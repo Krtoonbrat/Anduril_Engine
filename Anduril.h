@@ -88,6 +88,10 @@ private:
     std::vector<thc::Square> whiteQueens;
     std::vector<thc::Square> blackQueens;
 
+    // returns the amount of non pawn material (excluding kings)
+    int nonPawnMaterial(bool whiteToPlay);
+
+    // can we reduce the depth of our search for this move?
     bool isLateReduction(thc::ChessRules &board, thc::Move &move);
 
     // returns the next move to search
@@ -118,7 +122,7 @@ private:
 
     // finds the raw material score for the position
     // it returns a pointer to an array containing a middlegame and endgame value
-    int* getMaterialScore(thc::ChessRules &board);
+    std::vector<int> getMaterialScore(thc::ChessRules &board);
 
     // gets the phase of the game for evaluation
     double getPhase(thc::ChessRules &board);
@@ -169,6 +173,10 @@ private:
 
     // offsets for each piece
     enum piece {PAWN=0, KNIGHT, BISHOP, ROOK, QUEEN, KING};
+
+    // this will be used to make sure the same color doesn't do a null move twice in a row
+    enum nmpColor {NONE=-1, WHITE=true, BLACK=false};
+    nmpColor nmpColorCurrent = NONE;
 
     // maps each piece to its offset
     std::unordered_map<char, piece> pieceTypes = {{'P', PAWN},

@@ -21,8 +21,8 @@ int main() {
 
     // main game loop
     while (board.Evaluate(gameOver) && gameOver == thc::NOT_TERMINAL) {
-        /*
         std::cout << (board.WhiteToPlay() ? "White to move" : "Black to move") << std::endl;
+        /*
         auto start = std::chrono::high_resolution_clock::now();
         AI.go(board, 6);
         auto end = std::chrono::high_resolution_clock::now();

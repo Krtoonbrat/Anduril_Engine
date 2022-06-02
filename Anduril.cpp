@@ -3,14 +3,15 @@
 //
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 
 #include "Anduril.h"
 #include "ConsoleGame.h"
 
 // finds the raw material score for the position
-int* Anduril::getMaterialScore(thc::ChessRules &board) {
-    int score []= {0, 0};
+std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
+    std::vector<int> score = {0, 0};
     // pawns
     // white
     for (auto square : whitePawns){
@@ -725,7 +726,7 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     int scoreEG = 0;
 
     // get the material scoreMG for the board
-    int *matScore = getMaterialScore(board);
+    std::vector<int> matScore = getMaterialScore(board);
     scoreMG += matScore[0];
     scoreEG += matScore[1];
 
@@ -1007,9 +1008,15 @@ template <Anduril::NodeType nodeType>
 int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     depthNodes++;
     constexpr bool PvNode = nodeType == PV;
-    // if we are at max depth, simply evaluate and return
+
+    // check for 50 move rule
+    if (board.half_move_clock >= 100) {
+        return 0;
+    }
+
+    // if we are at max depth, start a quiescence search
     if (depth <= 0){
-        return quiesce<PvNode ? PV : NonPV>(board, -beta, -alpha, 4);
+        return quiesce<PvNode ? PV : NonPV>(board, alpha, beta, 4);
     }
 
     // represents the best score we have found so far
@@ -1027,7 +1034,6 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     if (transpoTable.count(hash) == 1) {
         node = transpoTable[hash];
         movesTransposed++;
-        // This should probably be moved to below the PV search
         if (!PvNode && node->nodeDepth >= depth) {
             switch (node->nodeType) {
                 case 1:
@@ -1053,12 +1059,38 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         node->nodeDepth = depth;
     }
 
+    // get the static evaluation
+    int staticEval = evaluateBoard(board);
+
     // razoring
     // weird magic values stolen straight from stockfish
-    if (!PvNode && depth <= 3 && evaluateBoard(board) < alpha - 348 - 258 * depth * depth) {
+    if (!PvNode && depth <= 3 && staticEval < alpha - 348 - 258 * depth * depth) {
         score = quiesce<NonPV>(board, alpha - 1, alpha, 4);
         if (score < alpha) {
             return score;
+        }
+    }
+
+    // null move pruning
+    if (!PvNode && board.getMoveFromStack(ply - 1).Valid()
+        && (board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))
+        && staticEval >= beta
+        && nonPawnMaterial(board.WhiteToPlay())
+        && depth >= 4
+        && nmpColorCurrent != board.WhiteToPlay()) {
+
+        // we pass an invalid move to make move to represent a passing turn
+        thc::Move nullMove;
+        nullMove.Invalid();
+
+        nmpColorCurrent = static_cast<nmpColor>(board.WhiteToPlay());
+
+        makeMove(board, nullMove);
+        int nullScore = -negamax<NonPV>(board, depth - 2, -beta, -beta + 1);
+        undoMove(board, nullMove);
+
+        if (nullScore >= beta) {
+            return nullScore;
         }
     }
 
@@ -1425,10 +1457,21 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     quiesceExplored = 0;
     transpoTable.clear();
     clearPieceLists();
+    nmpColorCurrent = NONE;
 
     board.PlayMove(bestMove);
 }
 
+int Anduril::nonPawnMaterial(bool whiteToPlay) {
+    if (whiteToPlay) {
+        return whiteKnights.size() + whiteBishops.size() + whiteRooks.size() + whiteQueens.size();
+    }
+    else {
+        return blackKnights.size() + blackBishops.size() + blackRooks.size() + blackQueens.size();
+    }
+}
+
+// can we reduce the depth of our search for this move?
 bool Anduril::isLateReduction(thc::ChessRules &board, thc::Move &move) {
     // don't reduce if the move is a capture
     if (move.capture != ' ') {
