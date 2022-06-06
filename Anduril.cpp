@@ -725,12 +725,12 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     int scoreMG = 0;
     int scoreEG = 0;
 
-    // get the material scoreMG for the board
+    // get the material score for the board
     std::vector<int> matScore = getMaterialScore(board);
     scoreMG += matScore[0];
     scoreEG += matScore[1];
 
-    // get the pawn scoreMG for the board
+    // get the pawn score for the board
     int p = getPawnScore(board);
     scoreMG += p;
     scoreEG += p;
@@ -761,7 +761,6 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     }
 
     // bishop pair
-
     if (whiteBishops.size() >= 2) {
         scoreMG += 25;
         scoreEG += 40;
@@ -769,6 +768,62 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     if (blackBishops.size() >= 2) {
         scoreMG -= 25;
         scoreEG += 40;
+    }
+
+    // rook on (semi)open files
+    bool half = false;
+    bool open = true;
+    // white
+    for (auto rook : whiteRooks) {
+        char rookFile = thc::get_file(rook);
+        // if we find a pawn on the same file, its not open
+        for (auto pawn : whitePawns) {
+            if (rookFile == thc::get_file(pawn)) {
+                open = false;
+                break;
+            }
+        }
+
+        // if the file is open, find out if its half or fully open, then apply bonus
+        if (open) {
+            for (auto enemyPawn : blackPawns) {
+                if (rookFile == thc::get_file(enemyPawn)) {
+                    half = true;
+                    break;
+                }
+            }
+
+            scoreMG += half ? 10 : 20;
+            scoreEG += half ? 10 : 20;
+        }
+    }
+
+    // reset the variable for black
+    half = false;
+    open = true;
+    // black
+    for (auto rook : blackRooks) {
+        char rookFile = thc::get_file(rook);
+        // if we find a pawn on the same file, its not open
+        for (auto pawn : blackPawns) {
+            if (rookFile == thc::get_file(pawn)) {
+                open = false;
+                break;
+            }
+        }
+
+        // if the file is open, find out if its half or fully open, then apply bonus
+        if (open) {
+            for (auto enemyPawn : whitePawns) {
+                if (rookFile == thc::get_file(enemyPawn)) {
+                    half = true;
+                    break;
+                }
+            }
+
+            scoreMG -= half ? 10 : 20;
+            scoreEG -= half ? 10 : 20;
+        }
     }
 
     // space advantages
