@@ -11,7 +11,7 @@ int main() {
     thc::TERMINAL gameOver = thc::NOT_TERMINAL;
 
     // this exists so that I can test problematic board positions if and when they arise
-    //board.Forsyth("r1bqkbnr/ppp2ppp/2n5/3p4/3Pp3/2P2N1P/PP2PPP1/RNBQKB1R w KQkq - 0 5");
+    //board.Forsyth("rnbq2kr/pppp1ppp/4pn2/1B6/1b6/4PN2/PPPP1PPP/RNBQ2KR w - - 6 6");
 
     //board.Forsyth("rn2r3/4k1p1/ppp5/4NP2/3RB3/2P3Bp/P1P4P/2K5 w - - 1 27");
     //board.Forsyth("2rk4/1B1brp2/pP1Qp1pp/4P3/8/8/1q4PP/3R1R1K b - - 0 38");
@@ -32,7 +32,7 @@ int main() {
         AI.setMovesExplored(0);
          */
 
-        if (board.WhiteToPlay()) {
+        if (!board.WhiteToPlay()) {
             Game::turn(board);
         }
         else {

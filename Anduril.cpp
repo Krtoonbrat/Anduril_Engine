@@ -34,6 +34,24 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 300 + knightSquareTableMG[i];
         score[1] += 300 + knightSquareTableEG[i];
+        // trapped knights
+        if ((square == thc::h8 && (board.squares[13] == 'p' || board.squares[15] == 'p'))
+            || (square == thc::a8) && (board.squares[8] == 'p' || board.squares[10] == 'p')) {
+            score[0] -= 150;
+            score[1] -= 150;
+        }
+        else if (square == thc::h7
+            && (board.squares[14] == 'p'
+            && (board.squares[21] == 'p' || board.squares[23] == 'p'))) {
+            score[0] -= 150;
+            score[1] -= 150;
+        }
+        else if (square == thc::a7
+            && (board.squares[9] == 'p'
+            && (board.squares[16] == 'p' || board.squares[18] == 'p'))) {
+            score[0] -= 150;
+            score[1] -= 150;
+        }
     }
     // black
     for (auto square : blackKnights) {
@@ -42,6 +60,24 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -300 - knightSquareTableMG[tableCoords];
         score[1] += -300 - knightSquareTableEG[tableCoords];
+        // trapped knights
+        if ((square == thc::h1 && (board.squares[53] == 'P' || board.squares[55] == 'P'))
+            || (square == thc::a1) && (board.squares[48] == 'P' || board.squares[50] == 'P')) {
+            score[0] += 150;
+            score[1] += 150;
+        }
+        else if (square == thc::h2
+                 && (board.squares[54] == 'P'
+                 && (board.squares[45] == 'P' || board.squares[47] == 'P'))) {
+            score[0] += 150;
+            score[1] += 150;
+        }
+        else if (square == thc::a2
+                 && (board.squares[49] == 'P'
+                 && (board.squares[40] == 'P' || board.squares[42] == 'P'))) {
+            score[0] += 150;
+            score[1] += 150;
+        }
     }
 
     // bishops
@@ -50,6 +86,12 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 320 + bishopSquareTableMG[i];
         score[1] += 350 + bishopSquareTableEG[i];
+        // fianchetto
+        if ((square == thc::g2 && board.wking_square == thc::g1)
+            || (square == thc::b2 && board.wking_square == thc::b1)) {
+            score[0] += 20;
+            score[1] += 20;
+        }
     }
     // black
     for (auto square : blackBishops) {
@@ -58,6 +100,12 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -320 - bishopSquareTableMG[tableCoords];
         score[1] += -350 - bishopSquareTableEG[tableCoords];
+        // fianchetto
+        if ((square == thc::g7 && board.wking_square == thc::g8)
+            || (square == thc::b7 && board.wking_square == thc::b8)) {
+            score[0] -= 20;
+            score[1] -= 20;
+        }
     }
 
     // rooks
@@ -66,6 +114,14 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 500 + rookSquareTableMG[i];
         score[1] += 500 + rookSquareTableEG[i];
+        // trapped rooks
+        if (((square == thc::h1 || square == thc::g1)
+            && (board.wking_square == thc::f1 || board.wking_square == thc::g1))
+            || ((square == thc::a1 || square == thc::b1)
+            && (board.wking_square == thc::c1 || board.wking_square == thc:: b1))) {
+            score[0] -= 40;
+            score[1] -= 40;
+        }
     }
     // black
     for (auto square : blackRooks) {
@@ -74,6 +130,14 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -500 - rookSquareTableMG[tableCoords];
         score[1] += -500 - rookSquareTableEG[tableCoords];
+        // trapped rooks
+        if (((square == thc::h8 || square == thc::g8)
+            && (board.bking_square == thc::f8 || board.bking_square == thc::g8))
+            || ((square == thc::a8 || square == thc::b8)
+            && (board.bking_square == thc::c8 || board.bking_square == thc:: b8))) {
+            score[0] += 40;
+            score[1] += 40;
+        }
     }
 
     // queens
