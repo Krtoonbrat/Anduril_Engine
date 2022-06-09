@@ -11,6 +11,7 @@
 
 #include "Node.h"
 #include "thc.h"
+#include "TranspositionTable.h"
 #include "PolyglotBook.h"
 
 class Anduril {
@@ -156,6 +157,8 @@ private:
 
     // transposition table
     std::unordered_map<uint64_t, Node*> transpoTable;
+
+    TranspositionTable table = TranspositionTable(512);
 
     // pawn transposition table
     std::unordered_map<uint64_t, int> pawnTranspoTable;

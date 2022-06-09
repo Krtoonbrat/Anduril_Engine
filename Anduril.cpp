@@ -1024,17 +1024,19 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
         return evaluateBoard(board);
     }
 
-
     // represents the best score we have found so far
     int bestScore = -999999999;
 
+    // current ply (white moves + black moves from the starting position)
+    int ply = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : (board.full_move_count * 2);
+
     // transposition lookup
     uint64_t hash = zobrist(board);
-    Node *node;
-    if (transpoTable.count(hash) == 1) {
-        node = transpoTable[hash];
+    bool found = false;
+    Node *node = table.probe(hash, found);
+    if (found) {
         movesTransposed++;
-        if (!PvNode && node->nodeDepth >= -Qdepth) {
+        if (!PvNode && node->nodeDepth >= -(ply + Qdepth)) {
             switch (node->nodeType) {
                 case 1:
                     return node->nodeScore;
@@ -1051,12 +1053,16 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
                     break;
             }
         }
-        node->nodeDepth = -Qdepth;
+        node->nodeDepth = -(ply + Qdepth);
     }
     else {
-        node = new Node();
-        transpoTable[hash] = node;
-        node->nodeDepth = -Qdepth;
+        // reset the node information so that we can rewrite it
+        // this isn't the best way to do it, but imma do it anyways
+        node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
+        node->nodeType = 3;
+        node->bestMove.Invalid();
+        node->key = hash;
+        node->nodeDepth = -(ply + Qdepth);
     }
 
     // stand pat score to see if we can exit early
@@ -1150,11 +1156,11 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // transposition lookup
     uint64_t hash = zobrist(board);
-    Node *node = nullptr;
-    if (transpoTable.count(hash) == 1) {
-        node = transpoTable[hash];
+    bool found = false;
+    Node *node = table.probe(hash, found);
+    if (found) {
         movesTransposed++;
-        if (!PvNode && node->nodeDepth >= depth) {
+        if (!PvNode && node->nodeDepth >= ply + depth) {
             switch (node->nodeType) {
                 case 1:
                     return node->nodeScore;
@@ -1171,12 +1177,16 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
                     break;
             }
         }
-        node->nodeDepth = depth;
+        node->nodeDepth = ply + depth;
     }
     else {
-        node = new Node();
-        transpoTable[hash] = node;
-        node->nodeDepth = depth;
+        // reset the node information so that we can rewrite it
+        // this isn't the best way to do it, but imma do it anyways
+        node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
+        node->nodeType = 3;
+        node->bestMove.Invalid();
+        node->key = hash;
+        node->nodeDepth = ply + depth;
     }
 
     // get the static evaluation
@@ -2200,6 +2210,7 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
     std::vector<thc::Move> PV;
     uint64_t hash = 0;
     Node *node;
+    bool found = true;
 
     // push the best move and add to the PV
     PV.push_back(bestMove);
@@ -2208,16 +2219,16 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
     // This loop hashes the board, finds the node associated with the current board
     // adds the best move we found to the PV, then pushes it to the board
     hash = zobrist(board);
-    node = transpoTable[hash];
-    while (node != nullptr && transpoTable.count(hash) != 0 && node->bestMove.src != node->bestMove.dst) {
+    node = table.probe(hash, found);
+    while (found && node->bestMove.src != node->bestMove.dst) {
         PV.push_back(node->bestMove);
         board.PushMove(node->bestMove);
         hash = zobrist(board);
-        node = transpoTable[hash];
+        node = table.probe(hash, found);
         // in case of infinite loops of repeating moves
-        // I just capped it at 15 because I honestly don't care about lines
+        // I just capped it at 9 because I honestly don't care about lines
         // calculated that long anyways
-        if (PV.size() > 7) {
+        if (PV.size() > 9) {
             break;
         }
     }

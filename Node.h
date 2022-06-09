@@ -9,7 +9,7 @@
 
 class Node {
 public:
-    Node() {nodeScore = -999999999; nodeType = 3; bestMove.Invalid(); nodeDepth = -99;};
+    Node() {nodeScore = -999999999; nodeType = 3; bestMove.Invalid(); nodeDepth = -99; key = 0;};
 
     // the evaluation of the node
     int nodeScore;
@@ -20,7 +20,11 @@ public:
     // type of node
     // 1 if the node is a PV node
     // 2 if the node is a cut node
+    // 3 if the node is an all node
     int nodeType;
+
+    // the key used to look up the node
+    uint64_t key;
 
     // the best move for the node
     thc::Move bestMove;

@@ -14,7 +14,7 @@ int main() {
     //board.Forsyth("rnbq2kr/pppp1ppp/4pn2/1B6/1b6/4PN2/PPPP1PPP/RNBQ2KR w - - 6 6");
 
     //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
-    //board.Forsyth("rnb2rk1/pp2ppbp/6p1/8/3PP3/5N2/q2BBPPP/1R1QK2R w K - 0 12");
+    //board.Forsyth("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
 
     Game::displayBoard(board);
     std::cout << "Board FEN: " << board.ForsythPublish() << std::endl;
