@@ -11,6 +11,7 @@
 
 #include "Node.h"
 #include "thc.h"
+#include "PolyglotBook.h"
 
 class Anduril {
 public:
@@ -72,6 +73,9 @@ private:
     // the ply of the root node
     int rootPly = 0;
 
+    // the opening book
+    Book openingBook = Book(R"(C:\Users\80hugkev\Documents\Anduril\book\Performance.bin)");
+
     // piece location lists
     std::vector<thc::Square> whitePawns;
     std::vector<thc::Square> blackPawns;
@@ -87,6 +91,8 @@ private:
 
     std::vector<thc::Square> whiteQueens;
     std::vector<thc::Square> blackQueens;
+
+    thc::Move getBookMove(thc::ChessRules &board);
 
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay);

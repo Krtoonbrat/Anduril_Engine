@@ -17,7 +17,7 @@ void Game::turn(thc::ChessRules &board) {
 
     thc::Square possiblePromotion = thc::make_square(move[0], move[1]);
 
-    if ((thc::get_rank(possiblePromotion) == 7 && board.squares[possiblePromotion] == 'P') || (thc::get_rank(possiblePromotion) == 2 && board.squares[possiblePromotion] == 'p')) {
+    if ((thc::get_rank(possiblePromotion) == '7' && board.squares[possiblePromotion] == 'P') || (thc::get_rank(possiblePromotion) == '2' && board.squares[possiblePromotion] == 'p')) {
         while (true) {
             std::string promotion;
             std::cout << "Please chose a piece to promote to.  q:Queen, r:Rook, n:Knight, b:Bishop: ";

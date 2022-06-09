@@ -13,8 +13,8 @@ int main() {
     // this exists so that I can test problematic board positions if and when they arise
     //board.Forsyth("rnbq2kr/pppp1ppp/4pn2/1B6/1b6/4PN2/PPPP1PPP/RNBQ2KR w - - 6 6");
 
-    //board.Forsyth("rn2r3/4k1p1/ppp5/4NP2/3RB3/2P3Bp/P1P4P/2K5 w - - 1 27");
-    //board.Forsyth("2rk4/1B1brp2/pP1Qp1pp/4P3/8/8/1q4PP/3R1R1K b - - 0 38");
+    //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
+    //board.Forsyth("rnb2rk1/pp2ppbp/6p1/8/3PP3/5N2/q2BBPPP/1R1QK2R w K - 0 12");
 
     Game::displayBoard(board);
     std::cout << "Board FEN: " << board.ForsythPublish() << std::endl;
@@ -32,7 +32,7 @@ int main() {
         AI.setMovesExplored(0);
          */
 
-        if (!board.WhiteToPlay()) {
+        if (board.WhiteToPlay()) {
             Game::turn(board);
         }
         else {

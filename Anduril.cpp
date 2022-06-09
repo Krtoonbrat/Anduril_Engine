@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <random>
 
 #include "Anduril.h"
 #include "ConsoleGame.h"
@@ -1183,7 +1184,9 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // razoring
     // weird magic values stolen straight from stockfish
-    if (!PvNode && depth <= 3 && staticEval < alpha - 348 - 258 * depth * depth) {
+    if (!PvNode
+        && depth <= 3
+        && staticEval < alpha - 348 - 258 * depth * depth) {
         score = quiesce<NonPV>(board, alpha - 1, alpha, 4);
         if (score < alpha) {
             return score;
@@ -1191,8 +1194,9 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     }
 
     // null move pruning
-    if (!PvNode && board.getMoveFromStack(ply - 1).Valid()
-        && (board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))
+    if (!PvNode
+        && board.getMoveFromStack(ply - 1).Valid()
+        && !(board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))
         && staticEval >= beta
         && nonPawnMaterial(board.WhiteToPlay())
         && depth >= 4
@@ -1205,7 +1209,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         nmpColorCurrent = static_cast<nmpColor>(board.WhiteToPlay());
 
         makeMove(board, nullMove);
-        int nullScore = -negamax<NonPV>(board, depth - 2, -beta, -beta + 1);
+        int nullScore = -negamax<NonPV>(board, depth - 3, -beta, -beta + 1);
         undoMove(board, nullMove);
 
         if (nullScore >= beta) {
@@ -1371,6 +1375,19 @@ int Anduril::zwSearch(thc::ChessRules &board, int beta, int depth) {
 
 // calls negamax and keeps track of the best move
 void Anduril::go(thc::ChessRules &board, int depth) {
+    if (openingBook.getBookOpen()) {
+        thc::Move bestMove = getBookMove(board);
+        if (bestMove.Valid()) {
+            std::cout << "Moving " << bestMove.TerseOut() << " from book" << std::endl;
+            board.PlayMove(bestMove);
+            return;
+        }
+        else {
+            openingBook.flipBookOpen();
+        }
+    }
+
+
     int alpha = -999999999;
     int beta = 999999999;
     int bestScore = -999999999;
@@ -1437,14 +1454,12 @@ void Anduril::go(thc::ChessRules &board, int depth) {
             }
 
             makeMove(board, move);
-            //board.PushMove(move);
             deep--;
             movesExplored++;
             depthNodes++;
             score = -negamax<PV>(board, deep, -beta, -alphaTheSecond);
             deep++;
             undoMove(board, move);
-            //board.PopMove(move);
 
             if (score > bestScore || (score == -999999999 && bestScore == -999999999)) {
                 bestScore = score;
@@ -1466,20 +1481,6 @@ void Anduril::go(thc::ChessRules &board, int depth) {
         if (bestScore == 999999999 || bestScore == -999999999) {
             break;
         }
-
-        /*
-        // move the previous search's best move to the front of the list for the next search
-        if (bestMove != moveList[0]){
-            for (auto i = moveList.begin(); i != moveList.end();){
-                if (*i == bestMove){
-                    moveList.erase(i);
-                    moveList.insert(moveList.begin(), bestMove);
-                    break;
-                }
-                i++;
-            }
-        }
-        */
 
         // set the aspiration window
         // we only actually use the aspiration window at depths greater than 2.
@@ -2229,6 +2230,40 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
     return PV;
 }
 
+thc::Move Anduril::getBookMove(thc::ChessRules &board) {
+    uint64_t key = zobrist(board);
+    int index = 0;
+    bookEntry *entry;
+    uint16_t move;
+    thc::Move bookMoves[32];
+    thc::Move tempMove;
+    int count = 0;
+    std::random_device random;
+
+    for (entry = openingBook.getEntries(); entry < openingBook.getEntries() + openingBook.getNumEntries(); entry++) {
+        if (key == openingBook.endian_swap_u64(entry->key)) {
+            move = openingBook.endian_swap_u16(entry->move);
+            tempMove = openingBook.convertPolyToInternal(move, board);
+            if (tempMove.Valid()) {
+                bookMoves[count++] = tempMove;
+                if (count > 32) {
+                    break;
+                }
+            }
+
+        }
+    }
+
+    if (count != 0) {
+        tempMove = bookMoves[random() % count];
+    }
+    else {
+        tempMove.Invalid();
+    }
+
+    return tempMove;
+}
+
 // calculates a hash for just pawns
 // this is used for the pawn transposition table
 // since the pawn score only depends on the position of the pawns
@@ -2248,7 +2283,10 @@ uint64_t Anduril::hashPawns(thc::ChessRules &board){
             }
 
             // xor the pseudorandom value from the array with the hash
-            hash ^= zobristArray[64 * pieceIndex + i];
+            // magic values at the end of the expression mirror i to the opposite
+            // side of the board because the zobirst array is mirrored along the
+            // x axis compared to our squares
+            hash ^= zobristArray[64 * pieceIndex + (((7 - (i / 8)) * 8) + i % 8)];
         }
     }
 
@@ -2257,7 +2295,7 @@ uint64_t Anduril::hashPawns(thc::ChessRules &board){
 
 // calculates a zobrist hash of the position
 uint64_t Anduril::zobrist(thc::ChessRules &board) {
-    return hashBoard(board) ^ hashCastling(board) ^ hashCastling(board) ^ hashEP(board) ^ hashTurn(board);
+    return hashBoard(board) ^ hashCastling(board) ^ hashEP(board) ^ hashTurn(board);
 }
 
 // calculates the board part of a zobrist hash
@@ -2276,7 +2314,10 @@ uint64_t Anduril::hashBoard(thc::ChessRules &board) {
             }
 
             // xor the pseudorandom value from the array with the hash
-            hash ^= zobristArray[64 * pieceIndex + i];
+            // magic values at the end of the expression mirror i to the opposite
+            // side of the board because the zobirst array is mirrored along the
+            // x axis compared to our squares
+            hash ^= zobristArray[64 * pieceIndex + (((7 - (i / 8)) * 8) + i % 8)];
         }
     }
 
