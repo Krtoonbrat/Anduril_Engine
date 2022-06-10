@@ -104,9 +104,6 @@ private:
     // returns the next move to search
     thc::Move pickNextMove(std::vector<std::tuple<int, thc::Move>> &moveListWithScores, int currentIndex);
 
-    // zero window search
-    int zwSearch(thc::ChessRules &board, int beta, int depth);
-
     // creates the piece lists for the board
     void fillPieceLists(thc::ChessRules &board);
 
@@ -155,26 +152,24 @@ private:
     // hashes whose turn it is
     uint64_t hashTurn(thc::ChessRules &board);
 
-    // transposition table
-    std::unordered_map<uint64_t, Node*> transpoTable;
-
+    // the transposition table
     TranspositionTable table = TranspositionTable(512);
 
     // pawn transposition table
-    std::unordered_map<uint64_t, int> pawnTranspoTable;
+    TranspositionTable pawnTable = TranspositionTable(256);
 
     // killer moves
     std::vector<std::vector<thc::Move>> killers;
 
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', 100},
-                                                 {'N', 320},
+                                                 {'N', 300},
                                                  {'B', 300},
                                                  {'R', 500},
                                                  {'Q', 900},
                                                  {'K', 20000},
                                                  {'p', -100},
-                                                 {'n', -320},
+                                                 {'n', -300},
                                                  {'b', -300},
                                                  {'r', -500},
                                                  {'q', -900},

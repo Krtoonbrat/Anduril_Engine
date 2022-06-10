@@ -33,7 +33,7 @@ bool Book::openBook(const char *file) {
         size_t returnValue;
         returnValue = fread(entries, sizeof(bookEntry), numEntries, book);
 
-        std::cout << returnValue << " Entries read from file" << std::endl;
+        //std::cout << returnValue << " Entries read from file" << std::endl;
     }
 
     return true;

@@ -198,8 +198,10 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
 
     // first check for a transposition
     uint64_t hash = hashPawns(board);
-    if (pawnTranspoTable.count(hash) == 1) {
-        return pawnTranspoTable[hash];
+    bool found = false;
+    Node *pNode = pawnTable.probe(hash, found);
+    if (found) {
+        return pNode->nodeScore;
     }
 
     int score = 0;
@@ -495,7 +497,7 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
     }
 
     // add the score to the transposition table
-    pawnTranspoTable[hash] = score;
+    pNode->nodeScore = score;
 
     return score;
 }
@@ -1255,28 +1257,27 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     thc::Move move;
 
     // do we need to search a move with the full depth?
-    bool doFull = false;
+    bool doFullSearch = false;
 
     // loop through the possible moves and score each
     for (int i = 0; i < moveList.size(); i++) {
         move = pickNextMove(moveList, i);
 
-        //board.PushMove(move);
         movesExplored++;
 
         // search with zero window
         // first check if we can reduce
-        doFull = false;
+        doFullSearch = false;
         if (depth > 1 && i > 2 && isLateReduction(board, move)) {
             makeMove(board, move);
             score = -negamax<NonPV>(board, depth - 2, -(alpha + 1), -alpha);
-            doFull = score > alpha && score < beta;
+            doFullSearch = score > alpha && score < beta;
             undoMove(board, move);
         }
         else {
-            doFull = !PvNode || i > 0;
+            doFullSearch = !PvNode || i > 0;
         }
-        if (doFull) {
+        if (doFullSearch) {
             makeMove(board, move);
             score = -negamax<NonPV>(board, depth - 1, -(alpha + 1), -alpha);
             undoMove(board, move);
@@ -1288,8 +1289,6 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
             score = -negamax<PV>(board, depth - 1, -beta, -alpha);
             undoMove(board, move);
         }
-
-        //board.PopMove(move);
 
         if (score > bestScore) {
             bestScore = score;
@@ -1314,75 +1313,6 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
 }
 
-// zero window search will search a node with tight bounds to see if it needs a full search or if we can skip the node
-int Anduril::zwSearch(thc::ChessRules &board, int beta, int depth) {
-    depthNodes++;
-    if (depth <= 0) {
-        return quiesce<NonPV>(board, beta - 1, beta, 4);
-    }
-    // represents the best score we have found so far
-    int bestScore = -999999999;
-
-    // holds the score of the move we just searched
-    int score = -999999999;
-
-    // transposition lookup
-    // NOTE: the transposition table is only being used for move ordering here
-    uint64_t hash = zobrist(board);
-    Node *node = nullptr;
-    if (transpoTable.count(hash) == 1) {
-        node = transpoTable[hash];
-        movesTransposed++;
-    }
-    else {
-        node = new Node();
-        transpoTable[hash] = node;
-        node->nodeDepth = depth;
-    }
-
-    // generate a move list
-    std::vector<std::tuple<int, thc::Move>> moveList;
-    if (node->nodeScore != -999999999) {
-        moveList = getMoveList(board, node);
-    }
-    else {
-        moveList = getMoveList(board, nullptr);
-    }
-
-    // if the move list is empty, we found mate and the current player lost
-    if (moveList.empty()){
-        return score;
-    }
-
-    // holds the move we want to search
-    thc::Move move;
-
-    // loop through the possible moves and score each
-    for (int i = 0; i < moveList.size(); i++) {
-        move = pickNextMove(moveList, i);
-        makeMove(board, move);
-        //board.PushMove(move);
-        movesExplored++;
-        score = -zwSearch(board, 1 - beta, depth - 1);
-        undoMove(board, move);
-
-        if (score > bestScore) {
-            bestScore = score;
-            node->nodeScore = score;
-            node->bestMove = move;
-            if (score >= beta) {
-                cutNodes++;
-                node->nodeType = 2;
-                return bestScore;
-            }
-        }
-    }
-
-    return bestScore;
-
-}
-
-
 // calls negamax and keeps track of the best move
 void Anduril::go(thc::ChessRules &board, int depth) {
     if (openingBook.getBookOpen()) {
@@ -1393,6 +1323,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
             return;
         }
         else {
+            std::cout << "End of opening book, starting search" << std::endl;
             openingBook.flipBookOpen();
         }
     }
@@ -1585,7 +1516,6 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     cutNodes = 0;
     movesTransposed = 0;
     quiesceExplored = 0;
-    transpoTable.clear();
     clearPieceLists();
     nmpColorCurrent = NONE;
 
