@@ -11,7 +11,7 @@ int main() {
     thc::TERMINAL gameOver = thc::NOT_TERMINAL;
 
     // this exists so that I can test problematic board positions if and when they arise
-    board.Forsyth("r3r1k1/3b1ppp/Pp3q2/3p4/1n1N4/1P1Q3P/4P1PR/R1B1KB2 b Q - 0 20");
+    //board.Forsyth("r3r1k1/3b1ppp/Pp3q2/3p4/1n1N4/1P1Q3P/4P1PR/R1B1KB2 b Q - 0 20");
 
     //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
     //board.Forsyth("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
