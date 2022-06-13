@@ -212,6 +212,9 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         return quiesce<PvNode ? PV : NonPV>(board, alpha, beta, 4);
     }
 
+    // represents our next move to search
+    thc::Move move;
+
     // represents the best score we have found so far
     int bestScore = -999999999;
 
@@ -318,8 +321,52 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         return 0;
     }
 
-    // represents our next move to search
-    thc::Move move;
+    // probcut
+    // if we find a position that returns a cutoff when beta is padded a little, we can assume
+    // the position would cut at a full depth search as well
+    int probCutBeta = beta + 350;
+    if (!PvNode
+        && depth > 4
+        && !(board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))
+        && !(found
+        && node->nodeDepth >= depth - 3
+        && node->nodeScore != -999999999
+        && node->nodeScore < probCutBeta)) {
+
+        // we loop through all the moves to try and find one that
+        // causes a beta cut on a reduced search
+        for (int i = 0; i < moveList.size(); i++) {
+            move = pickNextMove(moveList, i);
+
+            makeMove(board, move);
+
+            // perform a qsearch to verify that the move still is less than beta
+            score = -quiesce<NonPV>(board, -probCutBeta, -probCutBeta + 1, 4);
+
+            // if the qsearch holds, do a regular one
+            if (score >= probCutBeta) {
+                score = -negamax<NonPV>(board, depth - 4, -probCutBeta, -probCutBeta + 1);
+            }
+
+            undoMove(board, move);
+
+            if (score >= probCutBeta) {
+                // write to the node if we have better information
+                if (!(found
+                    && node->nodeDepth >= depth - 3
+                    && node->nodeScore != -999999999)) {
+                    node->nodeDepth = depth - 3;
+                    node->nodeScore = score;
+                    node->nodeType = 2;
+                    node->bestMove = move;
+                }
+                cutNodes++;
+                return score;
+            }
+
+        }
+    }
+
 
     // do we need to search a move with the full depth?
     bool doFullSearch = false;

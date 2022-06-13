@@ -22,9 +22,10 @@ int main() {
     // main game loop
     while (board.Evaluate(gameOver) && gameOver == thc::NOT_TERMINAL) {
         std::cout << (board.WhiteToPlay() ? "White to move" : "Black to move") << std::endl;
+
         /*
         auto start = std::chrono::high_resolution_clock::now();
-        AI.go(board, 8);
+        AI.go(board, 9);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> timeElapsed = end - start;
         std::cout << "Time spent searching: " << timeElapsed.count() / 1000 << " seconds" << std::endl;
@@ -32,7 +33,8 @@ int main() {
         AI.setMovesExplored(0);
          */
 
-        if (board.WhiteToPlay()) {
+
+        if (!board.WhiteToPlay()) {
             Game::turn(board);
         }
         else {
@@ -44,8 +46,6 @@ int main() {
             std::cout << "Nodes per second: " << AI.getMovesExplored() / (timeElapsed.count()/1000) << std::endl;
             AI.setMovesExplored(0);
         }
-
-
 
 
         Game::displayBoard(board);

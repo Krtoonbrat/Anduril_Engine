@@ -37,7 +37,7 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         }
         else if (square == thc::h7
                  && (board.squares[14] == 'p'
-                     && (board.squares[21] == 'p' || board.squares[23] == 'p'))) {
+                 && (board.squares[21] == 'p' || board.squares[23] == 'p'))) {
             score[0] -= 150;
             score[1] -= 150;
         }
