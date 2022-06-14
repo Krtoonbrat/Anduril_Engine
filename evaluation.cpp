@@ -2,7 +2,33 @@
 // Created by 80hugkev on 6/10/2022.
 //
 
+// we need this for debugging if we print the board
+#include <iostream>
+
 #include "Anduril.h"
+
+// these were totally stolen from the thc.cpp file directly
+// Macro to convert chess notation to Square convention,
+//  eg SQ('c','5') -> c5
+//  (We didn't always have such a sensible Square convention. SQ() remains
+//  useful for cases like SQ(file,rank), but you may actually see examples
+//  like the hardwired SQ('c','5') which can safely be changed to simply
+//  c5).
+
+#define SQ(f,r)  ( (thc::Square) ( ('8'-(r))*8 + ((f)-'a') )   )
+
+// More Square macros
+#define FILE(sq)    ( (char) (  ((sq)&0x07) + 'a' ) )           // eg c5->'c'
+#define RANK(sq)    ( (char) (  '8' - (((sq)>>3) & 0x07) ) )    // eg c5->'5'
+#define IFILE(sq)   (  (int)(sq) & 0x07 )                       // eg c5->2
+#define IRANK(sq)   (  7 - ((((int)(sq)) >>3) & 0x07) )         // eg c5->4
+#define SOUTH(sq)   (  (thc::Square)((sq) + 8) )                     // eg c5->c4
+#define NORTH(sq)   (  (thc::Square)((sq) - 8) )                     // eg c5->c6
+#define SW(sq)      (  (thc::Square)((sq) + 7) )                     // eg c5->b4
+#define SE(sq)      (  (thc::Square)((sq) + 9) )                     // eg c5->d4
+#define NW(sq)      (  (thc::Square)((sq) - 9) )                     // eg c5->b6
+#define NE(sq)      (  (thc::Square)((sq) - 7) )                     // eg c5->d6
+
 
 // finds the raw material score for the position
 std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
@@ -29,6 +55,16 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 300 + knightSquareTableMG[i];
         score[1] += 300 + knightSquareTableEG[i];
+
+        // outposts
+        if (square < thc::a3
+            && (board.squares[i + 7] == 'P' || board.squares[i + 9] == 'P')
+            && board.squares[i - 7] != 'p'
+            && board.squares[i - 9] != 'p') {
+            score[0] += 10;
+            score[0] += 10;
+        }
+
         // trapped knights
         if ((square == thc::h8 && (board.squares[13] == 'p' || board.squares[15] == 'p'))
             || (square == thc::a8) && (board.squares[8] == 'p' || board.squares[10] == 'p')) {
@@ -43,7 +79,7 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         }
         else if (square == thc::a7
                  && (board.squares[9] == 'p'
-                     && (board.squares[16] == 'p' || board.squares[18] == 'p'))) {
+                 && (board.squares[16] == 'p' || board.squares[18] == 'p'))) {
             score[0] -= 150;
             score[1] -= 150;
         }
@@ -55,6 +91,16 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -300 - knightSquareTableMG[tableCoords];
         score[1] += -300 - knightSquareTableEG[tableCoords];
+
+        // outposts
+        if (square > thc::h6
+            && (board.squares[i - 7] == 'p' || board.squares[i - 9] == 'p')
+            && board.squares[i + 7] != 'P'
+            && board.squares[i + 9] != 'P') {
+            score[0] -= 10;
+            score[0] -= 10;
+        }
+
         // trapped knights
         if ((square == thc::h1 && (board.squares[53] == 'P' || board.squares[55] == 'P'))
             || (square == thc::a1) && (board.squares[48] == 'P' || board.squares[50] == 'P')) {
@@ -63,13 +109,13 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         }
         else if (square == thc::h2
                  && (board.squares[54] == 'P'
-                     && (board.squares[45] == 'P' || board.squares[47] == 'P'))) {
+                 && (board.squares[45] == 'P' || board.squares[47] == 'P'))) {
             score[0] += 150;
             score[1] += 150;
         }
         else if (square == thc::a2
                  && (board.squares[49] == 'P'
-                     && (board.squares[40] == 'P' || board.squares[42] == 'P'))) {
+                 && (board.squares[40] == 'P' || board.squares[42] == 'P'))) {
             score[0] += 150;
             score[1] += 150;
         }
@@ -111,9 +157,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[1] += 500 + rookSquareTableEG[i];
         // trapped rooks
         if (((square == thc::h1 || square == thc::g1)
-             && (board.wking_square == thc::f1 || board.wking_square == thc::g1))
+            && (board.wking_square == thc::f1 || board.wking_square == thc::g1))
             || ((square == thc::a1 || square == thc::b1)
-                && (board.wking_square == thc::c1 || board.wking_square == thc:: b1))) {
+            && (board.wking_square == thc::c1 || board.wking_square == thc:: b1))) {
             score[0] -= 40;
             score[1] -= 40;
         }
@@ -127,9 +173,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[1] += -500 - rookSquareTableEG[tableCoords];
         // trapped rooks
         if (((square == thc::h8 || square == thc::g8)
-             && (board.bking_square == thc::f8 || board.bking_square == thc::g8))
+            && (board.bking_square == thc::f8 || board.bking_square == thc::g8))
             || ((square == thc::a8 || square == thc::b8)
-                && (board.bking_square == thc::c8 || board.bking_square == thc:: b8))) {
+            && (board.bking_square == thc::c8 || board.bking_square == thc:: b8))) {
             score[0] += 40;
             score[1] += 40;
         }
@@ -176,19 +222,6 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
 //  useful for cases like SQ(file,rank), but you may actually see examples
 //  like the hardwired SQ('c','5') which can safely be changed to simply
 //  c5).
-#define SQ(f,r)  ( (thc::Square) ( ('8'-(r))*8 + ((f)-'a') )   )
-
-// More Square macros
-#define FILE(sq)    ( (char) (  ((sq)&0x07) + 'a' ) )           // eg c5->'c'
-#define RANK(sq)    ( (char) (  '8' - (((sq)>>3) & 0x07) ) )    // eg c5->'5'
-#define IFILE(sq)   (  (int)(sq) & 0x07 )                       // eg c5->2
-#define IRANK(sq)   (  7 - ((((int)(sq)) >>3) & 0x07) )         // eg c5->4
-#define SOUTH(sq)   (  (thc::Square)((sq) + 8) )                     // eg c5->c4
-#define NORTH(sq)   (  (thc::Square)((sq) - 8) )                     // eg c5->c6
-#define SW(sq)      (  (thc::Square)((sq) + 7) )                     // eg c5->b4
-#define SE(sq)      (  (thc::Square)((sq) + 9) )                     // eg c5->d4
-#define NW(sq)      (  (thc::Square)((sq) - 9) )                     // eg c5->b6
-#define NE(sq)      (  (thc::Square)((sq) - 7) )                     // eg c5->d6
 
     // first check for a transposition
     uint64_t hash = hashPawns(board);

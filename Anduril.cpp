@@ -41,6 +41,12 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getMoveList(thc::ChessRules &bo
             continue;
         }
 
+        // we want to search castling before the equal captures
+        if (moves.moves[i].special >= thc::SPECIAL_WK_CASTLING && moves.moves[i].special <= thc::SPECIAL_BQ_CASTLING) {
+            movesWithScores.emplace_back(50, moves.moves[i]);
+            continue;
+        }
+
         // next check for killer moves
         if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), moves.moves[i]) != 0) {
             // the value of -30 makes sure that killers are searched after equal captures.
