@@ -580,9 +580,10 @@ void Anduril::go(thc::ChessRules &board, int depth) {
         }
 
         // set the aspiration window
-        // we only actually use the aspiration window at depths greater than 2.
-        // this is because we don't have a decent picture of the position until after each player has moved.
-        if (deep >= 2) {
+        // we only actually use the aspiration window at depths greater than 4.
+        // this is because we don't have a decent picture of the position yet
+        // and the search falls outside the window often causing instability
+        if (deep > 4) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
