@@ -75,7 +75,7 @@ private:
     int rootPly = 0;
 
     // the opening book
-    Book openingBook = Book(R"(C:\Users\80hugkev\Documents\Anduril\book\Performance.bin)");
+    Book openingBook = Book(R"(..\book\Performance.bin)");
 
     // piece location lists
     std::vector<thc::Square> whitePawns;
@@ -160,6 +160,9 @@ private:
 
     // killer moves
     std::vector<std::vector<thc::Move>> killers;
+
+    // futility margins
+    int margin[4] = {0, 200, 300, 500};
 
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', 100},

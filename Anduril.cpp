@@ -169,13 +169,18 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
     // loop through the moves and score them
     for (int i = 0; i < moveList.size(); i++) {
         move = pickNextMove(moveList, i);
+
+        // delta pruning
+        if (standPat + abs(pieceValues[board.squares[move.dst]]) + 200 < alpha) {
+            continue;
+        }
+
         makeMove(board, move);
-        //board.PushMove(move);
+
         movesExplored++;
         quiesceExplored++;
         score = -quiesce<nodeType>(board, -beta, -alpha, Qdepth - 1);
         undoMove(board, move);
-        //board.PopMove(move);
 
         if (score > bestScore) {
             bestScore = score;
@@ -262,6 +267,9 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     // get the static evaluation
     int staticEval = evaluateBoard(board);
 
+    // are we in check?
+    int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
+
     // razoring
     // weird magic values stolen straight from stockfish
     if (!PvNode
@@ -276,7 +284,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     // null move pruning
     if (!PvNode
         && board.getMoveFromStack(ply - 1).Valid()
-        && !(board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))
+        && !check
         && staticEval >= beta
         && nonPawnMaterial(board.WhiteToPlay())
         && depth >= 4
@@ -327,7 +335,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     int probCutBeta = beta + 350;
     if (!PvNode
         && depth > 4
-        && !(board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))
+        && !check
         && !(found
         && node->nodeDepth >= depth - 3
         && node->nodeScore != -999999999
@@ -367,6 +375,20 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         }
     }
 
+    // decide if we can use futility pruning
+    // if the eval is below (alpha - margin), searching non-tactical moves at lower
+    // depths wastes time, so we set a flag to prune them
+    bool futile = false;
+    if (!PvNode
+        && depth <= 3
+        && !check
+        && abs(alpha) < 9000     // this condition makes sure we aren't thinking about mate
+        && staticEval + margin[depth] <= alpha) {
+        futile = true;
+    }
+
+
+
 
     // do we need to search a move with the full depth?
     bool doFullSearch = false;
@@ -376,6 +398,22 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         move = pickNextMove(moveList, i);
 
         movesExplored++;
+
+        // futility pruning
+        if (futile
+            && move.capture == ' '
+            && !(move.special >= thc::SPECIAL_PROMOTION_QUEEN && move.special <= thc::SPECIAL_PROMOTION_KNIGHT)) {
+            // there is one check we need to do before pruning that requires the move to
+            // be made.  I put it separately so that we don't make the move and unmake it
+            // every single iteration
+            makeMove(board, move);
+            if (!(board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))) {
+                undoMove(board, move);
+                continue;
+            }
+            undoMove(board, move);
+        }
+
 
         // search with zero window
         // first check if we can reduce
