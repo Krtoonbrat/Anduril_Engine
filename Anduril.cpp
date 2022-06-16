@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <random>
@@ -49,16 +50,13 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getMoveList(thc::ChessRules &bo
 
         // next check for killer moves
         if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), moves.moves[i]) != 0) {
-            // the value of -30 makes sure that killers are searched after equal captures.
-            // equal captures are going to have a value between 20 and -20 because the value of knights and bishops were
-            // marked with an offset of 20 from each other.  I don't know why I did this either but it's not too big of a deal
-            movesWithScores.emplace_back(-30, moves.moves[i]);
+            movesWithScores.emplace_back(-910, moves.moves[i]);
             continue;
         }
 
         // the move isn't special, mark it to be searched with every other non-capture
-        // the value of -40 was chosen because it makes sure the moves are searched after killers, but before losing captures
-        movesWithScores.emplace_back(-40, moves.moves[i]);
+        // the value of -1000 was chosen because it makes sure the moves are searched after killers
+        movesWithScores.emplace_back(-1000, moves.moves[i]);
     }
 
     return movesWithScores;
@@ -218,6 +216,15 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         return 0;
     }
 
+    // are we in check?
+    int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
+
+    // extend the search by one if we are in check
+    // this makes sure we don't enter a qsearch while in check
+    if (check && depth == 0) {
+        depth++;
+    }
+
     // if we are at max depth, start a quiescence search
     if (depth <= 0){
         return quiesce<PvNode ? PV : NonPV>(board, alpha, beta, 4);
@@ -273,13 +280,11 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     // get the static evaluation
     int staticEval = evaluateBoard(board);
 
-    // are we in check?
-    int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
-
     // razoring
     // weird magic values stolen straight from stockfish
     if (!PvNode
-        && depth <= 3
+        && !check
+        && depth <= 7
         && staticEval < alpha - 348 - 258 * depth * depth) {
         score = quiesce<NonPV>(board, alpha - 1, alpha, 4);
         if (score < alpha) {
@@ -289,22 +294,24 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // null move pruning
     if (!PvNode
+        && nullAllowed
         && board.getMoveFromStack(ply - 1).Valid()
         && !check
         && staticEval >= beta
-        && nonPawnMaterial(board.WhiteToPlay())
         && depth >= 4
-        && nmpColorCurrent != board.WhiteToPlay()) {
+        && nonPawnMaterial(board.WhiteToPlay()) > 1300) {
 
         // we pass an invalid move to make move to represent a passing turn
         thc::Move nullMove;
         nullMove.Invalid();
 
-        nmpColorCurrent = static_cast<nmpColor>(board.WhiteToPlay());
+        nullAllowed = false;
 
         makeMove(board, nullMove);
         int nullScore = -negamax<NonPV>(board, depth - 3, -beta, -beta + 1);
         undoMove(board, nullMove);
+
+        nullAllowed = true;
 
         if (nullScore >= beta) {
             return nullScore;
@@ -484,6 +491,12 @@ void Anduril::go(thc::ChessRules &board, int depth) {
         }
     }
 
+    // start the clock
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // this is for debugging
+    std::string boardFENs = board.ForsythPublish();
+    char *boardFEN = &boardFENs[0];
 
     int alpha = -999999999;
     int beta = 999999999;
@@ -494,7 +507,8 @@ void Anduril::go(thc::ChessRules &board, int depth) {
 
     // set the killer vector to have the correct number of slots
     // and the root node's ply
-    killers = std::vector<std::vector<thc::Move>>(depth + 1);
+    // the vector is padded a little at the end in case of the search being extended
+    killers = std::vector<std::vector<thc::Move>>(depth + 5);
     for (auto & killer : killers) {
         killer = std::vector<thc::Move>(2);
     }
@@ -583,7 +597,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
         // we only actually use the aspiration window at depths greater than 4.
         // this is because we don't have a decent picture of the position yet
         // and the search falls outside the window often causing instability
-        if (deep > 4) {
+        if (deep > 5) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
@@ -632,6 +646,16 @@ void Anduril::go(thc::ChessRules &board, int depth) {
             depthNodes = 0;
         }
 
+
+        // for debugging
+        if (boardFEN != board.ForsythPublish()) {
+            std::cout << "Board does not match original at depth: " << deep << std::endl;
+            board.Forsyth(boardFEN);
+            clearPieceLists();
+            fillPieceLists(board);
+        }
+
+
         // reset the variables to prepare for the next loop
         if (!finalDepth) {
             bestScore = -999999999;
@@ -639,6 +663,9 @@ void Anduril::go(thc::ChessRules &board, int depth) {
             score = -999999999;
         }
     }
+
+    // stop the clock
+    auto end = std::chrono::high_resolution_clock::now();
 
     std::vector<thc::Move> PV = getPV(board, depth, bestMove);
 
@@ -670,21 +697,24 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     PVout += "]";
     std::cout << PVout + "\n";
     std::cout << "Moving: " << bestMove.TerseOut() << " with a score of " << (bestScore/ 100.0) * flipped << std::endl;
+    std::chrono::duration<double, std::milli> timeElapsed = end - start;
+    std::cout << "Time spent searching: " << timeElapsed.count() / 1000 << " seconds" << std::endl;
+    std::cout << "Nodes per second: " << getMovesExplored() / (timeElapsed.count()/1000) << std::endl;
+    setMovesExplored(0);
     cutNodes = 0;
     movesTransposed = 0;
     quiesceExplored = 0;
     clearPieceLists();
-    nmpColorCurrent = NONE;
 
     board.PlayMove(bestMove);
 }
 
 int Anduril::nonPawnMaterial(bool whiteToPlay) {
     if (whiteToPlay) {
-        return whiteKnights.size() + whiteBishops.size() + whiteRooks.size() + whiteQueens.size();
+        return whiteKnights.size() * 300 + whiteBishops.size() * 300 + whiteRooks.size() * 500 + whiteQueens.size() * 900;
     }
     else {
-        return blackKnights.size() + blackBishops.size() + blackRooks.size() + blackQueens.size();
+        return blackKnights.size() * 300 + blackBishops.size() * 300 + blackRooks.size() * 500 + blackQueens.size() * 900;
     }
 }
 

@@ -38,13 +38,7 @@ int main() {
             Game::turn(board);
         }
         else {
-            auto start = std::chrono::high_resolution_clock::now();
             AI.go(board, 10);
-            auto end = std::chrono::high_resolution_clock::now();
-            std::chrono::duration<double, std::milli> timeElapsed = end - start;
-            std::cout << "Time spent searching: " << timeElapsed.count() / 1000 << " seconds" << std::endl;
-            std::cout << "Nodes per second: " << AI.getMovesExplored() / (timeElapsed.count()/1000) << std::endl;
-            AI.setMovesExplored(0);
         }
 
 

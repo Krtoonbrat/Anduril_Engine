@@ -38,7 +38,7 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
     for (auto square : whitePawns){
         int i = static_cast<int>(square);
         score[0] += 100 + pawnSquareTableMG[i];
-        score[1] += 100 + pawnSquareTableEG[i];
+        score[1] += 110 + pawnSquareTableEG[i];
     }
     // black
     for (auto square : blackPawns) {
@@ -46,15 +46,15 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         // calculate the correct value to use for the piece square table
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -100 - pawnSquareTableMG[tableCoords];
-        score[1] += -100 - pawnSquareTableEG[tableCoords];
+        score[1] += -110 - pawnSquareTableEG[tableCoords];
     }
 
     // knights
     // white
     for (auto square : whiteKnights){
         int i = static_cast<int>(square);
-        score[0] += 300 + knightSquareTableMG[i];
-        score[1] += 300 + knightSquareTableEG[i];
+        score[0] += 337 + knightSquareTableMG[i];
+        score[1] += 281 + knightSquareTableEG[i];
 
         // outposts
         if (square < thc::a3
@@ -89,8 +89,8 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         // calculate the correct value to use for the piece square table
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -300 - knightSquareTableMG[tableCoords];
-        score[1] += -300 - knightSquareTableEG[tableCoords];
+        score[0] += -337 - knightSquareTableMG[tableCoords];
+        score[1] += -281 - knightSquareTableEG[tableCoords];
 
         // outposts
         if (square > thc::h6
@@ -125,8 +125,8 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
     // white
     for (auto square : whiteBishops){
         int i = static_cast<int>(square);
-        score[0] += 320 + bishopSquareTableMG[i];
-        score[1] += 350 + bishopSquareTableEG[i];
+        score[0] += 365 + bishopSquareTableMG[i];
+        score[1] += 297 + bishopSquareTableEG[i];
         // fianchetto
         if ((square == thc::g2 && board.wking_square == thc::g1)
             || (square == thc::b2 && board.wking_square == thc::b1)) {
@@ -139,8 +139,8 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         // calculate the correct value to use for the piece square table
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -320 - bishopSquareTableMG[tableCoords];
-        score[1] += -350 - bishopSquareTableEG[tableCoords];
+        score[0] += -365 - bishopSquareTableMG[tableCoords];
+        score[1] += -297 - bishopSquareTableEG[tableCoords];
         // fianchetto
         if ((square == thc::g7 && board.wking_square == thc::g8)
             || (square == thc::b7 && board.wking_square == thc::b8)) {
@@ -153,8 +153,8 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
     // white
     for (auto square : whiteRooks){
         int i = static_cast<int>(square);
-        score[0] += 500 + rookSquareTableMG[i];
-        score[1] += 500 + rookSquareTableEG[i];
+        score[0] += 477 + rookSquareTableMG[i];
+        score[1] += 512 + rookSquareTableEG[i];
         // trapped rooks
         if (((square == thc::h1 || square == thc::g1)
             && (board.wking_square == thc::f1 || board.wking_square == thc::g1))
@@ -169,8 +169,8 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         // calculate the correct value to use for the piece square table
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -500 - rookSquareTableMG[tableCoords];
-        score[1] += -500 - rookSquareTableEG[tableCoords];
+        score[0] += -477 - rookSquareTableMG[tableCoords];
+        score[1] += -512 - rookSquareTableEG[tableCoords];
         // trapped rooks
         if (((square == thc::h8 || square == thc::g8)
             && (board.bking_square == thc::f8 || board.bking_square == thc::g8))
@@ -185,16 +185,16 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
     // white
     for (auto square : whiteQueens){
         int i = static_cast<int>(square);
-        score[0] += 900 + queenSquareTableMG[i];
-        score[1] += 900 + queenSquareTableEG[i];
+        score[0] += 1025 + queenSquareTableMG[i];
+        score[1] += 936  + queenSquareTableEG[i];
     }
     // black
     for (auto square : blackQueens) {
         int i = static_cast<int>(square);
         // calculate the correct value to use for the piece square table
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -900 - queenSquareTableMG[tableCoords];
-        score[1] += -900 - queenSquareTableEG[tableCoords];
+        score[0] += -1025 - queenSquareTableMG[tableCoords];
+        score[1] += -936  - queenSquareTableEG[tableCoords];
     }
 
     // kings
@@ -861,7 +861,7 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     }
     if (blackBishops.size() >= 2) {
         scoreMG -= 25;
-        scoreEG += 40;
+        scoreEG -= 40;
     }
 
     // rook on (semi)open files
