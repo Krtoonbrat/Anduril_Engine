@@ -33,9 +33,6 @@ public:
 
     void closeBook();
 
-    // finds and returns a book move for the position
-    thc::Move getBookMove(thc::ChessRules &board);
-
     thc::Move convertPolyToInternal(uint16_t move, thc::ChessRules &board);
 
     uint16_t endian_swap_u16(uint16_t x);

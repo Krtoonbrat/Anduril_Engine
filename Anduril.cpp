@@ -6,10 +6,10 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
+#include <random>
 
 #include "Anduril.h"
 #include "ConsoleGame.h"
-#include "ZobristHasher.h"
 
 // Most Valuable Victim, Least Valuable Attacker
 int Anduril::MVVLVA(thc::ChessRules &board, int src, int dst) {
@@ -102,7 +102,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
     int ply = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : (board.full_move_count * 2);
 
     // transposition lookup
-    uint64_t hash = Zobrist::zobristHash(board);
+    uint64_t hash = zobrist(board);
     bool found = false;
     Node *node = table.probe(hash, found);
     if (found) {
@@ -243,7 +243,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     int ply = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : (board.full_move_count * 2);
 
     // transposition lookup
-    uint64_t hash = Zobrist::zobristHash(board);
+    uint64_t hash = zobrist(board);
     bool found = false;
     Node *node = table.probe(hash, found);
     if (found) {
@@ -478,10 +478,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
 // calls negamax and keeps track of the best move
 void Anduril::go(thc::ChessRules &board, int depth) {
-    thc::Move bestMove;
-    bestMove.Invalid();
     if (openingBook.getBookOpen()) {
-        bestMove = openingBook.getBookMove(board);
+        thc::Move bestMove = getBookMove(board);
         if (bestMove.Valid()) {
             std::cout << "Moving " << bestMove.TerseOut() << " from book" << std::endl;
             board.PlayMove(bestMove);
@@ -505,7 +503,6 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     int bestScore = -999999999;
 
     // set up the piece lists
-    clearPieceLists();
     fillPieceLists(board);
 
     // set the killer vector to have the correct number of slots
@@ -529,6 +526,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     // if the AI is controlling black, we need to
     // multiply the score by -1 to report it correctly to the player
     int flipped = 1;
+    thc::Move bestMove;
 
     // we need to values for alpha because we need to change alpha based on
     // our results, but we also need a copy of the original alpha for the
@@ -1337,12 +1335,12 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
 
     // This loop hashes the board, finds the node associated with the current board
     // adds the best move we found to the PV, then pushes it to the board
-    hash = Zobrist::zobristHash(board);
+    hash = zobrist(board);
     node = table.probe(hash, found);
     while (found && node->bestMove.src != node->bestMove.dst) {
         PV.push_back(node->bestMove);
         board.PushMove(node->bestMove);
-        hash = Zobrist::zobristHash(board);
+        hash = zobrist(board);
         node = table.probe(hash, found);
         // in case of infinite loops of repeating moves
         // I just capped it at 9 because I honestly don't care about lines
@@ -1358,4 +1356,170 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
     }
 
     return PV;
+}
+
+thc::Move Anduril::getBookMove(thc::ChessRules &board) {
+    uint64_t key = zobrist(board);
+    int index = 0;
+    bookEntry *entry;
+    uint16_t move;
+    thc::Move bookMoves[32];
+    thc::Move tempMove;
+    int count = 0;
+    std::random_device random;
+
+    for (entry = openingBook.getEntries(); entry < openingBook.getEntries() + openingBook.getNumEntries(); entry++) {
+        if (key == openingBook.endian_swap_u64(entry->key)) {
+            move = openingBook.endian_swap_u16(entry->move);
+            tempMove = openingBook.convertPolyToInternal(move, board);
+            if (tempMove.Valid()) {
+                bookMoves[count++] = tempMove;
+                if (count > 32) {
+                    break;
+                }
+            }
+
+        }
+    }
+
+    if (count != 0) {
+        tempMove = bookMoves[random() % count];
+    }
+    else {
+        tempMove.Invalid();
+    }
+
+    return tempMove;
+}
+
+// calculates a hash for just pawns
+// this is used for the pawn transposition table
+// since the pawn score only depends on the position of the pawns
+// we can just calculate the hash of the pawns position
+uint64_t Anduril::hashPawns(thc::ChessRules &board){
+    int pieceIndex = 0;
+    uint64_t hash = 0;
+
+    for (int i = 0; i < 64; i++) {
+        if (board.squares[i] == 'p' || board.squares[i] == 'P') {
+            // grabs the correct index for the piece
+            pieceIndex = pieceTypes[board.squares[i]] * 2;
+
+            // if the piece is white, add one to the piece index
+            if (board.squares[i] < 90){
+                pieceIndex++;
+            }
+
+            // xor the pseudorandom value from the array with the hash
+            // magic values at the end of the expression mirror i to the opposite
+            // side of the board because the zobirst array is mirrored along the
+            // x axis compared to our squares
+            hash ^= zobristArray[64 * pieceIndex + (((7 - (i / 8)) * 8) + i % 8)];
+        }
+    }
+
+    return hash;
+}
+
+// calculates a zobrist hash of the position
+uint64_t Anduril::zobrist(thc::ChessRules &board) {
+    return hashBoard(board) ^ hashCastling(board) ^ hashEP(board) ^ hashTurn(board);
+}
+
+// calculates the board part of a zobrist hash
+uint64_t Anduril::hashBoard(thc::ChessRules &board) {
+    int pieceIndex = 0;
+    uint64_t hash = 0;
+
+    for (int i = 0; i < 64; i++) {
+        if (board.squares[i] != ' ') {
+            // grabs the correct index for the piece
+            pieceIndex = pieceTypes[board.squares[i]] * 2;
+
+            // if the piece is white, add one to the piece index
+            if (board.squares[i] < 90){
+                pieceIndex++;
+            }
+
+            // xor the pseudorandom value from the array with the hash
+            // magic values at the end of the expression mirror i to the opposite
+            // side of the board because the zobirst array is mirrored along the
+            // x axis compared to our squares
+            hash ^= zobristArray[64 * pieceIndex + (((7 - (i / 8)) * 8) + i % 8)];
+        }
+    }
+
+    return hash;
+}
+
+// calculates hashing for castling rights
+uint64_t Anduril::hashCastling(thc::ChessRules &board) {
+    uint64_t hash = 0;
+
+    // each type of castling right has its own pseudorandom value
+    if (board.wking_allowed()){
+        hash ^= zobristArray[768];
+    }
+    if (board.wqueen_allowed()){
+        hash ^= zobristArray[769];
+    }
+    if (board.bking_allowed()){
+        hash ^= zobristArray[770];
+    }
+    if (board.bqueen_allowed()){
+        hash ^= zobristArray[771];
+    }
+
+    return hash;
+}
+
+// calculates hashing for en passant
+uint64_t Anduril::hashEP(thc::ChessRules &board) {
+    uint64_t hash = 0;
+    int fileMask = 0;
+
+    // this finds the square where en passant is possible
+    // then it applies an offset based on the file en passant
+    // is possible in
+    if (board.enpassant_target != thc::SQUARE_INVALID){
+        thc::Square target = board.groomed_enpassant_target();
+        if (target != thc::SQUARE_INVALID){
+            char file = thc::get_file(target);
+            switch (file){
+                case 'a':
+                    fileMask = 0;
+                    break;
+                case 'b':
+                    fileMask = 1;
+                    break;
+                case 'c':
+                    fileMask = 2;
+                    break;
+                case 'd':
+                    fileMask = 3;
+                    break;
+                case 'e':
+                    fileMask = 4;
+                    break;
+                case 'f':
+                    fileMask = 5;
+                    break;
+                case 'g':
+                    fileMask = 6;
+                    break;
+                case 'h':
+                    fileMask = 7;
+                    break;
+            }
+
+            return zobristArray[772 + fileMask];
+        }
+    }
+
+    return 0;
+}
+
+// calculates the hash for who's turn it is
+uint64_t Anduril::hashTurn(thc::ChessRules &board) {
+    return board.WhiteToPlay() ? zobristArray[780] : 0;
 }

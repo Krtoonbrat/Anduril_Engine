@@ -5,7 +5,6 @@
 #include <iostream> // we need this for debugging if we print the board
 
 #include "Anduril.h"
-#include "ZobristHasher.h"
 
 // these were totally stolen from the thc.cpp file directly
 // Macro to convert chess notation to Square convention,
@@ -286,7 +285,7 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
 //  c5).
 
     // first check for a transposition
-    uint64_t hash = Zobrist::hashPawns(board);
+    uint64_t hash = hashPawns(board);
     bool found = false;
     Node *pNode = pawnTable.probe(hash, found);
     if (found) {
