@@ -164,6 +164,12 @@ private:
     // futility margins
     int margin[4] = {0, 200, 300, 500};
 
+    // point bonus that increases the value of knights with more pawns on the board
+    int knightPawnBonus[9] = { -20, -16, -12, -8, -4,  0,  4,  8, 12 };
+
+    // point bonus that increases the value of rooks with less pawns
+    int rookPawnBonus[9] = { 15,  12,   9,  6,  3,  0, -3, -6, -9 };
+
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', 100},
                                                  {'N', 300},

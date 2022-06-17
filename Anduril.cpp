@@ -503,6 +503,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     int bestScore = -999999999;
 
     // set up the piece lists
+    clearPieceLists();
     fillPieceLists(board);
 
     // set the killer vector to have the correct number of slots
