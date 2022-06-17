@@ -56,6 +56,10 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[0] += 337 + knightSquareTableMG[i];
         score[1] += 281 + knightSquareTableEG[i];
 
+        // knight pawn bonus
+        score[0] += knightPawnBonus[whitePawns.size()];
+        score[1] += knightPawnBonus[whitePawns.size()];
+
         // outposts
         if (square < thc::a3
             && (board.squares[i + 7] == 'P' || board.squares[i + 9] == 'P')
@@ -91,6 +95,10 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -337 - knightSquareTableMG[tableCoords];
         score[1] += -281 - knightSquareTableEG[tableCoords];
+
+        // knight pawn bonus
+        score[0] -= knightPawnBonus[blackPawns.size()];
+        score[1] -= knightPawnBonus[blackPawns.size()];
 
         // outposts
         if (square > thc::h6
@@ -155,6 +163,10 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 477 + rookSquareTableMG[i];
         score[1] += 512 + rookSquareTableEG[i];
+
+        score[0] += rookPawnBonus[whitePawns.size()];
+        score[1] += rookPawnBonus[whitePawns.size()];
+
         // trapped rooks
         switch (square) {
             case thc::h1:
@@ -202,6 +214,10 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -477 - rookSquareTableMG[tableCoords];
         score[1] += -512 - rookSquareTableEG[tableCoords];
+
+        score[0] -= rookPawnBonus[blackPawns.size()];
+        score[1] -= rookPawnBonus[blackPawns.size()];
+
         // trapped rooks
         switch (square) {
             case thc::h8:
