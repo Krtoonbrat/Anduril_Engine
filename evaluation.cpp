@@ -2,8 +2,7 @@
 // Created by 80hugkev on 6/10/2022.
 //
 
-// we need this for debugging if we print the board
-#include <iostream>
+#include <iostream> // we need this for debugging if we print the board
 
 #include "Anduril.h"
 
@@ -156,12 +155,43 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[0] += 477 + rookSquareTableMG[i];
         score[1] += 512 + rookSquareTableEG[i];
         // trapped rooks
-        if (((square == thc::h1 || square == thc::g1)
-            && (board.wking_square == thc::f1 || board.wking_square == thc::g1))
-            || ((square == thc::a1 || square == thc::b1)
-            && (board.wking_square == thc::c1 || board.wking_square == thc:: b1))) {
-            score[0] -= 40;
-            score[1] -= 40;
+        switch (square) {
+            case thc::h1:
+                if (board.wking_square == thc::e1 || board.wking_square == thc::f1 || board.wking_square == thc::g1) {
+                    score[0] -= 40;
+                    score[1] -= 40;
+                }
+                break;
+            case thc::g1:
+                if (board.wking_square == thc::e1 || board.wking_square == thc::f1) {
+                    score[0] -= 40;
+                    score[1] -= 40;
+                }
+                break;
+            case thc::f1:
+                if (board.wking_square == thc::e1) {
+                    score[0] -= 40;
+                    score[1] -= 40;
+                }
+                break;
+            case thc::a1:
+                if (board.wking_square == thc::b1 || board.wking_square == thc::c1 || board.wking_square == thc::d1) {
+                    score[0] -= 40;
+                    score[1] -= 40;
+                }
+                break;
+            case thc::b1:
+                if (board.wking_square == thc::c1 || board.wking_square == thc::d1) {
+                    score[0] -= 40;
+                    score[1] -= 40;
+                }
+                break;
+            case thc::c1:
+                if (board.bking_square == thc::d1) {
+                    score[0] -= 40;
+                    score[1] -= 40;
+                }
+                break;
         }
     }
     // black
@@ -172,12 +202,43 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[0] += -477 - rookSquareTableMG[tableCoords];
         score[1] += -512 - rookSquareTableEG[tableCoords];
         // trapped rooks
-        if (((square == thc::h8 || square == thc::g8)
-            && (board.bking_square == thc::f8 || board.bking_square == thc::g8))
-            || ((square == thc::a8 || square == thc::b8)
-            && (board.bking_square == thc::c8 || board.bking_square == thc:: b8))) {
-            score[0] += 40;
-            score[1] += 40;
+        switch (square) {
+            case thc::h8:
+                if (board.bking_square == thc::e8 || board.bking_square == thc::f8 || board.bking_square == thc::g8) {
+                    score[0] += 40;
+                    score[1] += 40;
+                }
+                break;
+            case thc::g8:
+                if (board.bking_square == thc::e8 || board.bking_square == thc::f8) {
+                    score[0] += 40;
+                    score[1] += 40;
+                }
+                break;
+            case thc::f8:
+                if (board.bking_square == thc::e8) {
+                    score[0] += 40;
+                    score[1] += 40;
+                }
+                break;
+            case thc::a8:
+                if (board.bking_square == thc::b8 || board.bking_square == thc::c8 || board.bking_square == thc::d8) {
+                    score[0] += 40;
+                    score[1] += 40;
+                }
+                break;
+            case thc::b8:
+                if (board.bking_square == thc::c8 || board.bking_square == thc::d8) {
+                    score[0] += 40;
+                    score[1] += 40;
+                }
+                break;
+            case thc::c8:
+                if (board.bking_square == thc::d8) {
+                    score[0] += 40;
+                    score[1] += 40;
+                }
+                break;
         }
     }
 

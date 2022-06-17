@@ -50,7 +50,7 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getMoveList(thc::ChessRules &bo
 
         // next check for killer moves
         if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), moves.moves[i]) != 0) {
-            movesWithScores.emplace_back(-910, moves.moves[i]);
+            movesWithScores.emplace_back(-10, moves.moves[i]);
             continue;
         }
 
