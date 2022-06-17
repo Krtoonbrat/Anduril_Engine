@@ -3,10 +3,12 @@
 //
 
 #include <iostream>
+#include <random>
 
 #include "Anduril.h"
 #include "PolyglotBook.h"
 #include "thc.h"
+#include "ZobristHasher.h"
 
 // opens a book
 bool Book::openBook(const char *file) {
@@ -42,6 +44,41 @@ bool Book::openBook(const char *file) {
 // closes the book
 void Book::closeBook() {
     free(entries);
+}
+
+// finds and returns a book move for the position
+thc::Move Book::getBookMove(thc::ChessRules &board) {
+    uint64_t key = Zobrist::zobristHash(board);
+    int index = 0;
+    bookEntry *entry;
+    uint16_t move;
+    thc::Move bookMoves[32];
+    thc::Move tempMove;
+    int count = 0;
+    std::random_device random;
+
+    for (entry = getEntries(); entry < getEntries() + getNumEntries(); entry++) {
+        if (key == endian_swap_u64(entry->key)) {
+            move = endian_swap_u16(entry->move);
+            tempMove = convertPolyToInternal(move, board);
+            if (tempMove.Valid()) {
+                bookMoves[count++] = tempMove;
+                if (count > 32) {
+                    break;
+                }
+            }
+
+        }
+    }
+
+    if (count != 0) {
+        tempMove = bookMoves[random() % count];
+    }
+    else {
+        tempMove.Invalid();
+    }
+
+    return tempMove;
 }
 
 thc::Move Book::convertPolyToInternal(uint16_t move, thc::ChessRules &board) {
