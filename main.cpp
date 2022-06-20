@@ -12,7 +12,7 @@ int main() {
     thc::TERMINAL gameOver = thc::NOT_TERMINAL;
 
     // this exists so that I can test problematic board positions if and when they arise
-    //board.Forsyth("2r1k2r/pp3p2/3p1p1p/3Pp2B/3n4/8/P4PPP/4K2R w Kk - 1 20");
+    board.Forsyth("7r/2kr2pp/2p2p2/p4N2/1bnBP3/2P2P2/P4KPP/3R3R b - - 0 24");
 
     //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
     //board.Forsyth("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
@@ -25,17 +25,11 @@ int main() {
         std::cout << (board.WhiteToPlay() ? "White to move" : "Black to move") << std::endl;
 
         /*
-        auto start = std::chrono::high_resolution_clock::now();
         AI.go(board, 9);
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> timeElapsed = end - start;
-        std::cout << "Time spent searching: " << timeElapsed.count() / 1000 << " seconds" << std::endl;
-        std::cout << "Nodes per second: " << AI.getMovesExplored() / (timeElapsed.count()/1000) << std::endl;
-        AI.setMovesExplored(0);
          */
 
 
-        if (board.WhiteToPlay()) {
+        if (!board.WhiteToPlay()) {
             Game::turn(board);
         }
         else {

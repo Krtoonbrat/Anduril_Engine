@@ -141,6 +141,7 @@ private:
     // gives a score to each capture
     int MVVLVA(thc::ChessRules &board, int src, int dst);
 
+    // returns if the position is a draw
     bool isDraw(thc::ChessRules &board);
 
     // the transposition table

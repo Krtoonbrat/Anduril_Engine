@@ -232,7 +232,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // if we are at max depth, start a quiescence search
     if (depth <= 0){
-        return quiesce<PvNode ? PV : NonPV>(board, alpha, beta, 4);
+        return quiesce<PvNode ? PV : NonPV>(board, alpha, beta, 6);
     }
 
     // represents our next move to search
@@ -292,7 +292,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         && !check
         && depth <= 7
         && staticEval < alpha - 348 - 258 * depth * depth) {
-        score = quiesce<NonPV>(board, alpha - 1, alpha, 4);
+        score = quiesce<NonPV>(board, alpha - 1, alpha, 6);
         if (score < alpha) {
             return score;
         }
@@ -368,7 +368,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
             makeMove(board, move);
 
             // perform a qsearch to verify that the move still is less than beta
-            score = -quiesce<NonPV>(board, -probCutBeta, -probCutBeta + 1, 4);
+            score = -quiesce<NonPV>(board, -probCutBeta, -probCutBeta + 1, 6);
 
             // if the qsearch holds, do a regular one
             if (score >= probCutBeta) {
@@ -487,20 +487,6 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 void Anduril::go(thc::ChessRules &board, int depth) {
     thc::Move bestMove;
     bestMove.Invalid();
-    /*
-    if (openingBook.getBookOpen()) {
-        bestMove = openingBook.getBookMove(board);
-        if (bestMove.Valid()) {
-            std::cout << "Moving " << bestMove.TerseOut() << " from book" << std::endl;
-            board.PlayMove(bestMove);
-            return;
-        }
-        else {
-            std::cout << "End of opening book, starting search" << std::endl;
-            openingBook.flipBookOpen();
-        }
-    }
-     */
 
     // start the clock
     auto start = std::chrono::high_resolution_clock::now();

@@ -136,21 +136,40 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     scoreEG += king;
 
     // give the AI a slap for moving the queen too early
-    if (rootPly < 18) {
-        // white
-        for (int i = 1; i < 16; i += 2) {
-            if (board.getMoveFromStack(i).src == thc::d1) {
-                scoreMG -= 15;
-                break;
-            }
+    if (board.squares[59] != 'Q') {
+        if (board.squares[57] == 'N') {
+            scoreMG -= 2;
+            scoreEG -= 2;
         }
-
-        // black
-        for (int i = 2; i < 16; i += 2) {
-            if (board.getMoveFromStack(i).src == thc::d8) {
-                scoreMG += 15;
-                break;
-            }
+        if (board.squares[62] == 'N') {
+            scoreMG -= 2;
+            scoreEG -= 2;
+        }
+        if (board.squares[58] == 'B') {
+            scoreMG -= 2;
+            scoreEG -= 2;
+        }
+        if (board.squares[61] == 'B') {
+            scoreMG -= 2;
+            scoreEG -= 2;
+        }
+    }
+    if (board.squares[3] != 'q') {
+        if (board.squares[1] == 'n') {
+            scoreMG -= 2;
+            scoreEG -= 2;
+        }
+        if (board.squares[6] == 'n') {
+            scoreMG -= 2;
+            scoreEG -= 2;
+        }
+        if (board.squares[2] == 'b') {
+            scoreMG -= 2;
+            scoreEG -= 2;
+        }
+        if (board.squares[5] == 'b') {
+            scoreMG -= 2;
+            scoreEG -= 2;
         }
     }
 
