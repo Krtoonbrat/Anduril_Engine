@@ -278,7 +278,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     }
 
     // get the static evaluation
-    int staticEval = evaluateBoard(board);
+    // it won't be needed if in check however
+    int staticEval = check ? 999999999 : evaluateBoard(board);
 
     // razoring
     // weird magic values stolen straight from stockfish
@@ -480,6 +481,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 void Anduril::go(thc::ChessRules &board, int depth) {
     thc::Move bestMove;
     bestMove.Invalid();
+    /*
     if (openingBook.getBookOpen()) {
         bestMove = openingBook.getBookMove(board);
         if (bestMove.Valid()) {
@@ -492,6 +494,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
             openingBook.flipBookOpen();
         }
     }
+     */
 
     // start the clock
     auto start = std::chrono::high_resolution_clock::now();

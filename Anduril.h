@@ -68,9 +68,6 @@ private:
     // the ply of the root node
     int rootPly = 0;
 
-    // the opening book
-    Book openingBook = Book(R"(..\book\Performance.bin)");
-
     // piece location lists
     std::vector<thc::Square> whitePawns;
     std::vector<thc::Square> blackPawns;
@@ -129,6 +126,18 @@ private:
     // finds the king safety bonus for the position
     int getKingSafety(thc::ChessRules &board, thc::Square whiteKing, thc::Square blackKing);
 
+    // evaluates knights for tropism
+    void evaluateKnights(thc::ChessRules &board, thc::Square square, bool white);
+
+    // evaluates bishops for tropism
+    void evaluateBishops(thc::ChessRules &board, thc::Square square, bool white);
+
+    // evaluates rooks for tropism
+    void evaluateRooks(thc::ChessRules &board, thc::Square square, bool white);
+
+    // evaluates queens for tropism
+    void evaluateQueens(thc::ChessRules &board, thc::Square square, bool white);
+
     // gives a score to each capture
     int MVVLVA(thc::ChessRules &board, int src, int dst);
 
@@ -149,6 +158,16 @@ private:
 
     // point bonus that increases the value of rooks with less pawns
     int rookPawnBonus[9] = { 15,  12,   9,  6,  3,  0, -3, -6, -9 };
+
+    // number of pieces attacking the king zone
+    int attackCount[2] = {0};
+
+    // weight of the attackers on the king zone
+    int attackWeight[2] = {0};
+
+    // contains the squares that are the "king zone"
+    std::unordered_set<thc::Square> kingZoneW;
+    std::unordered_set<thc::Square> kingZoneB;
 
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', 100},
@@ -302,6 +321,19 @@ private:
             -19,  -3,  11,  21,  23,  16,   7,  -9,
             -27, -11,   4,  13,  14,   4,  -5, -17,
             -53, -34, -21, -11, -28, -14, -24, -43
+    };
+
+    const int SafetyTable[100] = {
+            0,  0,   1,   2,   3,   5,   7,   9,  12,  15,
+            18,  22,  26,  30,  35,  39,  44,  50,  56,  62,
+            68,  75,  82,  85,  89,  97, 105, 113, 122, 131,
+            140, 150, 169, 180, 191, 202, 213, 225, 237, 248,
+            260, 272, 283, 295, 307, 319, 330, 342, 354, 366,
+            377, 389, 401, 412, 424, 436, 448, 459, 471, 483,
+            494, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+            500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+            500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+            500, 500, 500, 500, 500, 500, 500, 500, 500, 500
     };
 
 };

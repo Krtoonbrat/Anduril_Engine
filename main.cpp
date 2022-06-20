@@ -8,6 +8,7 @@
 int main() {
     thc::ChessRules board;
     Anduril AI;
+    Book openingBook = Book(R"(..\book\Performance.bin)");
     thc::TERMINAL gameOver = thc::NOT_TERMINAL;
 
     // this exists so that I can test problematic board positions if and when they arise
@@ -38,7 +39,20 @@ int main() {
             Game::turn(board);
         }
         else {
-            AI.go(board, 10);
+            if (openingBook.getBookOpen()) {
+                thc::Move bestMove = openingBook.getBookMove(board);
+                if (bestMove.Valid()) {
+                    std::cout << "Moving " << bestMove.TerseOut() << " from book" << std::endl;
+                    board.PlayMove(bestMove);
+                }
+                else {
+                    std::cout << "End of opening book, starting search" << std::endl;
+                    openingBook.flipBookOpen();
+                }
+            }
+            else {
+                AI.go(board, 10);
+            }
         }
 
 

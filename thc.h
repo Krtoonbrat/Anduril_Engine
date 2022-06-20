@@ -149,6 +149,47 @@ namespace thc
     typedef unsigned char lte;   // lte = lookup table element
     typedef int32_t DETAIL;
 
+    // Convert piece, eg 'N' to bitmask in lookup tables. See automatically
+//  PrivateChessDefs.cpp and GeneratedLookupTables.h for format of
+//  lookup tables
+    extern lte to_mask[];
+
+// Lookup squares a queen can move to
+    extern const lte *queen_lookup[];
+
+// Lookup squares a rook can move to
+    extern const lte *rook_lookup[];
+
+// Lookup squares a bishop can move to
+    extern const lte *bishop_lookup[];
+
+// Lookup squares a knight can move to
+    extern const lte *knight_lookup[];
+
+// Lookup squares a king can move to
+    extern const lte *king_lookup[];
+
+// Lookup squares a white pawn can move to
+    extern const lte *pawn_white_lookup[];
+
+// Lookup squares a black pawn can move to
+    extern const lte *pawn_black_lookup[];
+
+// Lookup good squares for enemy king when a king is on a square in an endgame
+    extern const lte *good_king_position_lookup[];
+
+// Lookup squares from which an enemy pawn attacks white
+    extern const lte *pawn_attacks_white_lookup[];
+
+// Lookup squares from which an enemy pawn attacks black
+    extern const lte *pawn_attacks_black_lookup[];
+
+// Lookup squares from which enemy pieces attack white
+    extern const lte *attacks_white_lookup[];
+
+// Lookup squares from which enemy pieces attack black
+    extern const lte *attacks_black_lookup[];
+
 } //namespace thc
 
 #endif // CHESSDEFS_H
@@ -616,9 +657,6 @@ namespace thc
 
         Move getMoveFromStack(int ply){ return history[ply]; };
 
-// Private stuff
-    protected:
-
         // Generate a list of all possible moves in a position (including
         //  illegally "moving into check")
         void GenMoveList( MOVELIST *l );
@@ -637,6 +675,9 @@ namespace thc
 
         // Generate list of black pawn moves
         void BlackPawnMoves( MOVELIST *l, Square square );
+
+        // Private stuff
+    protected:
 
         // Evaluate a position, returns bool okay (not okay means illegal position)
         bool Evaluate( MOVELIST *list, TERMINAL &score_terminal );

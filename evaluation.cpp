@@ -3,8 +3,10 @@
 //
 
 #include <iostream> // we need this for debugging if we print the board
+#include <unordered_set>
 
 #include "Anduril.h"
+#include "thc.h"
 #include "ZobristHasher.h"
 
 // these were totally stolen from the thc.cpp file directly
@@ -29,6 +31,376 @@
 #define NW(sq)      (  (thc::Square)((sq) - 9) )                     // eg c5->b6
 #define NE(sq)      (  (thc::Square)((sq) - 7) )                     // eg c5->d6
 
+
+// generates a static evaluation of the board
+int Anduril::evaluateBoard(thc::ChessRules &board) {
+    // check for mate first
+    thc::TERMINAL mate = thc::NOT_TERMINAL;
+    board.Evaluate(mate);
+    if (mate == thc::TERMINAL_WCHECKMATE || mate == thc::TERMINAL_BCHECKMATE) {
+        return board.WhiteToPlay() ? 999999999 : -999999999;
+    }
+
+    // reset the king tropism variables
+    attackCount[0] = 0, attackCount[1] = 0;
+    attackWeight[0] = 0, attackWeight[1] = 0;
+    kingZoneW.clear(), kingZoneB.clear();
+
+    // fill the king zone
+    // white
+    int startSquare = static_cast<int>(board.wking_square) - 1;
+    int endSquare = static_cast<int>(board.wking_square) + 1;
+    int startRankModifier = -3;
+    int endRankModifier = 1;
+    // grab the modifier for the startSquare if needed
+    switch (thc::get_file(board.wking_square)) {
+        case 'a':
+            startSquare++;
+            break;
+        case 'h':
+            endSquare--;
+            break;
+    }
+    // grab the modifier for the startRankModifier if needed
+    switch (thc::get_rank(board.wking_square)) {
+        case '1':
+            endRankModifier--;
+            break;
+        case '6':
+            startRankModifier++;
+            break;
+        case '7':
+            startRankModifier += 2;
+            break;
+        case '8':
+            startRankModifier += 3;
+            break;
+    }
+    for (int modifier = startRankModifier; modifier <= endRankModifier; modifier++) {
+        for (int square = startSquare; square <= endSquare; square++) {
+            kingZoneW.insert(static_cast<thc::Square>(square + (modifier * 8)));
+        }
+    }
+    // black
+    startSquare = static_cast<int>(board.bking_square) - 1;
+    endSquare = static_cast<int>(board.bking_square) + 1;
+    startRankModifier = -1;
+    endRankModifier = 3;
+    // grab the modifier for the startSquare if needed
+    switch (thc::get_file(board.bking_square)) {
+        case 'a':
+            startSquare++;
+            break;
+        case 'h':
+            endSquare--;
+            break;
+    }
+    // grab the modifier for the startRankModifier if needed
+    switch (thc::get_rank(board.bking_square)) {
+        case '1':
+            endRankModifier -= 3;
+            break;
+        case '2':
+            endRankModifier -= 2;
+            break;
+        case '3':
+            startRankModifier--;
+            break;
+        case '8':
+            startRankModifier++;
+            break;
+    }
+    for (int modifier = startRankModifier; modifier <= endRankModifier; modifier++) {
+        for (int square = startSquare; square <= endSquare; square++) {
+            kingZoneB.insert(static_cast<thc::Square>(square + (modifier * 8)));
+        }
+    }
+
+    int scoreMG = 0;
+    int scoreEG = 0;
+
+    // get the material score for the board
+    std::vector<int> matScore = getMaterialScore(board);
+    scoreMG += matScore[0];
+    scoreEG += matScore[1];
+
+    // get the pawn score for the board
+    int p = getPawnScore(board);
+    scoreMG += p;
+    scoreEG += p;
+
+
+    // get king safety bonus for the board
+    int king = getKingSafety(board, board.wking_square, board.bking_square);
+    scoreMG += king;
+    scoreEG += king;
+
+    // give the AI a slap for moving the queen too early
+    if (rootPly < 18) {
+        // white
+        for (int i = 1; i < 16; i += 2) {
+            if (board.getMoveFromStack(i).src == thc::d1) {
+                scoreMG -= 15;
+                break;
+            }
+        }
+
+        // black
+        for (int i = 2; i < 16; i += 2) {
+            if (board.getMoveFromStack(i).src == thc::d8) {
+                scoreMG += 15;
+                break;
+            }
+        }
+    }
+
+    // bishop pair
+    if (whiteBishops.size() >= 2) {
+        scoreMG += 25;
+        scoreEG += 40;
+    }
+    if (blackBishops.size() >= 2) {
+        scoreMG -= 25;
+        scoreEG -= 40;
+    }
+
+    // rook on (semi)open files
+    bool half = false;
+    bool open = true;
+    // white
+    for (auto rook : whiteRooks) {
+        char rookFile = thc::get_file(rook);
+        // if we find a pawn on the same file, its not open
+        for (auto pawn : whitePawns) {
+            if (rookFile == thc::get_file(pawn)) {
+                open = false;
+                break;
+            }
+        }
+
+        // if the file is open, find out if its half or fully open, then apply bonus
+        if (open) {
+            for (auto enemyPawn : blackPawns) {
+                if (rookFile == thc::get_file(enemyPawn)) {
+                    half = true;
+                    break;
+                }
+            }
+
+            scoreMG += half ? 10 : 20;
+            scoreEG += half ? 10 : 20;
+        }
+    }
+
+    // reset the variable for black
+    half = false;
+    open = true;
+    // black
+    for (auto rook : blackRooks) {
+        char rookFile = thc::get_file(rook);
+        // if we find a pawn on the same file, its not open
+        for (auto pawn : blackPawns) {
+            if (rookFile == thc::get_file(pawn)) {
+                open = false;
+                break;
+            }
+        }
+
+        // if the file is open, find out if its half or fully open, then apply bonus
+        if (open) {
+            for (auto enemyPawn : whitePawns) {
+                if (rookFile == thc::get_file(enemyPawn)) {
+                    half = true;
+                    break;
+                }
+            }
+
+            scoreMG -= half ? 10 : 20;
+            scoreEG -= half ? 10 : 20;
+        }
+    }
+
+    // space advantages
+    // white
+    int whiteSafe = 0;
+    for (int i = 2; i <= 5; i++) {
+        for (int j = 48; j < 32; j -= 8) {
+            thc::Square square = thc::make_square(thc::get_file(static_cast<thc::Square>(i)), thc::get_rank(
+                    static_cast<thc::Square>(j)));
+            if (!board.AttackedSquare(square, false)) {
+                whiteSafe++;
+            }
+        }
+    }
+    scoreMG += whiteSafe * 5;
+    scoreEG += whiteSafe * 5;
+
+    // black
+    int blackSafe = 0;
+    for (int i = 2; i <= 5; i++) {
+        for (int j = 8; j < 24; j += 8) {
+            thc::Square square = thc::make_square(thc::get_file(static_cast<thc::Square>(i)), thc::get_rank(
+                    static_cast<thc::Square>(j)));
+            if (!board.AttackedSquare(square, true)) {
+                blackSafe++;
+            }
+        }
+    }
+    scoreMG -= blackSafe * 5;
+    scoreEG -= blackSafe * 5;
+
+    // get the phase for tapered eval
+    double phase = getPhase(board);
+
+    // for negamax to work, we must return a non-adjusted scoreMG for white
+    // and a negated scoreMG for black
+    return board.WhiteToPlay() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+}
+
+void Anduril::evaluateKnights(thc::ChessRules &board, thc::Square square, bool white) {
+    // list of moves for the knight
+    thc::MOVELIST list;
+    list.count = 0;
+
+    // lookup table for the piece
+    const thc::lte *ptr = thc::knight_lookup[static_cast<int>(square)];
+
+    // how many squares does it attack in the zone?
+    int attack = 0;
+
+    // generate the move list
+    board.ShortMoves(&list, square, ptr, thc::NOT_SPECIAL);
+
+    // white
+    if (white) {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneB.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneW.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+
+    if (attack) {
+        attackCount[white]++;
+        attackWeight[white] += 2 * attack;
+    }
+
+}
+
+void Anduril::evaluateBishops(thc::ChessRules &board, thc::Square square, bool white) {
+    // list of moves for the knight
+    thc::MOVELIST list;
+    list.count = 0;
+
+    // lookup table for the piece
+    const thc::lte *ptr = thc::bishop_lookup[static_cast<int>(square)];
+
+    // how many squares does it attack in the zone?
+    int attack = 0;
+
+    // generate the move list
+    board.LongMoves(&list, square, ptr);
+
+    // white
+    if (white) {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneB.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneW.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+
+    if (attack) {
+        attackCount[white]++;
+        attackWeight[white] += 2 * attack;
+    }
+}
+
+void Anduril::evaluateRooks(thc::ChessRules &board, thc::Square square, bool white) {
+    // list of moves for the knight
+    thc::MOVELIST list;
+    list.count = 0;
+
+    // lookup table for the piece
+    const thc::lte *ptr = thc::rook_lookup[static_cast<int>(square)];
+
+    // how many squares does it attack in the zone?
+    int attack = 0;
+
+    // generate the move list
+    board.LongMoves(&list, square, ptr);
+
+    // white
+    if (white) {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneB.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneW.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+
+    if (attack) {
+        attackCount[white]++;
+        attackWeight[white] += 3 * attack;
+    }
+}
+
+void Anduril::evaluateQueens(thc::ChessRules &board, thc::Square square, bool white) {
+    // list of moves for the knight
+    thc::MOVELIST list;
+    list.count = 0;
+
+    // lookup table for the piece
+    const thc::lte *ptr = thc::queen_lookup[static_cast<int>(square)];
+
+    // how many squares does it attack in the zone?
+    int attack = 0;
+
+    // generate the move list
+    board.LongMoves(&list, square, ptr);
+
+    // white
+    if (white) {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneB.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < list.count; i++) {
+            if (kingZoneW.contains(list.moves[i].dst)) {
+                attack++;
+            }
+        }
+    }
+
+    if (attack) {
+        attackCount[white]++;
+        attackWeight[white] += 4 * attack;
+    }
+}
 
 // finds the raw material score for the position
 std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
@@ -56,6 +428,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[0] += 337 + knightSquareTableMG[i];
         score[1] += 281 + knightSquareTableEG[i];
 
+        // evaluate the square for king tropism
+        evaluateKnights(board, square, true);
+
         // knight pawn bonus
         score[0] += knightPawnBonus[whitePawns.size()];
         score[1] += knightPawnBonus[whitePawns.size()];
@@ -66,7 +441,7 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
             && board.squares[i - 7] != 'p'
             && board.squares[i - 9] != 'p') {
             score[0] += 10;
-            score[0] += 10;
+            score[1] += 10;
         }
 
         // trapped knights
@@ -96,6 +471,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[0] += -337 - knightSquareTableMG[tableCoords];
         score[1] += -281 - knightSquareTableEG[tableCoords];
 
+        // evaluate the square for king tropism
+        evaluateKnights(board, square, false);
+
         // knight pawn bonus
         score[0] -= knightPawnBonus[blackPawns.size()];
         score[1] -= knightPawnBonus[blackPawns.size()];
@@ -106,7 +484,7 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
             && board.squares[i + 7] != 'P'
             && board.squares[i + 9] != 'P') {
             score[0] -= 10;
-            score[0] -= 10;
+            score[1] -= 10;
         }
 
         // trapped knights
@@ -135,6 +513,10 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 365 + bishopSquareTableMG[i];
         score[1] += 297 + bishopSquareTableEG[i];
+
+        // evaluate for king tropism
+        evaluateBishops(board, square, true);
+
         // fianchetto
         if ((square == thc::g2 && board.wking_square == thc::g1)
             || (square == thc::b2 && board.wking_square == thc::b1)) {
@@ -149,6 +531,10 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -365 - bishopSquareTableMG[tableCoords];
         score[1] += -297 - bishopSquareTableEG[tableCoords];
+
+        // evaluate for king tropism
+        evaluateBishops(board, square, false);
+
         // fianchetto
         if ((square == thc::g7 && board.wking_square == thc::g8)
             || (square == thc::b7 && board.wking_square == thc::b8)) {
@@ -166,6 +552,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
 
         score[0] += rookPawnBonus[whitePawns.size()];
         score[1] += rookPawnBonus[whitePawns.size()];
+
+        // evaluate for king tropism
+        evaluateRooks(board, square, true);
 
         // trapped rooks
         switch (square) {
@@ -218,6 +607,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         score[0] -= rookPawnBonus[blackPawns.size()];
         score[1] -= rookPawnBonus[blackPawns.size()];
 
+        // evaluate for king tropism
+        evaluateRooks(board, square, false);
+
         // trapped rooks
         switch (square) {
             case thc::h8:
@@ -265,6 +657,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int i = static_cast<int>(square);
         score[0] += 1025 + queenSquareTableMG[i];
         score[1] += 936  + queenSquareTableEG[i];
+
+        // evaluate for king tropism
+        evaluateQueens(board, square, true);
     }
     // black
     for (auto square : blackQueens) {
@@ -273,6 +668,9 @@ std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
         int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
         score[0] += -1025 - queenSquareTableMG[tableCoords];
         score[1] += -936  - queenSquareTableEG[tableCoords];
+
+        // evaluate for king tropism
+        evaluateQueens(board, square, false);
     }
 
     // kings
@@ -882,157 +1280,18 @@ int Anduril::getKingSafety(thc::ChessRules &board, thc::Square whiteKing, thc::S
         }
     }
 
+    // king tropism (black is index 0, white is index 1)
+    // white
+    if (attackCount[1] >= 2) {
+        score += SafetyTable[attackWeight[1]];
+    }
+    // black
+    if (attackCount[0] >= 2) {
+        score -= SafetyTable[attackWeight[0]];
+    }
+
+
     return score;
-}
-
-// generates a static evaluation of the board
-int Anduril::evaluateBoard(thc::ChessRules &board) {
-    // check for mate first
-    thc::TERMINAL mate = thc::NOT_TERMINAL;
-    board.Evaluate(mate);
-    if (mate == thc::TERMINAL_WCHECKMATE || mate == thc::TERMINAL_BCHECKMATE) {
-        return board.WhiteToPlay() ? 999999999 : -999999999;
-    }
-
-    int scoreMG = 0;
-    int scoreEG = 0;
-
-    // get the material score for the board
-    std::vector<int> matScore = getMaterialScore(board);
-    scoreMG += matScore[0];
-    scoreEG += matScore[1];
-
-    // get the pawn score for the board
-    int p = getPawnScore(board);
-    scoreMG += p;
-    scoreEG += p;
-
-
-    // get king safety bonus for the board
-    int king = getKingSafety(board, board.wking_square, board.bking_square);
-    scoreMG += king;
-    scoreEG += king;
-
-    // give the AI a slap for moving the queen too early
-    if (rootPly < 18) {
-        // white
-        for (int i = 1; i < 16; i += 2) {
-            if (board.getMoveFromStack(i).src == thc::d1) {
-                scoreMG -= 15;
-                break;
-            }
-        }
-
-        // black
-        for (int i = 2; i < 16; i += 2) {
-            if (board.getMoveFromStack(i).src == thc::d8) {
-                scoreMG += 15;
-                break;
-            }
-        }
-    }
-
-    // bishop pair
-    if (whiteBishops.size() >= 2) {
-        scoreMG += 25;
-        scoreEG += 40;
-    }
-    if (blackBishops.size() >= 2) {
-        scoreMG -= 25;
-        scoreEG -= 40;
-    }
-
-    // rook on (semi)open files
-    bool half = false;
-    bool open = true;
-    // white
-    for (auto rook : whiteRooks) {
-        char rookFile = thc::get_file(rook);
-        // if we find a pawn on the same file, its not open
-        for (auto pawn : whitePawns) {
-            if (rookFile == thc::get_file(pawn)) {
-                open = false;
-                break;
-            }
-        }
-
-        // if the file is open, find out if its half or fully open, then apply bonus
-        if (open) {
-            for (auto enemyPawn : blackPawns) {
-                if (rookFile == thc::get_file(enemyPawn)) {
-                    half = true;
-                    break;
-                }
-            }
-
-            scoreMG += half ? 10 : 20;
-            scoreEG += half ? 10 : 20;
-        }
-    }
-
-    // reset the variable for black
-    half = false;
-    open = true;
-    // black
-    for (auto rook : blackRooks) {
-        char rookFile = thc::get_file(rook);
-        // if we find a pawn on the same file, its not open
-        for (auto pawn : blackPawns) {
-            if (rookFile == thc::get_file(pawn)) {
-                open = false;
-                break;
-            }
-        }
-
-        // if the file is open, find out if its half or fully open, then apply bonus
-        if (open) {
-            for (auto enemyPawn : whitePawns) {
-                if (rookFile == thc::get_file(enemyPawn)) {
-                    half = true;
-                    break;
-                }
-            }
-
-            scoreMG -= half ? 10 : 20;
-            scoreEG -= half ? 10 : 20;
-        }
-    }
-
-    // space advantages
-    // white
-    int whiteSafe = 0;
-    for (int i = 2; i <= 5; i++) {
-        for (int j = 48; j < 32; j -= 8) {
-            thc::Square square = thc::make_square(thc::get_file(static_cast<thc::Square>(i)), thc::get_rank(
-                    static_cast<thc::Square>(j)));
-            if (!board.AttackedSquare(square, false)) {
-                whiteSafe++;
-            }
-        }
-    }
-    scoreMG += whiteSafe * 5;
-    scoreEG += whiteSafe * 5;
-
-    // black
-    int blackSafe = 0;
-    for (int i = 2; i <= 5; i++) {
-        for (int j = 8; j < 24; j += 8) {
-            thc::Square square = thc::make_square(thc::get_file(static_cast<thc::Square>(i)), thc::get_rank(
-                    static_cast<thc::Square>(j)));
-            if (!board.AttackedSquare(square, true)) {
-                blackSafe++;
-            }
-        }
-    }
-    scoreMG -= blackSafe * 5;
-    scoreEG -= blackSafe * 5;
-
-    // get the phase for tapered eval
-    double phase = getPhase(board);
-
-    // for negamax to work, we must return a non-adjusted scoreMG for white
-    // and a negated scoreMG for black
-    return board.WhiteToPlay() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
 }
 
 // gets the phase of the game for evaluation
