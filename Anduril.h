@@ -141,6 +141,8 @@ private:
     // gives a score to each capture
     int MVVLVA(thc::ChessRules &board, int src, int dst);
 
+    bool isDraw(thc::ChessRules &board);
+
     // the transposition table
     TranspositionTable table = TranspositionTable(1024);
 
@@ -149,6 +151,12 @@ private:
 
     // killer moves
     std::vector<std::vector<thc::Move>> killers;
+
+    // stores the zobrist hash of previous positions to find threefold repetition
+    std::vector<uint64_t> positionStack;
+
+    // history heuristic
+    int history[2][6][64] = {0};
 
     // futility margins
     int margin[4] = {0, 200, 300, 500};
@@ -182,6 +190,20 @@ private:
                                                  {'r', -500},
                                                  {'q', -900},
                                                  {'k', -20000}};
+
+    // this will return the index value for the history heuristic
+    std::unordered_map<char, int> pieceIndex = {{'P', 0},
+                                                {'N', 1},
+                                                {'B', 2},
+                                                {'R', 3},
+                                                {'Q', 4},
+                                                {'K', 5},
+                                                {'p', 0},
+                                                {'n', 1},
+                                                {'b', 2},
+                                                {'r', 3},
+                                                {'q', 4},
+                                                {'k', 5}};
 
     // this will be used to make sure the same color doesn't do a null move twice in a row
     bool nullAllowed = true;

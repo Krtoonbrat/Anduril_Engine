@@ -54,8 +54,13 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getMoveList(thc::ChessRules &bo
             continue;
         }
 
+        // next check the history array
+        if (history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(moves.moves[i].src)]]][static_cast<int>(moves.moves[i].dst)] != 0) {
+            movesWithScores.emplace_back(std::min(-history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(moves.moves[i].src)]]][static_cast<int>(moves.moves[i].dst)], -15), moves.moves[i]);
+        }
+
         // the move isn't special, mark it to be searched with every other non-capture
-        // the value of -1000 was chosen because it makes sure the moves are searched after killers
+        // the value of -1000 was chosen because it makes sure the moves are searched after killers and losing captures
         movesWithScores.emplace_back(-1000, moves.moves[i]);
     }
 
@@ -211,8 +216,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     depthNodes++;
     constexpr bool PvNode = nodeType == PV;
 
-    // check for 50 move rule
-    if (board.half_move_clock >= 100) {
+    // check for draw
+    if (isDraw(board)) {
         return 0;
     }
 
@@ -464,6 +469,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
                     node->nodeType = 2;
                     if (move.capture == ' ') {
                         insertKiller(ply - rootPly, move);
+                        history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(move.src)]]][board.squares[static_cast<int>(move.dst)]] += depth*depth;
                     }
                     return bestScore;
                 }
@@ -714,6 +720,28 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     board.PlayMove(bestMove);
 }
 
+bool Anduril::isDraw(thc::ChessRules &board) {
+    // first check for 50 move rule
+    if (board.half_move_clock >= 100) {
+        return true;
+    }
+
+    // next check for repetition
+    uint64_t currentHash = Zobrist::zobristHash(board);
+    int repetitions = 0;
+    for (int i = 0; i < positionStack.size(); i++) {
+        if (currentHash == positionStack[i]) {
+            repetitions++;
+        }
+    }
+
+    if (repetitions >= 3) {
+        return true;
+    }
+
+    return false;
+}
+
 int Anduril::nonPawnMaterial(bool whiteToPlay) {
     if (whiteToPlay) {
         return whiteKnights.size() * 300 + whiteBishops.size() * 300 + whiteRooks.size() * 500 + whiteQueens.size() * 900;
@@ -830,6 +858,13 @@ void Anduril::fillPieceLists(thc::ChessRules &board){
 void Anduril::makeMove(thc::ChessRules &board, thc::Move move) {
     int src = static_cast<int>(move.src);
     int dst = static_cast<int>(move.dst);
+
+    // if the move was null, push it and skip the rest
+    if (!move.Valid()) {
+        board.PushMove(move);
+        positionStack.push_back(Zobrist::zobristHash(board));
+        return;
+    }
 
     // adjust the piece lists to reflect the move
     switch (board.squares[src]) {
@@ -1104,6 +1139,8 @@ void Anduril::makeMove(thc::ChessRules &board, thc::Move move) {
     }
 
     board.PushMove(move);
+
+    positionStack.push_back(Zobrist::zobristHash(board));
 }
 
 void Anduril::undoMove(thc::ChessRules &board, thc::Move move) {
@@ -1111,6 +1148,13 @@ void Anduril::undoMove(thc::ChessRules &board, thc::Move move) {
     int dst = static_cast<int>(move.dst);
 
     board.PopMove(move);
+
+    positionStack.pop_back();
+
+    // if the move was null, skip the rest
+    if (!move.Valid()) {
+        return;
+    }
 
     // adjust the piece lists to reflect the move
     switch (board.squares[src]) {
