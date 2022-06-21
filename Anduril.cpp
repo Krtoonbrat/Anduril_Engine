@@ -91,14 +91,11 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getQMoveList(thc::ChessRules &b
     return movesWithScores;
 }
 
-// the quiesce search
+// the quiescence search
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
-int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
+int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     constexpr bool PvNode = nodeType == PV;
-    if (Qdepth <= 0){
-        return evaluateBoard(board);
-    }
 
     // represents the best score we have found so far
     int bestScore = -999999999;
@@ -112,7 +109,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
     Node *node = table.probe(hash, found);
     if (found) {
         movesTransposed++;
-        if (!PvNode && node->nodeDepth >= -(ply + Qdepth)) {
+        if (!PvNode && node->nodeDepth >= -1) {
             switch (node->nodeType) {
                 case 1:
                     return node->nodeScore;
@@ -129,7 +126,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
                     break;
             }
         }
-        node->nodeDepth = -(ply + Qdepth);
+        node->nodeDepth = -1;
     }
     else {
         // reset the node information so that we can rewrite it
@@ -138,7 +135,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
         node->nodeType = 3;
         node->bestMove.Invalid();
         node->key = hash;
-        node->nodeDepth = -(ply + Qdepth);
+        node->nodeDepth = -1;
     }
 
     // stand pat score to see if we can exit early
@@ -188,7 +185,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth) {
 
         movesExplored++;
         quiesceExplored++;
-        score = -quiesce<nodeType>(board, -beta, -alpha, Qdepth - 1);
+        score = -quiesce<nodeType>(board, -beta, -alpha);
         undoMove(board, move);
 
         if (score > bestScore) {
@@ -232,7 +229,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // if we are at max depth, start a quiescence search
     if (depth <= 0){
-        return quiesce<PvNode ? PV : NonPV>(board, alpha, beta, 6);
+        return quiesce<PvNode ? PV : NonPV>(board, alpha, beta);
     }
 
     // represents our next move to search
@@ -292,7 +289,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         && !check
         && depth <= 7
         && staticEval < alpha - 348 - 258 * depth * depth) {
-        score = quiesce<NonPV>(board, alpha - 1, alpha, 6);
+        score = quiesce<NonPV>(board, alpha - 1, alpha);
         if (score < alpha) {
             return score;
         }
@@ -368,7 +365,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
             makeMove(board, move);
 
             // perform a qsearch to verify that the move still is less than beta
-            score = -quiesce<NonPV>(board, -probCutBeta, -probCutBeta + 1, 6);
+            score = -quiesce<NonPV>(board, -probCutBeta, -probCutBeta + 1);
 
             // if the qsearch holds, do a regular one
             if (score >= probCutBeta) {

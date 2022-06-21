@@ -27,7 +27,7 @@ public:
     // the quiesce search
     // searches possible captures to make sure we aren't mis-evaluating certain positions
     template <NodeType nodeType>
-    int quiesce(thc::ChessRules &board, int alpha, int beta, int Qdepth);
+    int quiesce(thc::ChessRules &board, int alpha, int beta);
 
     // generates a static evaluation of the board
     int evaluateBoard(thc::ChessRules &board);

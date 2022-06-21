@@ -31,7 +31,7 @@ int main() {
          */
 
 
-        if (board.WhiteToPlay()) {
+        if (!board.WhiteToPlay()) {
             Game::turn(board, AI);
         }
         else {
