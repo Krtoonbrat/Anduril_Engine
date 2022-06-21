@@ -4,10 +4,12 @@
 #include <iostream>
 #include <regex>
 
+#include "Anduril.h"
 #include "ConsoleGame.h"
 
 // goes through the process of a turn
-void Game::turn(thc::ChessRules &board) {
+// we need an instance of Anduril so that we can update its position stack through the makeMovePlay method
+void Game::turn(thc::ChessRules &board, Anduril &AI) {
     std::string move = "";
     thc::Move playerMove;
 
@@ -33,11 +35,11 @@ void Game::turn(thc::ChessRules &board) {
     }
 
     if (playerMove.TerseIn(&board, move.c_str())){
-        board.PlayMove(playerMove);
+        AI.makeMovePlay(board, playerMove);
     }
     else{
         std::cout << "Illegal Move." << std::endl;
-        turn(board);
+        turn(board, AI);
     }
 }
 

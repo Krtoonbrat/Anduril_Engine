@@ -4,6 +4,7 @@
 #include "Anduril.h"
 #include "ConsoleGame.h"
 #include "thc.h"
+#include "ZobristHasher.h"
 
 int main() {
     thc::ChessRules board;
@@ -12,13 +13,14 @@ int main() {
     thc::TERMINAL gameOver = thc::NOT_TERMINAL;
 
     // this exists so that I can test problematic board positions if and when they arise
-    board.Forsyth("7r/2kr2pp/2p2p2/p4N2/1bnBP3/2P2P2/P4KPP/3R3R b - - 0 24");
+    //board.Forsyth("7r/2kr2pp/2p2p2/p4N2/1bnBP3/2P2P2/P4KPP/3R3R b - - 0 24");
 
     //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
     //board.Forsyth("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
 
     Game::displayBoard(board);
     std::cout << "Board FEN: " << board.ForsythPublish() << std::endl;
+    AI.positionStack.push_back(Zobrist::hashBoard(board));
 
     // main game loop
     while (board.Evaluate(gameOver) && gameOver == thc::NOT_TERMINAL) {
@@ -29,15 +31,15 @@ int main() {
          */
 
 
-        if (!board.WhiteToPlay()) {
-            Game::turn(board);
+        if (board.WhiteToPlay()) {
+            Game::turn(board, AI);
         }
         else {
             if (openingBook.getBookOpen()) {
                 thc::Move bestMove = openingBook.getBookMove(board);
                 if (bestMove.Valid()) {
                     std::cout << "Moving " << bestMove.TerseOut() << " from book" << std::endl;
-                    board.PlayMove(bestMove);
+                    AI.makeMovePlay(board, bestMove);
                 }
                 else {
                     std::cout << "End of opening book, starting search" << std::endl;

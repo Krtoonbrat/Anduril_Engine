@@ -49,6 +49,15 @@ public:
     // finds and returns the principal variation
     std::vector<thc::Move> getPV(thc::ChessRules &board, int depth, thc::Move bestMove);
 
+    // this version of make move uses the "play move" function instead of "push move"
+    // it should only be used on moves that are final (player moves and the move the engine chose)
+    // the reason we need this is to add the board position to the position stack
+    void makeMovePlay(thc::ChessRules &board, thc::Move move);
+
+    // stores the zobrist hash of previous positions to find threefold repetition
+    // this is public so that we can add the start position from outside the object
+    std::vector<uint64_t> positionStack;
+
 private:
     // total number of moves Anduril searched
     int movesExplored = 0;
@@ -152,9 +161,6 @@ private:
 
     // killer moves
     std::vector<std::vector<thc::Move>> killers;
-
-    // stores the zobrist hash of previous positions to find threefold repetition
-    std::vector<uint64_t> positionStack;
 
     // history heuristic
     int history[2][6][64] = {0};

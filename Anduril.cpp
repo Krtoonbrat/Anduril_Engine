@@ -703,7 +703,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     quiesceExplored = 0;
     clearPieceLists();
 
-    board.PlayMove(bestMove);
+    makeMovePlay(board, bestMove);
 }
 
 bool Anduril::isDraw(thc::ChessRules &board) {
@@ -1391,4 +1391,9 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
     }
 
     return PV;
+}
+
+void Anduril::makeMovePlay(thc::ChessRules &board, thc::Move move) {
+    board.PlayMove(move);
+    positionStack.push_back(Zobrist::hashBoard(board));
 }

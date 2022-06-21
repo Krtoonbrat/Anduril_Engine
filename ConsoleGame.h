@@ -5,13 +5,14 @@
 #ifndef ANDURIL_ENGINE_CONSOLEGAME_H
 #define ANDURIL_ENGINE_CONSOLEGAME_H
 
+#include "Anduril.h"
 #include "thc.h"
 
 class Game {
 public:
 
     // goes through the process of a turn
-    static void turn(thc::ChessRules &board);
+    static void turn(thc::ChessRules &board, Anduril &AI);
 
     // prints the board to the console
     static void displayBoard(thc::ChessRules &board){std::cout << board.ToDebugStr() << std::endl;}
