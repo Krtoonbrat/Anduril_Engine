@@ -100,9 +100,6 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     // represents the best score we have found so far
     int bestScore = -999999999;
 
-    // current ply (white moves + black moves from the starting position)
-    int ply = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : (board.full_move_count * 2);
-
     // transposition lookup
     uint64_t hash = Zobrist::zobristHash(board);
     bool found = false;
@@ -126,7 +123,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
                     break;
             }
         }
-        node->nodeDepth = -1;
+        node->nodeDepth = -1; // I used -1 to denote that this position was searched in quiescence
     }
     else {
         // reset the node information so that we can rewrite it
@@ -138,32 +135,56 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
         node->nodeDepth = -1;
     }
 
-    // stand pat score to see if we can exit early
-    int standPat = evaluateBoard(board);
-    bestScore = standPat;
-    node->nodeScore = standPat;
-
-    // adjust alpha and beta based on the stand pat
-    if (standPat >= beta) {
-        node->nodeType = 2;
-        return standPat;
-    }
-    if (PvNode && standPat > alpha) {
-        alpha = standPat;
-    }
+    // are we in check?
+    int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
 
     // get a move list
     std::vector<std::tuple<int, thc::Move>> moveList;
-    if (node->nodeScore != -999999999) {
-        moveList = getQMoveList(board, node);
-    }
-    else {
-        moveList = getQMoveList(board, nullptr);
-    }
 
-    // if there are no moves, we can just return our stand pat
-    if (moveList.empty()){
-        return standPat;
+    int standPat = -999999999;
+    // we can't stand pat if we are in check
+    if (!check) {
+        // stand pat score to see if we can exit early
+        standPat = evaluateBoard(board);
+        bestScore = standPat;
+        node->nodeScore = standPat;
+
+        // adjust alpha and beta based on the stand pat
+        if (standPat >= beta) {
+            node->nodeType = 2;
+            return standPat;
+        }
+        if (PvNode && standPat > alpha) {
+            alpha = standPat;
+        }
+
+        // generate a move list
+        if (node->nodeScore != -999999999) {
+            moveList = getQMoveList(board, node);
+        }
+        else {
+            moveList = getQMoveList(board, nullptr);
+        }
+
+        // if there are no moves, we can just return our stand pat
+        if (moveList.empty()){
+            return standPat;
+        }
+    }
+    // if we are in check, we need to generate all the possible evasions and search them
+    else {
+        // generate a move list
+        if (node->nodeScore != -999999999) {
+            moveList = getMoveList(board, node);
+        }
+        else {
+            moveList = getMoveList(board, nullptr);
+        }
+
+        // if there are no moves, we can just return our stand pat
+        if (moveList.empty()){
+            return standPat;
+        }
     }
 
     // arbitrarily low score to make sure its replaced
@@ -177,7 +198,9 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
         move = pickNextMove(moveList, i);
 
         // delta pruning
-        if (standPat + abs(pieceValues[board.squares[move.dst]]) + 200 < alpha) {
+        if (standPat + abs(pieceValues[board.squares[static_cast<int>(move.dst)]]) + 200 < alpha
+            && nonPawnMaterial(!board.WhiteToPlay()) - abs(pieceValues[board.squares[static_cast<int>(move.dst)]]) > 1300
+            && !(move.special >= thc::SPECIAL_PROMOTION_QUEEN && move.special <= thc::SPECIAL_PROMOTION_KNIGHT)) {
             continue;
         }
 
@@ -503,7 +526,7 @@ void Anduril::go(thc::ChessRules &board, int depth) {
     // set the killer vector to have the correct number of slots
     // and the root node's ply
     // the vector is padded a little at the end in case of the search being extended
-    killers = std::vector<std::vector<thc::Move>>(depth + 5);
+    killers = std::vector<std::vector<thc::Move>>(218); // 218 is the "max moves" defined in thc.h
     for (auto & killer : killers) {
         killer = std::vector<thc::Move>(2);
     }
