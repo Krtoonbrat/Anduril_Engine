@@ -321,7 +321,6 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     // null move pruning
     if (!PvNode
         && nullAllowed
-        && board.getMoveFromStack(ply - 1).Valid()
         && !check
         && staticEval >= beta
         && depth >= 4
@@ -333,8 +332,10 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
         nullAllowed = false;
 
+        int R = depth >= 6 ? 3 : 2;
+
         makeMove(board, nullMove);
-        int nullScore = -negamax<NonPV>(board, depth - 3, -beta, -beta + 1);
+        int nullScore = -negamax<NonPV>(board, depth - R - 1, -beta, -beta + 1);
         undoMove(board, nullMove);
 
         nullAllowed = true;
@@ -343,6 +344,10 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
             return nullScore;
         }
     }
+    // need to set this to true here because we can't razor if we just made a null move
+    // but the flag needs to be reset for the next node
+    nullAllowed = true;
+
 
     // generate a move list
     std::vector<std::tuple<int, thc::Move>> moveList;
@@ -370,7 +375,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
-    // the position would cut at a full depth search as well
+    // the position would most likely cut at a full depth search as well
     int probCutBeta = beta + 350;
     if (!PvNode
         && depth > 4
@@ -426,9 +431,6 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         futile = true;
     }
 
-
-
-
     // do we need to search a move with the full depth?
     bool doFullSearch = false;
 
@@ -457,9 +459,10 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         // search with zero window
         // first check if we can reduce
         doFullSearch = false;
-        if (depth > 1 && i > 2 && isLateReduction(board, move)) {
+        if (!PvNode && depth > 1 && i > 2 && isLateReduction(board, move)) {
+            int reduction = i > 6 ? 2 : 1;
             makeMove(board, move);
-            score = -negamax<NonPV>(board, depth - 2, -(alpha + 1), -alpha);
+            score = -negamax<NonPV>(board, depth - reduction - 1, -(alpha + 1), -alpha);
             doFullSearch = score > alpha && score < beta;
             undoMove(board, move);
         }
@@ -1400,7 +1403,7 @@ std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Mo
         // in case of infinite loops of repeating moves
         // I just capped it at 9 because I honestly don't care about lines
         // calculated that long anyways
-        if (PV.size() > 9) {
+        if (PV.size() > depth) {
             break;
         }
     }
