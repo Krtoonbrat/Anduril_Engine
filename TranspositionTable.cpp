@@ -10,7 +10,7 @@ TranspositionTable::TranspositionTable(size_t tSize) {
 }
 
 void TranspositionTable::resize(size_t tSize) {
-    int nodeCount = tSize * 1024 * 1024 / sizeof(Cluster);
+    int nodeCount = (tSize * 1024 * 1024) / sizeof(Cluster);
     table.resize(nodeCount);
     tableSize = nodeCount - 1;
 }

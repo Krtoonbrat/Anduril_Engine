@@ -14,7 +14,7 @@ struct Cluster {
 
 class TranspositionTable {
 public:
-    TranspositionTable(size_t tSize);
+    explicit TranspositionTable(size_t tSize);
 
     void resize(size_t tSize);
 
@@ -27,6 +27,15 @@ private:
 
     int tableSize = 0;
 
+};
+
+// I totally stole this from stockfish
+template<class nodeType, int Size>
+struct HashTable {
+    nodeType* operator[](uint64_t key) { return &table[key & Size]; }
+
+private:
+    std::vector<nodeType> table = std::vector<nodeType>((Size * 1024 * 1024) / sizeof(nodeType));
 };
 
 #endif //ANDURIL_ENGINE_TRANSPOSITIONTABLE_H

@@ -157,7 +157,10 @@ private:
     TranspositionTable table = TranspositionTable(1024);
 
     // pawn transposition table
-    TranspositionTable pawnTable = TranspositionTable(256);
+    HashTable<SimpleNode, 128> pTable = HashTable<SimpleNode, 128>();
+
+    // transposition table for evaluations
+    HashTable<SimpleNode, 128> evalTable = HashTable<SimpleNode, 128>();
 
     // killer moves
     std::vector<std::vector<thc::Move>> killers;

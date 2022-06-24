@@ -34,6 +34,16 @@
 
 // generates a static evaluation of the board
 int Anduril::evaluateBoard(thc::ChessRules &board) {
+    // first check for transpositions
+    uint64_t hash = Zobrist::zobristHash(board);
+    SimpleNode *eNode = evalTable[hash];
+    if (eNode->key == hash) {
+        return eNode->score;
+    }
+    else {
+        eNode->key = hash;
+    }
+
     // check for mate first
     thc::TERMINAL mate = thc::NOT_TERMINAL;
     board.Evaluate(mate);
@@ -273,7 +283,10 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
 
     // for negamax to work, we must return a non-adjusted scoreMG for white
     // and a negated scoreMG for black
-    return board.WhiteToPlay() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+    int finalScore = board.WhiteToPlay() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+    eNode->score = finalScore;
+
+    return finalScore;
 }
 
 void Anduril::evaluateKnights(thc::ChessRules &board, thc::Square square, bool white) {
@@ -720,10 +733,12 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
 
     // first check for a transposition
     uint64_t hash = Zobrist::hashPawns(board);
-    bool found = false;
-    Node *pNode = pawnTable.probe(hash, found);
-    if (found) {
-        return pNode->nodeScore;
+    SimpleNode *node = pTable[hash];
+    if (node->key == hash) {
+        return node->score;
+    }
+    else {
+        node->key = hash;
     }
 
     int score = 0;
@@ -1019,7 +1034,7 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
     }
 
     // add the score to the transposition table
-    pNode->nodeScore = score;
+    node->score = score;
 
     return score;
 }

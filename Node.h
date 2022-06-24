@@ -32,4 +32,12 @@ public:
 
 };
 
+struct SimpleNode {
+    // holds the value of the node
+    int score = -999999999;
+
+    // the key used to search for the node
+    uint64_t key = 0;
+};
+
 #endif //ANDURIL_ENGINE_NODE_H
