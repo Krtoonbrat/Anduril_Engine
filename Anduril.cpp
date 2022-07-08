@@ -107,7 +107,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     // we return a "checkmate" score here so that the engine throws out the
     // incomplete search if we weren't screwed anyways
     if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
-        return -999999999;
+        return 0;
     }
 
     // represents the best score we have found so far
@@ -134,6 +134,8 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
                         return node->nodeScore;
                     }
                     break;
+                default:
+                    break;
             }
         }
         node->nodeDepth = -1; // I used -1 to denote that this position was searched in quiescence
@@ -142,7 +144,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
         // reset the node information so that we can rewrite it
         // this isn't the best way to do it, but imma do it anyways
         node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
-        node->nodeType = 3;
+        node->nodeType = -1;
         node->bestMove.Invalid();
         node->key = hash;
         node->nodeDepth = -1;
@@ -150,6 +152,9 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
 
     // are we in check?
     int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
+
+    // did this node increase alpha?
+    bool alphaChange = false;
 
     // get a move list
     std::vector<std::tuple<int, thc::Move>> moveList;
@@ -168,11 +173,12 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
             return standPat;
         }
         if (PvNode && standPat > alpha) {
+            alphaChange = true;
             alpha = standPat;
         }
 
         // generate a move list
-        if (node->nodeScore != -999999999) {
+        if (found) {
             moveList = getQMoveList(board, node);
         }
         else {
@@ -187,7 +193,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     // if we are in check, we need to generate all the possible evasions and search them
     else {
         // generate a move list
-        if (node->nodeScore != -999999999) {
+        if (found) {
             moveList = getMoveList(board, node);
         }
         else {
@@ -205,6 +211,8 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
 
     // holds the move we want to search
     thc::Move move;
+    move.Invalid();
+    thc::Move bestMove = move;
 
     // loop through the moves and score them
     for (int i = 0; i < moveList.size(); i++) {
@@ -226,19 +234,24 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
 
         if (score > bestScore) {
             bestScore = score;
-            node->nodeScore = score;
-            node->bestMove = move;
+            bestMove = move;
             if (score > alpha) {
                 if (score >= beta) {
                     cutNodes++;
                     node->nodeType = 2;
+                    node->nodeScore = bestScore;
+                    node->bestMove = bestMove;
                     return bestScore;
                 }
-                node->nodeType = 1;
+                alphaChange = true;
                 alpha = score;
             }
         }
     }
+
+    alphaChange ? node->nodeType = 1 : node->nodeType = 2;
+    node->nodeScore = bestScore;
+    node->bestMove = bestMove;
     return bestScore;
 
 }
@@ -258,7 +271,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     // we return a "checkmate" score here so that the engine throws out the
     // incomplete search if we weren't screwed anyways
     if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
-        return -999999999;
+        return 0;
     }
 
     // check for draw
@@ -268,6 +281,9 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // are we in check?
     int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
+
+    // did alpha change?
+    bool alphaChange = false;
 
     // extend the search by one if we are in check
     // this makes sure we don't enter a qsearch while in check
@@ -282,6 +298,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // represents our next move to search
     thc::Move move;
+    move.Invalid();
+    thc::Move bestMove = move;
 
     // represents the best score we have found so far
     int bestScore = -999999999;
@@ -313,6 +331,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
                         return node->nodeScore;
                     }
                     break;
+                default:
+                    break;
             }
         }
         node->nodeDepth = ply + depth;
@@ -321,7 +341,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         // reset the node information so that we can rewrite it
         // this isn't the best way to do it, but imma do it anyways
         node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
-        node->nodeType = 3;
+        node->nodeType = -1;
         node->bestMove.Invalid();
         node->key = hash;
         node->nodeDepth = ply + depth;
@@ -376,7 +396,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // generate a move list
     std::vector<std::tuple<int, thc::Move>> moveList;
-    if (node->nodeScore != -999999999) {
+    if (found) {
         moveList = getMoveList(board, node);
     }
     else {
@@ -509,8 +529,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
         if (score > bestScore) {
             bestScore = score;
-            node->nodeScore = score;
-            node->bestMove = move;
+            bestMove = move;
             if (score > alpha) {
                 if (score >= beta) {
                     cutNodes++;
@@ -519,14 +538,19 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
                         insertKiller(ply - rootPly, move);
                         history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(move.src)]]][board.squares[static_cast<int>(move.dst)]] += depth*depth;
                     }
+                    node->nodeScore = score;
+                    node->bestMove = bestMove;
                     return bestScore;
                 }
-                node->nodeType = 1;
+                alphaChange = true;
                 alpha = score;
             }
         }
     }
 
+    alphaChange ? node->nodeType = 1 : node->nodeType = 2;
+    node->nodeScore = bestScore;
+    node->bestMove = bestMove;
     return bestScore;
 
 }

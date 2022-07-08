@@ -65,6 +65,15 @@ public:
     // this is public so that we can add the start position from outside the object
     std::vector<uint64_t> positionStack;
 
+    // the transposition table
+    TranspositionTable table = TranspositionTable(1024);
+
+    // pawn transposition table
+    HashTable<SimpleNode, 128> pTable = HashTable<SimpleNode, 128>();
+
+    // transposition table for evaluations
+    HashTable<SimpleNode, 128> evalTable = HashTable<SimpleNode, 128>();
+
     // the limits the GUI could send
     limits limits;
 
@@ -174,15 +183,6 @@ private:
 
     // returns if the position is a draw
     bool isDraw(thc::ChessRules &board);
-
-    // the transposition table
-    TranspositionTable table = TranspositionTable(1024);
-
-    // pawn transposition table
-    HashTable<SimpleNode, 128> pTable = HashTable<SimpleNode, 128>();
-
-    // transposition table for evaluations
-    HashTable<SimpleNode, 128> evalTable = HashTable<SimpleNode, 128>();
 
     // killer moves
     std::vector<std::vector<thc::Move>> killers;

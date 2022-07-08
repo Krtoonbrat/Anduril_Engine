@@ -19,19 +19,21 @@ struct bookEntry {
 
 class Book {
 public:
-    Book(const char *file) { bookOpen = openBook(file); }
+    Book(const char *file) { bookOpen = readBook(file); }
 
-    ~Book() { closeBook(); }
+    ~Book() { freeBook(); }
 
     // getters and setters
     bookEntry* getEntries() { return entries; }
     long getNumEntries() const { return numEntries; }
     bool getBookOpen() const { return bookOpen; }
     void flipBookOpen() { bookOpen = !bookOpen; }
+    inline void closeBook() { bookOpen = false; }
+    inline void openBook() { bookOpen = true; }
 
-    bool openBook(const char *file);
+    bool readBook(const char *file);
 
-    void closeBook();
+    void freeBook();
 
     // finds and returns a book move for the position
     thc::Move getBookMove(thc::ChessRules &board);

@@ -72,6 +72,9 @@ namespace UCI {
             }
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
+                AI.table.clear();
+                AI.pTable = HashTable<SimpleNode, 128>();
+                AI.evalTable = HashTable<SimpleNode, 128>();
                 parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "go", 2)) {
@@ -94,15 +97,18 @@ namespace UCI {
 
     void parseGo(char* line, thc::ChessRules &board, Anduril &AI, Book &openingBook) {
         // reset all the limits
-        int depth = -1; int moveTime = -1; int mtg = 30;
+        int depth = -1; int moveTime = -1; int mtg = 25;
         int time = -1;
         int increment = -1;
         AI.limits.timeSet = false;
         char *ptr = NULL;
 
+        // the opening book stays open unless we are doing an infinite search
+        openingBook.openBook();
+
         // commands
         if ((ptr = strstr(line, "infinite"))) {
-            openingBook.flipBookOpen();
+            openingBook.closeBook();
             ;
         }
 
@@ -348,6 +354,8 @@ void Anduril::go(thc::ChessRules &board) {
     int deep = 1;
     bool finalDepth = false;
     bool incomplete = false;
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> timeElapsed = end - startTime;
     // iterative deepening loop
     while (!finalDepth) {
         UCI::ReadInput(*this);
@@ -374,6 +382,11 @@ void Anduril::go(thc::ChessRules &board) {
             }
             else {
                 move = std::get<1>(moveListWithScores[i]);
+            }
+            end = std::chrono::steady_clock::now();
+            timeElapsed = end - startTime;
+            if (timeElapsed.count() >= 1000) {
+                std::cout << "info currmove " << move.TerseOut() << " currmovenumber " << i + 1 << std::endl;
             }
 
             makeMove(board, move);
@@ -407,8 +420,8 @@ void Anduril::go(thc::ChessRules &board) {
         }
 
         // send info to the GUI
-        auto end = std::chrono::steady_clock::now();
-        std::chrono::duration<double, std::milli> timeElapsed = end - startTime;
+        end = std::chrono::steady_clock::now();
+        timeElapsed = end - startTime;
 
         std::cout << "info score cp " << prevBestScore << " depth " << deep << " nodes " <<
         movesExplored << " nps " << getMovesExplored() / (timeElapsed.count()/1000) << " time " << timeElapsed.count();

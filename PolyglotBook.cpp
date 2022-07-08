@@ -11,7 +11,7 @@
 #include "ZobristHasher.h"
 
 // opens a book
-bool Book::openBook(const char *file) {
+bool Book::readBook(const char *file) {
     book = fopen(file, "rb");
 
     if (book == nullptr) {
@@ -42,7 +42,7 @@ bool Book::openBook(const char *file) {
 }
 
 // closes the book
-void Book::closeBook() {
+void Book::freeBook() {
     free(entries);
 }
 

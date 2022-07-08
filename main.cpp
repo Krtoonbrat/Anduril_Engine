@@ -25,7 +25,7 @@ int main() {
         //board.Forsyth("7r/2kr2pp/2p2p2/p4N2/1bnBP3/2P2P2/P4KPP/3R3R b - - 0 24");
 
         //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
-        //board.Forsyth("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
+        board.Forsyth("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
 
         Game::displayBoard(board);
         std::cout << "Board FEN: " << board.ForsythPublish() << std::endl;
@@ -45,7 +45,7 @@ int main() {
                     openingBook.flipBookOpen();
                 }
             } else {
-                AI.go(board);
+                AI.goDebug(board, 10);
             }
 
 

@@ -9,7 +9,7 @@
 
 class Node {
 public:
-    Node() {nodeScore = -999999999; nodeType = 3; bestMove.Invalid(); nodeDepth = -99; key = 0;};
+    Node() {nodeScore = -999999999; nodeType = -1; bestMove.Invalid(); nodeDepth = -99; key = 0;};
 
     // the evaluation of the node
     int nodeScore;
