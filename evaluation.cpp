@@ -281,8 +281,8 @@ int Anduril::evaluateBoard(thc::ChessRules &board) {
     // get the phase for tapered eval
     double phase = getPhase(board);
 
-    // for negamax to work, we must return a non-adjusted scoreMG for white
-    // and a negated scoreMG for black
+    // for negamax to work, we must return a non-adjusted score for white
+    // and a negated score for black
     int finalScore = board.WhiteToPlay() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
     eNode->score = finalScore;
 

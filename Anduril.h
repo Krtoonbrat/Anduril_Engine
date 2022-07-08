@@ -6,9 +6,11 @@
 #define ANDURIL_ENGINE_ANDURIL_H
 
 #include <algorithm>
+#include <chrono>
 #include <unordered_map>
 #include <unordered_set>
 
+#include "limits.h"
 #include "Node.h"
 #include "thc.h"
 #include "TranspositionTable.h"
@@ -19,6 +21,10 @@ public:
 
     // the type of node we are searching
     enum NodeType {PV, NonPV};
+
+    // calls negamax and keeps track of the best move
+    // this version will also interact with UCI
+    void go(thc::ChessRules &board);
 
     // the negamax function.  Does the heavy lifting for the search
     template <NodeType nodeType>
@@ -33,7 +39,8 @@ public:
     int evaluateBoard(thc::ChessRules &board);
 
     // calls negamax and keeps track of the best move
-    void go(thc::ChessRules &board, int depth);
+    // this is the debug version, it only uses console control and has zero UCI function
+    void goDebug(thc::ChessRules &board, int depth);
 
     // getter and setter for moves explored
     int getMovesExplored() const { return movesExplored; }
@@ -57,6 +64,21 @@ public:
     // stores the zobrist hash of previous positions to find threefold repetition
     // this is public so that we can add the start position from outside the object
     std::vector<uint64_t> positionStack;
+
+    // the limits the GUI could send
+    limits limits;
+
+    // time we started the search
+    std::chrono::time_point<std::chrono::steady_clock> startTime;
+
+    // time we should stop the search
+    std::chrono::time_point<std::chrono::steady_clock> stopTime;
+
+    // did the GUI tell us to quit?
+    bool quit = false;
+
+    // did the GUI tell us to stop the search?
+    bool stopped = false;
 
 private:
     // total number of moves Anduril searched

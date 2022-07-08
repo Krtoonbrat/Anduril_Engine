@@ -9,6 +9,7 @@
 
 #include "Anduril.h"
 #include "ConsoleGame.h"
+#include "UCI.h"
 #include "ZobristHasher.h"
 
 // Most Valuable Victim, Least Valuable Attacker
@@ -96,6 +97,18 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getQMoveList(thc::ChessRules &b
 template <Anduril::NodeType nodeType>
 int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     constexpr bool PvNode = nodeType == PV;
+
+    // did we receive a stop command?
+    if (movesExplored % 5000 == 0) {
+        UCI::ReadInput(*this);
+    }
+
+    // is the time up?
+    // we return a "checkmate" score here so that the engine throws out the
+    // incomplete search if we weren't screwed anyways
+    if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        return -999999999;
+    }
 
     // represents the best score we have found so far
     int bestScore = -999999999;
@@ -235,6 +248,18 @@ template <Anduril::NodeType nodeType>
 int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     depthNodes++;
     constexpr bool PvNode = nodeType == PV;
+
+    // did we receive a stop command?
+    if (movesExplored % 5000 == 0) {
+        UCI::ReadInput(*this);
+    }
+
+    // is the time up?
+    // we return a "checkmate" score here so that the engine throws out the
+    // incomplete search if we weren't screwed anyways
+    if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        return -999999999;
+    }
 
     // check for draw
     if (isDraw(board)) {
@@ -507,7 +532,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 }
 
 // calls negamax and keeps track of the best move
-void Anduril::go(thc::ChessRules &board, int depth) {
+// this is the debug version, it only uses console control and has zero UCI function
+void Anduril::goDebug(thc::ChessRules &board, int depth) {
     thc::Move bestMove;
     bestMove.Invalid();
 
