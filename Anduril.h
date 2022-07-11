@@ -89,6 +89,27 @@ public:
     // did the GUI tell us to stop the search?
     bool stopped = false;
 
+    // values for CLOP to tune
+    // pawn value
+    int pMG = 100;
+    int pEG = 110;
+
+    // knight value
+    int kMG = 337;
+    int kEG = 281;
+
+    // bishop value
+    int bMG = 365;
+    int bEG = 297;
+
+    // rook value
+    int rMG = 477;
+    int rEG = 512;
+
+    // queen value
+    int qMG = 1025;
+    int qEG = 936;
+
 private:
     // total number of moves Anduril searched
     int movesExplored = 0;

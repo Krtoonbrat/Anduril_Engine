@@ -20,6 +20,9 @@ namespace UCI {
     // parses position commands from the GUI
     void parsePosition(char* line, thc::ChessRules &board, Anduril &AI);
 
+    // parses setoptions
+    void parseOption(char* line, Anduril &AI);
+
     // looks to see if there is an input waiting for us to read
     // http://home.arcor.de/dreamlike/chess/
     int InputWaiting();

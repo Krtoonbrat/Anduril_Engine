@@ -45,6 +45,16 @@ namespace UCI {
         std::cout << "id name Anduril" << std::endl;
         std::cout << "id author Krtoonbrat" << std::endl;
         std::cout << "uciok" << std::endl;
+        std::cout << "option name pMG type spin default 100 min 50 max 300" << std::endl;
+        std::cout << "option name pEG type spin default 110 min 50 max 300" << std::endl;
+        std::cout << "option name kMG type spin default 337 min 100 max 500" << std::endl;
+        std::cout << "option name kEG type spin default 281 min 100 max 500" << std::endl;
+        std::cout << "option name bMG type spin default 365 min 100 max 500" << std::endl;
+        std::cout << "option name bEG type spin default 297 min 100 max 500" << std::endl;
+        std::cout << "option name rMG type spin default 477 min 300 max 700" << std::endl;
+        std::cout << "option name rEG type spin default 512 min 300 max 700" << std::endl;
+        std::cout << "option name qMG type spin default 1025 min 700 max 1200" << std::endl;
+        std::cout << "option name qEG type spin default 936 min 700 max 1200" << std::endl;
 
         // set up the board, engine, book, and game state
         thc::ChessRules board;
@@ -70,6 +80,9 @@ namespace UCI {
             else if (!strncmp(line, "position", 8)) {
                 parsePosition(line, board, AI);
             }
+            else if (!strncmp(line, "setoption", 9)) {
+                parseOption(line, AI);
+            }
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
                 AI.table.clear();
@@ -88,10 +101,65 @@ namespace UCI {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
                 std::cout << "uciok" << std::endl;
+                std::cout << "option name pMG type spin default 100 min 50 max 300" << std::endl;
+                std::cout << "option name pEG type spin default 110 min 50 max 300" << std::endl;
+                std::cout << "option name kMG type spin default 337 min 100 max 500" << std::endl;
+                std::cout << "option name kEG type spin default 281 min 100 max 500" << std::endl;
+                std::cout << "option name bMG type spin default 365 min 100 max 500" << std::endl;
+                std::cout << "option name bEG type spin default 297 min 100 max 500" << std::endl;
+                std::cout << "option name rMG type spin default 477 min 300 max 700" << std::endl;
+                std::cout << "option name rEG type spin default 512 min 300 max 700" << std::endl;
+                std::cout << "option name qMG type spin default 1025 min 700 max 1200" << std::endl;
+                std::cout << "option name qEG type spin default 936 min 700 max 1200" << std::endl;
             }
 
             // break the loop if quit is received
             if (AI.quit) { break; }
+        }
+    }
+
+    void parseOption(char* line, Anduril &AI) {
+        char *ptr = NULL;
+
+        // setoption name pMG value 100
+        if ((ptr = strstr(line, "pMG"))) {
+            AI.pMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "pEG"))) {
+            AI.pEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kMG"))) {
+            AI.kMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kEG"))) {
+            AI.kEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "bMG"))) {
+            AI.bMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "bEG"))) {
+            AI.bEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "rMG"))) {
+            AI.rMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "rEG"))) {
+            AI.rEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "qMG"))) {
+            AI.qMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "qEG"))) {
+            AI.qEG = atoi(ptr + 10);
         }
     }
 
@@ -385,9 +453,11 @@ void Anduril::go(thc::ChessRules &board) {
             }
             end = std::chrono::steady_clock::now();
             timeElapsed = end - startTime;
+            /*
             if (timeElapsed.count() >= 1000) {
                 std::cout << "info currmove " << move.TerseOut() << " currmovenumber " << i + 1 << std::endl;
             }
+             */
 
             makeMove(board, move);
             deep--;
@@ -423,8 +493,10 @@ void Anduril::go(thc::ChessRules &board) {
         end = std::chrono::steady_clock::now();
         timeElapsed = end - startTime;
 
+        /*
         std::cout << "info score cp " << prevBestScore << " depth " << deep << " nodes " <<
         movesExplored << " nps " << getMovesExplored() / (timeElapsed.count()/1000) << " time " << timeElapsed.count();
+         */
 
         std::vector<thc::Move> PV = getPV(board, limits.depth, bestMove);
         std::string pv = "";
