@@ -10,82 +10,113 @@
 #include "Anduril.h"
 #include "ConsoleGame.h"
 #include "UCI.h"
-#include "ZobristHasher.h"
 
 // Most Valuable Victim, Least Valuable Attacker
-int Anduril::MVVLVA(thc::ChessRules &board, int src, int dst) {
-    return std::abs(pieceValues[board.squares[dst]]) - std::abs(pieceValues[board.squares[src]]);
+int Anduril::MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst) {
+    return std::abs(pieceValues[board.piece_on(dst)->to_char()]) - std::abs(pieceValues[board.piece_on(src)->to_char()]);
 }
 
 // generates a move list in the order we want to search them
-std::vector<std::tuple<int, thc::Move>> Anduril::getMoveList(thc::ChessRules &board, Node *node) {
+std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Position &board, Node *node) {
     // current ply for finding killer moves
-    int ply = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : board.full_move_count * 2;
+    int ply = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
 
     // this is the list of moves with their assigned scores
-    std::vector<std::tuple<int, thc::Move>> movesWithScores;
+    std::vector<std::tuple<int, libchess::Move>> movesWithScores;
 
     // get a list of possible moves
-    thc::MOVELIST moves;
-    board.GenLegalMoveList(&moves);
+    libchess::MoveList moves = board.pseudo_legal_move_list();
 
     // loop through the board, give each move a score, and add it to the list
-    for (int i = 0; i < moves.count; i++) {
+    for (auto i = moves.begin(); i < moves.end(); i++) {
         // first check if the move is a hash move
-        if (node != nullptr && moves.moves[i] == node->bestMove) {
-            movesWithScores.emplace_back(10000, moves.moves[i]);
+        if (node != nullptr && *i == node->bestMove) {
+            movesWithScores.emplace_back(10000, *i);
             continue;
         }
 
         // next check if the move is a capture
-        if (moves.moves[i].capture != ' ') {
-            movesWithScores.emplace_back(MVVLVA(board, moves.moves[i].src, moves.moves[i].dst), moves.moves[i]);
+        if (board.is_capture_move(*i)) {
+            movesWithScores.emplace_back(MVVLVA(board, i->from_square(), i->to_square()), *i);
             continue;
         }
 
         // we want to search castling before the equal captures
-        if (moves.moves[i].special >= thc::SPECIAL_WK_CASTLING && moves.moves[i].special <= thc::SPECIAL_BQ_CASTLING) {
-            movesWithScores.emplace_back(50, moves.moves[i]);
+        if (i->type() == libchess::Move::Type::CASTLING) {
+            movesWithScores.emplace_back(50, *i);
             continue;
         }
 
         // next check for killer moves
-        if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), moves.moves[i]) != 0) {
-            movesWithScores.emplace_back(-10, moves.moves[i]);
+        if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), *i) != 0) {
+            movesWithScores.emplace_back(-10, *i);
             continue;
-        }
-
-        // next check the history array
-        if (history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(moves.moves[i].src)]]][static_cast<int>(moves.moves[i].dst)] != 0) {
-            movesWithScores.emplace_back(std::min(-history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(moves.moves[i].src)]]][static_cast<int>(moves.moves[i].dst)], -15), moves.moves[i]);
         }
 
         // the move isn't special, mark it to be searched with every other non-capture
         // the value of -1000 was chosen because it makes sure the moves are searched after killers and losing captures
-        movesWithScores.emplace_back(-1000, moves.moves[i]);
+        movesWithScores.emplace_back(-1000, *i);
     }
 
     return movesWithScores;
 }
 
-std::vector<std::tuple<int, thc::Move>> Anduril::getQMoveList(thc::ChessRules &board, Node *node) {
+// generates a move list of legal moves we want to search
+std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Position &board) {
+    // current ply for finding killer moves
+    int ply = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
+
     // this is the list of moves with their assigned scores
-    std::vector<std::tuple<int, thc::Move>> movesWithScores;
+    std::vector<std::tuple<int, libchess::Move>> movesWithScores;
 
     // get a list of possible moves
-    thc::MOVELIST moves;
-    board.GenLegalMoveList(&moves);
+    libchess::MoveList moves = board.legal_move_list();
 
-    for (int i = 0; i < moves.count; i++) {
+    // loop through the board, give each move a score, and add it to the list
+    for (auto i = moves.begin(); i < moves.end(); i++) {
+        // check if the move is a capture
+        if (board.is_capture_move(*i)) {
+            movesWithScores.emplace_back(board.see_for(*i, seeValues), *i);
+            continue;
+        }
+
+        // we want to search castling before the equal captures
+        if (i->type() == libchess::Move::Type::CASTLING) {
+            movesWithScores.emplace_back(50, *i);
+            continue;
+        }
+
+        // next check for killer moves
+        if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), *i) != 0) {
+            movesWithScores.emplace_back(-10, *i);
+            continue;
+        }
+
+        // the move isn't special, mark it to be searched with every other non-capture
+        // the value of -1000 was chosen because it makes sure the moves are searched after killers and losing captures
+        movesWithScores.emplace_back(-1000, *i);
+    }
+
+    return movesWithScores;
+}
+
+std::vector<std::tuple<int, libchess::Move>> Anduril::getQMoveList(libchess::Position &board, Node *node) {
+    // this is the list of moves with their assigned scores
+    std::vector<std::tuple<int, libchess::Move>> movesWithScores;
+
+    // get a list of possible moves
+    libchess::MoveList moves = board.pseudo_legal_move_list();
+
+    for (auto i = moves.begin(); i < moves.end(); i++) {
         // first check if the move is a capture
-        if (moves.moves[i].capture != ' ') {
+        if (board.is_capture_move(*i)) {
             // next check if it's the hash move
-            if (node != nullptr && moves.moves[i] == node->bestMove) {
-                movesWithScores.emplace_back(10000, moves.moves[i]);
+            if (node != nullptr && *i == node->bestMove) {
+                movesWithScores.emplace_back(10000, *i);
                 continue;
             }
             // if it isn't a hash move, add it with its MVVLVA score
-            movesWithScores.emplace_back(MVVLVA(board, moves.moves[i].src, moves.moves[i].dst), moves.moves[i]);
+            movesWithScores.emplace_back(MVVLVA(board, i->from_square(), i->to_square()), *i);
         }
     }
 
@@ -95,7 +126,7 @@ std::vector<std::tuple<int, thc::Move>> Anduril::getQMoveList(thc::ChessRules &b
 // the quiescence search
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
-int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
+int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     constexpr bool PvNode = nodeType == PV;
 
     // did we receive a stop command?
@@ -114,7 +145,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     int bestScore = -999999999;
 
     // transposition lookup
-    uint64_t hash = Zobrist::zobristHash(board);
+    uint64_t hash = board.hash();
     bool found = false;
     Node *node = table.probe(hash, found);
     if (found) {
@@ -145,19 +176,19 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
         // this isn't the best way to do it, but imma do it anyways
         node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
         node->nodeType = -1;
-        node->bestMove.Invalid();
+        node->bestMove = libchess::Move();
         node->key = hash;
         node->nodeDepth = -1;
     }
 
     // are we in check?
-    int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
+    bool check = board.in_check();
 
     // did this node increase alpha?
     bool alphaChange = false;
 
     // get a move list
-    std::vector<std::tuple<int, thc::Move>> moveList;
+    std::vector<std::tuple<int, libchess::Move>> moveList;
 
     int standPat = -999999999;
     // we can't stand pat if we are in check
@@ -210,27 +241,36 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
     int score = -999999999;
 
     // holds the move we want to search
-    thc::Move move;
-    move.Invalid();
-    thc::Move bestMove = move;
+    libchess::Move move(0);
+    libchess::Move bestMove = move;
 
     // loop through the moves and score them
     for (int i = 0; i < moveList.size(); i++) {
         move = pickNextMove(moveList, i);
 
-        // delta pruning
-        if (standPat + abs(pieceValues[board.squares[static_cast<int>(move.dst)]]) + 200 < alpha
-            && nonPawnMaterial(!board.WhiteToPlay()) - abs(pieceValues[board.squares[static_cast<int>(move.dst)]]) > 1300
-            && !(move.special >= thc::SPECIAL_PROMOTION_QUEEN && move.special <= thc::SPECIAL_PROMOTION_KNIGHT)) {
+        // search only legal moves
+        if (!board.is_legal_move(move)) {
             continue;
         }
 
-        makeMove(board, move);
+        // don't search moves with negative see
+        if (board.see_for(move, seeValues) < 0) {
+            continue;
+        }
+
+        // delta pruning
+        if (standPat + abs(pieceValues[board.piece_on(move.to_square())->to_char()]) + 200 < alpha
+            && nonPawnMaterial(board.side_to_move(), board) - abs(pieceValues[board.piece_on(move.to_square())->to_char()]) > 1300
+            && move.type() != libchess::Move::Type::PROMOTION) {
+            continue;
+        }
+
+        board.make_move(move);
 
         movesExplored++;
         quiesceExplored++;
-        score = -quiesce<nodeType>(board, -beta, -alpha);
-        undoMove(board, move);
+        score = -quiescence<nodeType>(board, -beta, -alpha);
+        board.unmake_move();
 
         if (score > bestScore) {
             bestScore = score;
@@ -258,7 +298,7 @@ int Anduril::quiesce(thc::ChessRules &board, int alpha, int beta) {
 
 // the negamax function.  Does the heavy lifting for the search
 template <Anduril::NodeType nodeType>
-int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
+int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) {
     depthNodes++;
     constexpr bool PvNode = nodeType == PV;
 
@@ -280,7 +320,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     }
 
     // are we in check?
-    int check = board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square);
+    int check = board.in_check();
 
     // did alpha change?
     bool alphaChange = false;
@@ -293,13 +333,12 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
     // if we are at max depth, start a quiescence search
     if (depth <= 0){
-        return quiesce<PvNode ? PV : NonPV>(board, alpha, beta);
+        return quiescence<PvNode ? PV : NonPV>(board, alpha, beta);
     }
 
     // represents our next move to search
-    thc::Move move;
-    move.Invalid();
-    thc::Move bestMove = move;
+    libchess::Move move;
+    libchess::Move bestMove = move;
 
     // represents the best score we have found so far
     int bestScore = -999999999;
@@ -308,10 +347,10 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     int score = -999999999;
 
     // current ply (white moves + black moves from the starting position)
-    int ply = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : (board.full_move_count * 2);
+    int ply = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
 
     // transposition lookup
-    uint64_t hash = Zobrist::zobristHash(board);
+    uint64_t hash = board.hash();
     bool found = false;
     Node *node = table.probe(hash, found);
     if (found) {
@@ -342,7 +381,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         // this isn't the best way to do it, but imma do it anyways
         node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
         node->nodeType = -1;
-        node->bestMove.Invalid();
+        node->bestMove = libchess::Move(0);
         node->key = hash;
         node->nodeDepth = ply + depth;
     }
@@ -357,7 +396,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         && !check
         && depth <= 7
         && staticEval < alpha - 348 - 258 * depth * depth) {
-        score = quiesce<NonPV>(board, alpha - 1, alpha);
+        score = quiescence<NonPV>(board, alpha - 1, alpha);
         if (score < alpha) {
             return score;
         }
@@ -369,19 +408,15 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         && !check
         && staticEval >= beta
         && depth >= 4
-        && nonPawnMaterial(board.WhiteToPlay()) > 1300) {
-
-        // we pass an invalid move to make move to represent a passing turn
-        thc::Move nullMove;
-        nullMove.Invalid();
+        && nonPawnMaterial(!board.side_to_move(), board) > 1300) {
 
         nullAllowed = false;
 
         int R = depth >= 6 ? 3 : 2;
 
-        makeMove(board, nullMove);
+        board.make_null_move();
         int nullScore = -negamax<NonPV>(board, depth - R - 1, -beta, -beta + 1);
-        undoMove(board, nullMove);
+        board.unmake_move();
 
         nullAllowed = true;
 
@@ -395,7 +430,7 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
 
     // generate a move list
-    std::vector<std::tuple<int, thc::Move>> moveList;
+    std::vector<std::tuple<int, libchess::Move>> moveList;
     if (found) {
         moveList = getMoveList(board, node);
     }
@@ -406,11 +441,10 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     // if the move list is empty, we found mate or stalemate and the current player lost
     if (moveList.empty()){
         // find out how the game ended
-        thc::TERMINAL endType = thc::NOT_TERMINAL;
-        board.Evaluate(endType);
+        libchess::Position::GameState endType = board.game_state();
 
         // if it's mate, return "-infinity"
-        if (endType == thc::TERMINAL_WCHECKMATE || endType == thc::TERMINAL_BCHECKMATE) {
+        if (endType == libchess::Position::GameState::CHECKMATE) {
             return -999999999;
         }
 
@@ -435,17 +469,22 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         for (int i = 0; i < moveList.size(); i++) {
             move = pickNextMove(moveList, i);
 
-            makeMove(board, move);
+            // search only legal moves
+            if (!board.is_legal_move(move)) {
+                continue;
+            }
+
+            board.make_move(move);
 
             // perform a qsearch to verify that the move still is less than beta
-            score = -quiesce<NonPV>(board, -probCutBeta, -probCutBeta + 1);
+            score = -quiescence<NonPV>(board, -probCutBeta, -probCutBeta + 1);
 
             // if the qsearch holds, do a regular one
             if (score >= probCutBeta) {
                 score = -negamax<NonPV>(board, depth - 4, -probCutBeta, -probCutBeta + 1);
             }
 
-            undoMove(board, move);
+            board.unmake_move();
 
             if (score >= probCutBeta) {
                 // write to the node if we have better information
@@ -483,21 +522,26 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
     for (int i = 0; i < moveList.size(); i++) {
         move = pickNextMove(moveList, i);
 
+        // search only legal moves
+        if (!board.is_legal_move(move)) {
+            continue;
+        }
+
         movesExplored++;
 
         // futility pruning
         if (futile
-            && move.capture == ' '
-            && !(move.special >= thc::SPECIAL_PROMOTION_QUEEN && move.special <= thc::SPECIAL_PROMOTION_KNIGHT)) {
+            && move.type() != libchess::Move::Type::CAPTURE
+            && move.type() != libchess::Move::Type::PROMOTION) {
             // there is one check we need to do before pruning that requires the move to
             // be made.  I put it separately so that we don't make the move and unmake it
             // every single iteration
-            makeMove(board, move);
-            if (!(board.WhiteToPlay() ? board.AttackedPiece(board.wking_square) : board.AttackedPiece(board.bking_square))) {
-                undoMove(board, move);
+            board.make_move(move);
+            if (!board.in_check()) {
+                board.unmake_move();
                 continue;
             }
-            undoMove(board, move);
+            board.unmake_move();
         }
 
 
@@ -506,25 +550,25 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
         doFullSearch = false;
         if (!PvNode && depth > 1 && i > 2 && isLateReduction(board, move)) {
             int reduction = i > 6 ? 2 : 1;
-            makeMove(board, move);
+            board.make_move(move);
             score = -negamax<NonPV>(board, depth - reduction - 1, -(alpha + 1), -alpha);
             doFullSearch = score > alpha && score < beta;
-            undoMove(board, move);
+            board.unmake_move();
         }
         else {
             doFullSearch = !PvNode || i > 0;
         }
         if (doFullSearch) {
-            makeMove(board, move);
+            board.make_move(move);
             score = -negamax<NonPV>(board, depth - 1, -(alpha + 1), -alpha);
-            undoMove(board, move);
+            board.unmake_move();
         }
 
         // full PV search for the first move and for moves that fail in the zero window
         if (PvNode && (i == 0 || (score > alpha && score < beta))) {
-            makeMove(board, move);
+            board.make_move(move);
             score = -negamax<PV>(board, depth - 1, -beta, -alpha);
-            undoMove(board, move);
+            board.unmake_move();
         }
 
         if (score > bestScore) {
@@ -534,9 +578,8 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
                 if (score >= beta) {
                     cutNodes++;
                     node->nodeType = 2;
-                    if (move.capture == ' ') {
+                    if (move.type() == libchess::Move::Type::CAPTURE) {
                         insertKiller(ply - rootPly, move);
-                        history[board.WhiteToPlay()][pieceIndex[board.squares[static_cast<int>(move.src)]]][board.squares[static_cast<int>(move.dst)]] += depth*depth;
                     }
                     node->nodeScore = score;
                     node->bestMove = bestMove;
@@ -557,34 +600,29 @@ int Anduril::negamax(thc::ChessRules &board, int depth, int alpha, int beta) {
 
 // calls negamax and keeps track of the best move
 // this is the debug version, it only uses console control and has zero UCI function
-void Anduril::goDebug(thc::ChessRules &board, int depth) {
-    thc::Move bestMove;
-    bestMove.Invalid();
+void Anduril::goDebug(libchess::Position &board, int depth) {
+    libchess::Move bestMove(0);
 
     // start the clock
     auto start = std::chrono::high_resolution_clock::now();
 
     // this is for debugging
-    std::string boardFENs = board.ForsythPublish();
+    std::string boardFENs = board.fen();
     char *boardFEN = &boardFENs[0];
 
     int alpha = -999999999;
     int beta = 999999999;
     int bestScore = -999999999;
 
-    // set up the piece lists
-    clearPieceLists();
-    fillPieceLists(board);
-
     // set the killer vector to have the correct number of slots
     // and the root node's ply
     // the vector is padded a little at the end in case of the search being extended
-    killers = std::vector<std::vector<thc::Move>>(218); // 218 is the "max moves" defined in thc.h
+    killers = std::vector<std::vector<libchess::Move>>(218); // 218 is the "max moves" defined in thc.h
     for (auto & killer : killers) {
-        killer = std::vector<thc::Move>(2);
+        killer = std::vector<libchess::Move>(2);
     }
 
-    rootPly = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : board.full_move_count * 2;
+    rootPly = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
@@ -604,12 +642,12 @@ void Anduril::goDebug(thc::ChessRules &board, int depth) {
     int alphaTheSecond = alpha;
 
     // get the move list
-    std::vector<std::tuple<int, thc::Move>> moveListWithScores = getMoveList(board, nullptr);
+    std::vector<std::tuple<int, libchess::Move>> moveListWithScores = getMoveList(board);
 
     // this starts our move to search at the first move in the list
-    thc::Move move = std::get<1>(moveListWithScores[0]);
+    libchess::Move move = std::get<1>(moveListWithScores[0]);
 
-    if (!board.white){
+    if (board.side_to_move()){
         flipped = -1;
     }
 
@@ -634,13 +672,18 @@ void Anduril::goDebug(thc::ChessRules &board, int depth) {
                 move = std::get<1>(moveListWithScores[i]);
             }
 
-            makeMove(board, move);
+            // search only legal moves
+            if (!board.is_legal_move(move)) {
+                continue;
+            }
+
+            board.make_move(move);
             deep--;
             movesExplored++;
             depthNodes++;
             score = -negamax<PV>(board, deep, -beta, -alphaTheSecond);
             deep++;
-            undoMove(board, move);
+            board.unmake_move();
 
             if (score > bestScore || (score == -999999999 && bestScore == -999999999)) {
                 bestScore = score;
@@ -718,11 +761,9 @@ void Anduril::goDebug(thc::ChessRules &board, int depth) {
 
 
         // for debugging
-        if (boardFEN != board.ForsythPublish()) {
+        if (boardFEN != board.fen()) {
             std::cout << "Board does not match original at depth: " << deep << std::endl;
-            board.Forsyth(boardFEN);
-            clearPieceLists();
-            fillPieceLists(board);
+            board.from_fen(boardFEN);
         }
 
 
@@ -737,7 +778,7 @@ void Anduril::goDebug(thc::ChessRules &board, int depth) {
     // stop the clock
     auto end = std::chrono::high_resolution_clock::now();
 
-    std::vector<thc::Move> PV = getPV(board, depth, bestMove);
+    std::vector<libchess::Move> PV = getPV(board, depth, bestMove);
 
     // output information about the search to the console
     // mostly info for debug, but still interesting to look at
@@ -759,14 +800,14 @@ void Anduril::goDebug(thc::ChessRules &board, int depth) {
     std::cout << missesStr + "\n" << "PV: ";
     std::string PVout = "[";
     for (int i = 0; i < PV.size(); i++) {
-        PVout += PV[i].TerseOut();
+        PVout += PV[i].to_str();
         if (i != PV.size() - 1) {
             PVout += ", ";
         }
     }
     PVout += "]";
     std::cout << PVout + "\n";
-    std::cout << "Moving: " << bestMove.TerseOut() << " with a score of " << (bestScore/ 100.0) * flipped << std::endl;
+    std::cout << "Moving: " << bestMove.to_str() << " with a score of " << (bestScore/ 100.0) * flipped << std::endl;
     std::chrono::duration<double, std::milli> timeElapsed = end - start;
     std::cout << "Time spent searching: " << timeElapsed.count() / 1000 << " seconds" << std::endl;
     std::cout << "Nodes per second: " << getMovesExplored() / (timeElapsed.count()/1000) << std::endl;
@@ -774,19 +815,18 @@ void Anduril::goDebug(thc::ChessRules &board, int depth) {
     cutNodes = 0;
     movesTransposed = 0;
     quiesceExplored = 0;
-    clearPieceLists();
 
-    makeMovePlay(board, bestMove);
+    board.make_move(bestMove);
 }
 
-bool Anduril::isDraw(thc::ChessRules &board) {
+bool Anduril::isDraw(libchess::Position &board) {
     // first check for 50 move rule
-    if (board.half_move_clock >= 100) {
+    if (board.halfmoves() >= 100) {
         return true;
     }
 
     // next check for repetition
-    uint64_t currentHash = Zobrist::zobristHash(board);
+    uint64_t currentHash = board.hash();
     int repetitions = 0;
     for (int i = 0; i < positionStack.size(); i++) {
         if (currentHash == positionStack[i]) {
@@ -801,58 +841,55 @@ bool Anduril::isDraw(thc::ChessRules &board) {
     return false;
 }
 
-int Anduril::nonPawnMaterial(bool whiteToPlay) {
+int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
+    int material = 0;
     if (whiteToPlay) {
-        return whiteKnights.size() * 300 + whiteBishops.size() * 300 + whiteRooks.size() * 500 + whiteQueens.size() * 900;
+        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE).popcount() * 300;
+        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() * 300;
+        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::WHITE).popcount() * 500;
+        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE).popcount() * 900;
+
+        return material;
     }
     else {
-        return blackKnights.size() * 300 + blackBishops.size() * 300 + blackRooks.size() * 500 + blackQueens.size() * 900;
+        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK).popcount() * 300;
+        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() * 300;
+        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::BLACK).popcount() * 500;
+        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK).popcount() * 900;
+
+        return material;
     }
 }
 
 // can we reduce the depth of our search for this move?
-bool Anduril::isLateReduction(thc::ChessRules &board, thc::Move &move) {
+bool Anduril::isLateReduction(libchess::Position &board, libchess::Move &move) {
     // don't reduce if the move is a capture
-    if (move.capture != ' ') {
+    if (board.is_capture_move(move)) {
         return false;
     }
 
     // don't reduce if the move is a promotion to a queen
-    if (static_cast<int>(move.special) == 6) {
+    if (board.is_promotion_move(move)) {
         return false;
     }
 
     // don't reduce if the side to move is in check, or on moves that give check
-    if (board.WhiteToPlay()) {
-        if (board.AttackedPiece(board.wking_square)) {
-            return false;
-        }
-        board.PushMove(move);
-        if (board.AttackedPiece(board.bking_square)) {
-            board.PopMove(move);
-            return false;
-        }
-        board.PopMove(move);
-
+    if (board.in_check()) {
+        return false;
     }
-    else {
-        if (board.AttackedPiece(board.bking_square)) {
-            return false;
-        }
-        board.PushMove(move);
-        if (board.AttackedPiece(board.wking_square)) {
-            board.PopMove(move);
-            return false;
-        }
-        board.PopMove(move);
+    board.make_move(move);
+    if (board.in_check()) {
+        board.unmake_move();
+        return false;
     }
+    board.unmake_move();
 
     // if we passed everything else, we can reduce
     return true;
 }
 
 // returns the next move to search
-thc::Move Anduril::pickNextMove(std::vector<std::tuple<int, thc::Move>> &moveListWithScores, int currentIndex) {
+libchess::Move Anduril::pickNextMove(std::vector<std::tuple<int, libchess::Move>> &moveListWithScores, int currentIndex) {
     for (int j = currentIndex + 1; j < moveListWithScores.size(); j++) {
         if (std::get<0>(moveListWithScores[currentIndex]) < std::get<0>(moveListWithScores[j])) {
             moveListWithScores[currentIndex].swap(moveListWithScores[j]);
@@ -862,611 +899,47 @@ thc::Move Anduril::pickNextMove(std::vector<std::tuple<int, thc::Move>> &moveLis
     return std::get<1>(moveListWithScores[currentIndex]);
 }
 
-// clears the piece lists
-void Anduril::clearPieceLists() {
-    whitePawns.clear();
-    blackPawns.clear();
-    whiteBishops.clear();
-    blackBishops.clear();
-    whiteKnights.clear();
-    blackKnights.clear();
-    whiteRooks.clear();
-    blackRooks.clear();
-    whiteQueens.clear();
-    blackQueens.clear();
-}
-
-// creates the piece lists for the board
-void Anduril::fillPieceLists(thc::ChessRules &board){
-    for (int i = 0; i < 64; i++) {
-        switch (board.squares[i]) {
-            case 'p':
-                blackPawns.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'P':
-                whitePawns.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'n':
-                blackKnights.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'N':
-                whiteKnights.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'b':
-                blackBishops.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'B':
-                whiteBishops.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'r':
-                blackRooks.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'R':
-                whiteRooks.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'q':
-                blackQueens.push_back(static_cast<const thc::Square>(i));
-                break;
-            case 'Q':
-                whiteQueens.push_back(static_cast<const thc::Square>(i));
-                break;
-        }
-    }
-}
-
-void Anduril::makeMove(thc::ChessRules &board, thc::Move move) {
-    int src = static_cast<int>(move.src);
-    int dst = static_cast<int>(move.dst);
-
-    // if the move was null, push it and skip the rest
-    if (!move.Valid()) {
-        board.PushMove(move);
-        positionStack.push_back(Zobrist::zobristHash(board));
-        return;
-    }
-
-    // adjust the piece lists to reflect the move
-    switch (board.squares[src]) {
-        // pawns require special attention in the case of a promotion
-        case 'p':
-            switch (move.special) {
-                case thc::SPECIAL_PROMOTION_QUEEN:
-                    for (int i = 0; i < blackPawns.size(); i++) {
-                        if (blackPawns[i] == move.src) {
-                            blackPawns.erase(blackPawns.begin() + i);
-                            blackQueens.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_ROOK:
-                    for (int i = 0; i < blackPawns.size(); i++) {
-                        if (blackPawns[i] == move.src) {
-                            blackPawns.erase(blackPawns.begin() + i);
-                            blackRooks.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_BISHOP:
-                    for (int i = 0; i < blackPawns.size(); i++) {
-                        if (blackPawns[i] == move.src) {
-                            blackPawns.erase(blackPawns.begin() + i);
-                            blackBishops.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-                case thc::SPECIAL_PROMOTION_KNIGHT:
-                    for (int i = 0; i < blackPawns.size(); i++) {
-                        if (blackPawns[i] == move.src) {
-                            blackPawns.erase(blackPawns.begin() + i);
-                            blackKnights.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-
-                default:
-                    for (int i = 0; i < blackPawns.size(); i++) {
-                        if (blackPawns[i] == move.src) {
-                            blackPawns[i] = move.dst;
-                            break;
-                        }
-                    }
-                    break;
-            }
-            break;
-        case 'P':
-            switch (move.special) {
-                case thc::SPECIAL_PROMOTION_QUEEN:
-                    for (int i = 0; i < whitePawns.size(); i++) {
-                        if (whitePawns[i] == move.src) {
-                            whitePawns.erase(whitePawns.begin() + i);
-                            whiteQueens.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_ROOK:
-                    for (int i = 0; i < whitePawns.size(); i++) {
-                        if (whitePawns[i] == move.src) {
-                            whitePawns.erase(whitePawns.begin() + i);
-                            whiteRooks.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_BISHOP:
-                    for (int i = 0; i < whitePawns.size(); i++) {
-                        if (whitePawns[i] == move.src) {
-                            whitePawns.erase(whitePawns.begin() + i);
-                            whiteBishops.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-                case thc::SPECIAL_PROMOTION_KNIGHT:
-                    for (int i = 0; i < whitePawns.size(); i++) {
-                        if (whitePawns[i] == move.src) {
-                            whitePawns.erase(whitePawns.begin() + i);
-                            whiteKnights.push_back(move.dst);
-                            break;
-                        }
-                    }
-                    break;
-
-                default:
-                    for (int i = 0; i < whitePawns.size(); i++) {
-                        if (whitePawns[i] == move.src) {
-                            whitePawns[i] = move.dst;
-                            break;
-                        }
-                    }
-                    break;
-            }
-            break;
-
-        case 'n':
-            for (int i = 0; i < blackKnights.size(); i++) {
-                if (blackKnights[i] == move.src) {
-                    blackKnights[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'N':
-            for (int i = 0; i < whiteKnights.size(); i++) {
-                if (whiteKnights[i] == move.src) {
-                    whiteKnights[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'b':
-            for (int i = 0; i < blackBishops.size(); i++) {
-                if (blackBishops[i] == move.src) {
-                    blackBishops[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'B':
-            for (int i = 0; i < whiteBishops.size(); i++) {
-                if (whiteBishops[i] == move.src) {
-                    whiteBishops[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'r':
-            for (int i = 0; i < blackRooks.size(); i++) {
-                if (blackRooks[i] == move.src) {
-                    blackRooks[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'R':
-            for (int i = 0; i < whiteRooks.size(); i++) {
-                if (whiteRooks[i] == move.src) {
-                    whiteRooks[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'q':
-            for (int i = 0; i < blackQueens.size(); i++) {
-                if (blackQueens[i] == move.src) {
-                    blackQueens[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-        case 'Q':
-            for (int i = 0; i < whiteQueens.size(); i++) {
-                if (whiteQueens[i] == move.src) {
-                    whiteQueens[i] = move.dst;
-                    break;
-                }
-            }
-            break;
-    }
-
-    // captures
-    if (move.capture != ' ' && (move.special != thc::SPECIAL_BEN_PASSANT && move.special != thc::SPECIAL_WEN_PASSANT)) {
-        switch (board.squares[dst]) {
-            case 'p':
-                for (int i = 0; i < blackPawns.size(); i++) {
-                    if (blackPawns[i] == move.dst) {
-                        blackPawns.erase(blackPawns.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'P':
-                for (int i = 0; i < whitePawns.size(); i++) {
-                    if (whitePawns[i] == move.dst) {
-                        whitePawns.erase(whitePawns.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'n':
-                for (int i = 0; i < blackKnights.size(); i++) {
-                    if (blackKnights[i] == move.dst) {
-                        blackKnights.erase(blackKnights.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'N':
-                for (int i = 0; i < whiteKnights.size(); i++) {
-                    if (whiteKnights[i] == move.dst) {
-                        whiteKnights.erase(whiteKnights.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'b':
-                for (int i = 0; i < blackBishops.size(); i++) {
-                    if (blackBishops[i] == move.dst) {
-                        blackBishops.erase(blackBishops.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'B':
-                for (int i = 0; i < whiteBishops.size(); i++) {
-                    if (whiteBishops[i] == move.dst) {
-                        whiteBishops.erase(whiteBishops.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'r':
-                for (int i = 0; i < blackRooks.size(); i++) {
-                    if (blackRooks[i] == move.dst) {
-                        blackRooks.erase(blackRooks.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'R':
-                for (int i = 0; i < whiteRooks.size(); i++) {
-                    if (whiteRooks[i] == move.dst) {
-                        whiteRooks.erase(whiteRooks.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'q':
-                for (int i = 0; i < blackQueens.size(); i++) {
-                    if (blackQueens[i] == move.dst) {
-                        blackQueens.erase(blackQueens.begin() + i);
-                        break;
-                    }
-                }
-                break;
-            case 'Q':
-                for (int i = 0; i < whiteQueens.size(); i++) {
-                    if (whiteQueens[i] == move.dst) {
-                        whiteQueens.erase(whiteQueens.begin() + i);
-                        break;
-                    }
-                }
-                break;
-        }
-    }
-    else if (move.special == thc::SPECIAL_BEN_PASSANT) {
-        for (int i = 0; i < whitePawns.size(); i++) {
-            if (whitePawns[i] == thc::make_square(thc::get_file(board.enpassant_target), '4')) {
-                whitePawns.erase(whitePawns.begin() + i);
-            }
-        }
-    }
-    else if (move.special == thc::SPECIAL_WEN_PASSANT) {
-        for (int i = 0; i < blackPawns.size(); i++) {
-            if (blackPawns[i] == thc::make_square(thc::get_file(board.enpassant_target), '5')) {
-                blackPawns.erase(blackPawns.begin() + i);
-            }
-        }
-    }
-
-    board.PushMove(move);
-
-    positionStack.push_back(Zobrist::zobristHash(board));
-}
-
-void Anduril::undoMove(thc::ChessRules &board, thc::Move move) {
-    int src = static_cast<int>(move.src);
-    int dst = static_cast<int>(move.dst);
-
-    board.PopMove(move);
-
-    positionStack.pop_back();
-
-    // if the move was null, skip the rest
-    if (!move.Valid()) {
-        return;
-    }
-
-    // adjust the piece lists to reflect the move
-    switch (board.squares[src]) {
-        // pawns require special attention in the case of a promotion
-        case 'p':
-            switch (move.special) {
-                case thc::SPECIAL_PROMOTION_QUEEN:
-                    for (int i = 0; i < blackQueens.size(); i++) {
-                        if (blackQueens[i] == move.dst) {
-                            blackQueens.erase(blackQueens.begin() + i);
-                            blackPawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_ROOK:
-                    for (int i = 0; i < blackRooks.size(); i++) {
-                        if (blackRooks[i] == move.dst) {
-                            blackRooks.erase(blackRooks.begin() + i);
-                            blackPawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_BISHOP:
-                    for (int i = 0; i < blackBishops.size(); i++) {
-                        if (blackBishops[i] == move.dst) {
-                            blackBishops.erase(blackBishops.begin() + i);
-                            blackPawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-                case thc::SPECIAL_PROMOTION_KNIGHT:
-                    for (int i = 0; i < blackKnights.size(); i++) {
-                        if (blackKnights[i] == move.dst) {
-                            blackKnights.erase(blackKnights.begin() + i);
-                            blackPawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-
-                default:
-                    for (int i = 0; i < blackPawns.size(); i++) {
-                        if (blackPawns[i] == move.dst) {
-                            blackPawns[i] = move.src;
-                            break;
-                        }
-                    }
-                    break;
-            }
-            break;
-        case 'P':
-            switch (move.special) {
-                case thc::SPECIAL_PROMOTION_QUEEN:
-                    for (int i = 0; i < whiteQueens.size(); i++) {
-                        if (whiteQueens[i] == move.dst) {
-                            whiteQueens.erase(whiteQueens.begin() + i);
-                            whitePawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_ROOK:
-                    for (int i = 0; i < whiteRooks.size(); i++) {
-                        if (whiteRooks[i] == move.dst) {
-                            whiteRooks.erase(whiteRooks.begin() + i);
-                            whitePawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-
-                case thc::SPECIAL_PROMOTION_BISHOP:
-                    for (int i = 0; i < whiteBishops.size(); i++) {
-                        if (whiteBishops[i] == move.dst) {
-                            whiteBishops.erase(whiteBishops.begin() + i);
-                            whitePawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-                case thc::SPECIAL_PROMOTION_KNIGHT:
-                    for (int i = 0; i < whiteKnights.size(); i++) {
-                        if (whiteKnights[i] == move.dst) {
-                            whiteKnights.erase(whiteKnights.begin() + i);
-                            whitePawns.push_back(move.src);
-                            break;
-                        }
-                    }
-                    break;
-
-                default:
-                    for (int i = 0; i < whitePawns.size(); i++) {
-                        if (whitePawns[i] == move.dst) {
-                            whitePawns[i] = move.src;
-                            break;
-                        }
-                    }
-                    break;
-            }
-            break;
-
-        case 'n':
-            for (int i = 0; i < blackKnights.size(); i++) {
-                if (blackKnights[i] == move.dst) {
-                    blackKnights[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'N':
-            for (int i = 0; i < whiteKnights.size(); i++) {
-                if (whiteKnights[i] == move.dst) {
-                    whiteKnights[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'b':
-            for (int i = 0; i < blackBishops.size(); i++) {
-                if (blackBishops[i] == move.dst) {
-                    blackBishops[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'B':
-            for (int i = 0; i < whiteBishops.size(); i++) {
-                if (whiteBishops[i] == move.dst) {
-                    whiteBishops[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'r':
-            for (int i = 0; i < blackRooks.size(); i++) {
-                if (blackRooks[i] == move.dst) {
-                    blackRooks[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'R':
-            for (int i = 0; i < whiteRooks.size(); i++) {
-                if (whiteRooks[i] == move.dst) {
-                    whiteRooks[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'q':
-            for (int i = 0; i < blackQueens.size(); i++) {
-                if (blackQueens[i] == move.dst) {
-                    blackQueens[i] = move.src;
-                    break;
-                }
-            }
-            break;
-        case 'Q':
-            for (int i = 0; i < whiteQueens.size(); i++) {
-                if (whiteQueens[i] == move.dst) {
-                    whiteQueens[i] = move.src;
-                    break;
-                }
-            }
-            break;
-    }
-
-    // captures
-    if (move.capture != ' ' && (move.special != thc::SPECIAL_BEN_PASSANT && move.special != thc::SPECIAL_WEN_PASSANT)) {
-        switch (move.capture) {
-            case 'p':
-                blackPawns.push_back(move.dst);
-                break;
-            case 'P':
-                whitePawns.push_back(move.dst);
-                break;
-            case 'n':
-                blackKnights.push_back(move.dst);
-                break;
-            case 'N':
-                whiteKnights.push_back(move.dst);
-                break;
-            case 'b':
-                blackBishops.push_back(move.dst);
-                break;
-            case 'B':
-                whiteBishops.push_back(move.dst);
-                break;
-            case 'r':
-                blackRooks.push_back(move.dst);
-                break;
-            case 'R':
-                whiteRooks.push_back(move.dst);
-                break;
-            case 'q':
-                blackQueens.push_back(move.dst);
-                break;
-            case 'Q':
-                whiteQueens.push_back(move.dst);
-                break;
-        }
-    }
-    else if (move.special == thc::SPECIAL_BEN_PASSANT) {
-        whitePawns.push_back(thc::make_square(thc::get_file(board.enpassant_target), '4'));
-    }
-    else if (move.special == thc::SPECIAL_WEN_PASSANT) {
-        blackPawns.push_back(thc::make_square(thc::get_file(board.enpassant_target), '5'));
-    }
-}
-
 // finds and returns the principal variation
-std::vector<thc::Move> Anduril::getPV(thc::ChessRules &board, int depth, thc::Move bestMove) {
-    std::vector<thc::Move> PV;
+std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth, libchess::Move bestMove) {
+    std::vector<libchess::Move> PV;
     uint64_t hash = 0;
     Node *node;
     bool found = true;
 
     // push the best move and add to the PV
     PV.push_back(bestMove);
-    board.PushMove(bestMove);
+    board.make_move(bestMove);
 
     // This loop hashes the board, finds the node associated with the current board
     // adds the best move we found to the PV, then pushes it to the board
-    hash = Zobrist::zobristHash(board);
+    hash = board.hash();
     node = table.probe(hash, found);
-    while (found && node->bestMove.src != node->bestMove.dst) {
-        PV.push_back(node->bestMove);
-        board.PushMove(node->bestMove);
-        hash = Zobrist::zobristHash(board);
+    while (found && node->bestMove.value() != 0) {
+        if (board.is_capture_move(node->bestMove) && board.piece_type_on(node->bestMove.to_square()) == std::nullopt) {
+            break;
+        }
+        // this will make sure we don't segfault
+        // I don't know the problem but this fixed it and the search does not appear to be affected
+        if (board.is_legal_move(node->bestMove)) {
+            PV.push_back(node->bestMove);
+            board.make_move(node->bestMove);
+        }
+        else {
+            break;
+        }
+        hash = board.hash();
         node = table.probe(hash, found);
         // in case of infinite loops of repeating moves
-        // I just capped it at 9 because I honestly don't care about lines
-        // calculated that long anyways
-        if (PV.size() > depth) {
+        // also check to see if the pv is still in the main search
+        if (PV.size() > depth || node->nodeDepth == -1) {
             break;
         }
     }
 
     // undoes each move in the PV so that we don't have a messed up board
     for (int i = PV.size() - 1; i >= 0; i--){
-        board.PopMove(PV[i]);
+        board.unmake_move();
     }
 
     return PV;
-}
-
-void Anduril::makeMovePlay(thc::ChessRules &board, thc::Move move) {
-    board.PlayMove(move);
-    positionStack.push_back(Zobrist::hashBoard(board));
 }

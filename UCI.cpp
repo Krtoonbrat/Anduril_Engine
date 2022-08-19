@@ -4,6 +4,7 @@
 
 // these includes are for finding/reading input only
 #ifdef WIN32
+#include <io.h>
 #include "windows.h"
 #else
 #include "sys/time.h"
@@ -15,14 +16,12 @@
 #include <chrono>
 #include <cmath>
 #include <iostream>
-#include <io.h>
 #include <string>
 
 #include "Anduril.h"
 #include "ConsoleGame.h"
+#include "libchess/Position.h"
 #include "UCI.h"
-#include "thc.h"
-#include "ZobristHasher.h"
 
 // all the UCI protocol stuff is going to be implemented
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
@@ -35,32 +34,26 @@ namespace UCI {
     const char* StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     void loop() {
-
         // first we turn off the stdin and stdout buffers
-        setbuf(stdin, NULL);
-        setbuf(stdout, NULL);
+        //setbuf(stdin, NULL);
+        //setbuf(stdout, NULL);
 
         // send engine info to the GUI
         char line[INPUTBUFFER];
         std::cout << "id name Anduril" << std::endl;
         std::cout << "id author Krtoonbrat" << std::endl;
         std::cout << "uciok" << std::endl;
-        std::cout << "option name pMG type spin default 100 min 50 max 300" << std::endl;
-        std::cout << "option name pEG type spin default 110 min 50 max 300" << std::endl;
-        std::cout << "option name kMG type spin default 337 min 100 max 500" << std::endl;
-        std::cout << "option name kEG type spin default 281 min 100 max 500" << std::endl;
-        std::cout << "option name bMG type spin default 365 min 100 max 500" << std::endl;
-        std::cout << "option name bEG type spin default 297 min 100 max 500" << std::endl;
-        std::cout << "option name rMG type spin default 477 min 300 max 700" << std::endl;
-        std::cout << "option name rEG type spin default 512 min 300 max 700" << std::endl;
-        std::cout << "option name qMG type spin default 1025 min 700 max 1200" << std::endl;
-        std::cout << "option name qEG type spin default 936 min 700 max 1200" << std::endl;
+        std::cout << "option name kMG type spin default 337 min 200 max 500" << std::endl;
+        std::cout << "option name kEG type spin default 281 min 200 max 500" << std::endl;
+        std::cout << "option name out type spin default 10 min 0 max 100" << std::endl;
+        std::cout << "option name trp type spin default 150 min 0 max 200" << std::endl;
+
+
 
         // set up the board, engine, book, and game state
-        thc::ChessRules board;
+        libchess::Position board(StartFEN);
         Anduril AI;
-        Book openingBook = Book(R"(..\book\Performance.bin)");
-        thc::TERMINAL gameOver = thc::NOT_TERMINAL;
+        Book openingBook = Book(R"(C:\Users\80hugkev\Documents\La libchess es la leche\Anduril\book\Performance.bin)");
 
         while (true) {
             // clear the line and flush stdout in case of buffer issues
@@ -101,16 +94,12 @@ namespace UCI {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
                 std::cout << "uciok" << std::endl;
-                std::cout << "option name pMG type spin default 100 min 50 max 300" << std::endl;
-                std::cout << "option name pEG type spin default 110 min 50 max 300" << std::endl;
-                std::cout << "option name kMG type spin default 337 min 100 max 500" << std::endl;
-                std::cout << "option name kEG type spin default 281 min 100 max 500" << std::endl;
-                std::cout << "option name bMG type spin default 365 min 100 max 500" << std::endl;
-                std::cout << "option name bEG type spin default 297 min 100 max 500" << std::endl;
-                std::cout << "option name rMG type spin default 477 min 300 max 700" << std::endl;
-                std::cout << "option name rEG type spin default 512 min 300 max 700" << std::endl;
-                std::cout << "option name qMG type spin default 1025 min 700 max 1200" << std::endl;
-                std::cout << "option name qEG type spin default 936 min 700 max 1200" << std::endl;
+                std::cout << "option name kMG type spin default 337 min 200 max 500" << std::endl;
+                std::cout << "option name kEG type spin default 281 min 200 max 500" << std::endl;
+                std::cout << "option name out type spin default 10 min 0 max 100" << std::endl;
+                std::cout << "option name trp type spin default 150 min 0 max 200" << std::endl;
+
+
             }
 
             // break the loop if quit is received
@@ -122,14 +111,6 @@ namespace UCI {
         char *ptr = NULL;
 
         // setoption name pMG value 100
-        if ((ptr = strstr(line, "pMG"))) {
-            AI.pMG = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "pEG"))) {
-            AI.pEG = atoi(ptr + 10);
-        }
-
         if ((ptr = strstr(line, "kMG"))) {
             AI.kMG = atoi(ptr + 10);
         }
@@ -138,33 +119,17 @@ namespace UCI {
             AI.kEG = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "bMG"))) {
-            AI.bMG = atoi(ptr + 10);
+        if ((ptr = strstr(line, "out"))) {
+            AI.out = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "bEG"))) {
-            AI.bEG = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "rMG"))) {
-            AI.rMG = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "rEG"))) {
-            AI.rEG = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "qMG"))) {
-            AI.qMG = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "qEG"))) {
-            AI.qEG = atoi(ptr + 10);
+        if ((ptr = strstr(line, "trp"))) {
+            AI.trp = atoi(ptr + 10);
         }
     }
 
-    void parseGo(char* line, thc::ChessRules &board, Anduril &AI, Book &openingBook) {
-        // reset all the limits
+    void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook) {
+        // reset all the limit
         int depth = -1; int moveTime = -1; int mtg = 25;
         int time = -1;
         int increment = -1;
@@ -172,7 +137,8 @@ namespace UCI {
         char *ptr = NULL;
 
         // the opening book stays open unless we are doing an infinite search
-        openingBook.openBook();
+        // jk no opening book rn cuz of CLOP
+        openingBook.closeBook();
 
         // commands
         if ((ptr = strstr(line, "infinite"))) {
@@ -180,19 +146,19 @@ namespace UCI {
             ;
         }
 
-        if ((ptr = strstr(line, "btime")) && !board.WhiteToPlay()) {
+        if ((ptr = strstr(line, "btime")) && board.side_to_move()) {
             time = atoi(ptr + 6);
         }
 
-        if ((ptr = strstr(line, "wtime")) && board.WhiteToPlay()) {
+        if ((ptr = strstr(line, "wtime")) && !board.side_to_move()) {
             time = atoi(ptr + 6);
         }
 
-        if ((ptr = strstr(line, "binc")) && !board.WhiteToPlay()) {
+        if ((ptr = strstr(line, "binc")) && board.side_to_move()) {
             increment = atoi(ptr + 5);
         }
 
-        if ((ptr = strstr(line, "winc")) && board.WhiteToPlay()) {
+        if ((ptr = strstr(line, "winc")) && !board.side_to_move()) {
             increment = atoi(ptr + 5);
         }
 
@@ -232,14 +198,14 @@ namespace UCI {
 
         /*
         std::cout << "time: " << time << " start: " << AI.startTime.time_since_epoch().count() <<
-        " stop: " << AI.stopTime.time_since_epoch().count() << " depth: " << AI.limits.depth << " timeset: " << AI.limits.timeSet << std::endl;
+        " stop: " << AI.stopTime.time_since_epoch().count() << " depth: " << AI.limit.depth << " timeset: " << AI.limit.timeSet << std::endl;
          */
 
         if (openingBook.getBookOpen()) {
-            thc::Move bestMove = openingBook.getBookMove(board);
-            if (bestMove.Valid()) {
-                std::cout << "bestmove " << bestMove.TerseOut() << std::endl;
-                AI.makeMovePlay(board, bestMove);
+            libchess::Move bestMove = openingBook.getBookMove(board);
+            if (bestMove.value() != 0) {
+                std::cout << "bestmove " << bestMove.to_str() << std::endl;
+                board.make_move(bestMove);
             }
             else {
                 //std::cout << "End of opening book, starting search" << std::endl;
@@ -252,7 +218,7 @@ namespace UCI {
         }
     }
 
-    void parsePosition(char* line, thc::ChessRules &board, Anduril &AI) {
+    void parsePosition(char* line, libchess::Position &board, Anduril &AI) {
         // first move the pointer past the "position" token
         line += 9;
 
@@ -261,36 +227,44 @@ namespace UCI {
 
         // instructions for different commands we could receive
         if (strncmp(line, "startpos", 8) == 0) {
-            board.Forsyth(StartFEN);
-            AI.positionStack.push_back(Zobrist::hashBoard(board));
+            board = *libchess::Position::from_fen(StartFEN);
+            AI.positionStack.push_back(board.hash());
         }
         else {
             ptrToken = strstr(line, "fen");
             if (ptrToken == NULL) {
-                board.Forsyth(StartFEN);
-                AI.positionStack.push_back(Zobrist::hashBoard(board));
+                board = *libchess::Position::from_fen(StartFEN);
+                AI.positionStack.push_back(board.hash());
             }
             else {
                 ptrToken += 4;
-                board.Forsyth(ptrToken);
-                AI.positionStack.push_back(Zobrist::hashBoard(board));
+                board = *libchess::Position::from_fen(ptrToken);
+                AI.positionStack.push_back(board.hash());
             }
         }
 
         // set up the variable for parsing the moves
         ptrToken = strstr(line, "moves");
-        thc::Move move;
-        move.Invalid();
+        libchess::Move move(0);
 
         // parse the moves the GUI sent
         if (ptrToken != NULL) {
             ptrToken += 6;
             while (*ptrToken) {
-                move.TerseIn(&board, ptrToken);
-                if (!move.Valid()) { break; }
-                AI.makeMovePlay(board, move);
-                AI.positionStack.push_back(Zobrist::hashBoard(board));
-                while (*ptrToken && *ptrToken != ' ') { ptrToken++; }
+                std::string moveStr;
+                if (ptrToken[4] == ' ' || ptrToken[4] == '\n') {
+                    moveStr = std::string(ptrToken, 4);
+                }
+                else {
+                    moveStr = std::string(ptrToken, 5);
+                }
+                move = *libchess::Move::from(moveStr);
+                if (move.value() == 0) { break; }
+                board.make_move(move);
+                AI.positionStack.push_back(board.hash());
+                while (*ptrToken && *ptrToken != ' ') {
+                    ptrToken++;
+                }
                 ptrToken++;
             }
         }
@@ -363,13 +337,13 @@ namespace UCI {
 
 // calls negamax and keeps track of the best move
 // this version will also interact with UCI
-void Anduril::go(thc::ChessRules &board) {
-    thc::Move bestMove;
-    bestMove.Invalid();
-    thc::Move prevBestMove = bestMove;
+void Anduril::go(libchess::Position &board) {
+    std::cout << board.fen() << std::endl;
+    libchess::Move bestMove(0);
+    libchess::Move prevBestMove = bestMove;
 
     // this is for debugging
-    std::string boardFENs = board.ForsythPublish();
+    std::string boardFENs = board.fen();
     char *boardFEN = &boardFENs[0];
 
     int alpha = -999999999;
@@ -377,19 +351,15 @@ void Anduril::go(thc::ChessRules &board) {
     int bestScore = -999999999;
     int prevBestScore = bestScore;
 
-    // set up the piece lists
-    clearPieceLists();
-    fillPieceLists(board);
-
     // set the killer vector to have the correct number of slots
     // and the root node's ply
     // the vector is padded a little at the end in case of the search being extended
-    killers = std::vector<std::vector<thc::Move>>(218); // 218 is the "max moves" defined in thc.h
+    killers = std::vector<std::vector<libchess::Move>>(218); // 218 is the "max moves" defined in thc.h
     for (auto & killer : killers) {
-        killer = std::vector<thc::Move>(2);
+        killer = std::vector<libchess::Move>(2);
     }
 
-    rootPly = board.WhiteToPlay() ? (board.full_move_count * 2) - 1 : board.full_move_count * 2;
+    rootPly = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
@@ -409,12 +379,12 @@ void Anduril::go(thc::ChessRules &board) {
     int alphaTheSecond = alpha;
 
     // get the move list
-    std::vector<std::tuple<int, thc::Move>> moveListWithScores = getMoveList(board, nullptr);
+    std::vector<std::tuple<int, libchess::Move>> moveListWithScores = getMoveList(board);
 
     // this starts our move to search at the first move in the list
-    thc::Move move = std::get<1>(moveListWithScores[0]);
+    libchess::Move move = std::get<1>(moveListWithScores[0]);
 
-    if (!board.white){
+    if (board.side_to_move()){
         flipped = -1;
     }
 
@@ -444,28 +414,26 @@ void Anduril::go(thc::ChessRules &board) {
             }
 
             // find the next best move to search
-            // skips this step if we are on the first depth because all scores will be zero
-            if (deep != 1) {
-                move = pickNextMove(moveListWithScores, i);
-            }
-            else {
-                move = std::get<1>(moveListWithScores[i]);
+            move = pickNextMove(moveListWithScores, i);
+            // search only legal moves
+            if (!board.is_legal_move(move)) {
+                continue;
             }
             end = std::chrono::steady_clock::now();
             timeElapsed = end - startTime;
-            /*
-            if (timeElapsed.count() >= 1000) {
-                std::cout << "info currmove " << move.TerseOut() << " currmovenumber " << i + 1 << std::endl;
-            }
-             */
 
-            makeMove(board, move);
+            if (timeElapsed.count() >= 1000) {
+                std::cout << "info currmove " << move.to_str() << " currmovenumber " << i + 1 << std::endl;
+            }
+
+
+            board.make_move(move);
             deep--;
             movesExplored++;
             depthNodes++;
             score = -negamax<PV>(board, deep, -beta, -alphaTheSecond);
             deep++;
-            undoMove(board, move);
+            board.unmake_move();
 
             if (score > bestScore || (score == -999999999 && bestScore == -999999999)) {
                 bestScore = score;
@@ -487,24 +455,25 @@ void Anduril::go(thc::ChessRules &board) {
         if (!incomplete) {
             prevBestMove = bestMove;
             prevBestScore = bestScore;
+            aspMissesH = 0, aspMissesL = 0;
         }
 
         // send info to the GUI
         end = std::chrono::steady_clock::now();
         timeElapsed = end - startTime;
 
-        /*
-        std::cout << "info score cp " << prevBestScore << " depth " << deep << " nodes " <<
-        movesExplored << " nps " << getMovesExplored() / (timeElapsed.count()/1000) << " time " << timeElapsed.count();
-         */
 
-        std::vector<thc::Move> PV = getPV(board, limits.depth, bestMove);
+        std::cout << "info score cp " << prevBestScore << " depth " << deep << " nodes " <<
+        movesExplored << " nps " << (int)(getMovesExplored() / (timeElapsed.count()/1000)) << " time " << timeElapsed.count();
+
+        std::vector<libchess::Move> PV = getPV(board, deep, bestMove);
         std::string pv = "";
         for (auto m : PV) {
-            pv += " " + m.TerseOut();
+            pv += " " + m.to_str();
         }
 
         std::cout << " pv" << pv << std::endl;
+
 
         // check if we found mate
         if (bestScore == 999999999 || bestScore == -999999999) {
@@ -515,15 +484,15 @@ void Anduril::go(thc::ChessRules &board) {
         // we only actually use the aspiration window at depths greater than 4.
         // this is because we don't have a decent picture of the position yet
         // and the search falls outside the window often causing instability
-        if (deep > 5) {
+        if (deep >= 4) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
                 if (!limits.timeSet) { finalDepth = false; }
                 misses.push_back(deep);
                 aspMissesL++;
-                alpha = bestScore - 50 * (std::pow(3, aspMissesL));
-                beta = bestScore + 50 * (std::pow(3, aspMissesH));
+                alpha = bestScore - 25 * (std::pow(3, aspMissesL));
+                beta = bestScore + 25 * (std::pow(3, aspMissesH));
                 research = true;
             }
                 // fail high
@@ -531,14 +500,14 @@ void Anduril::go(thc::ChessRules &board) {
                 if (!limits.timeSet) { finalDepth = false; }
                 misses.push_back(deep);
                 aspMissesH++;
-                alpha = bestScore - 50 * (std::pow(3, aspMissesL));
-                beta = bestScore + 50 * (std::pow(3, aspMissesH));
+                alpha = bestScore - 25 * (std::pow(3, aspMissesL));
+                beta = bestScore + 25 * (std::pow(3, aspMissesH));
                 research = true;
             }
                 // the search didn't fall outside the window, we can move to the next depth
             else {
-                alpha = bestScore - 50 * (std::pow(3, aspMissesL));
-                beta = bestScore + 50 * (std::pow(3, aspMissesH));
+                alpha = bestScore - 25 * (std::pow(3, aspMissesL));
+                beta = bestScore + 25 * (std::pow(3, aspMissesH));
                 deep++;
                 research = false;
             }
@@ -566,11 +535,9 @@ void Anduril::go(thc::ChessRules &board) {
 
 
         // for debugging
-        if (boardFEN != board.ForsythPublish()) {
+        if (boardFEN != board.fen()) {
             std::cout << "Board does not match original at depth: " << deep << std::endl;
-            board.Forsyth(boardFEN);
-            clearPieceLists();
-            fillPieceLists(board);
+            board.from_fen(boardFEN);
         }
 
 
@@ -582,18 +549,33 @@ void Anduril::go(thc::ChessRules &board) {
         }
     }
 
-    std::vector<thc::Move> PV = getPV(board, limits.depth, bestMove);
+    std::vector<libchess::Move> PV = getPV(board, deep - 1, bestMove);
+    std::string pv = "";
+    for (auto m : PV) {
+        pv += " " + m.to_str();
+    }
 
     setMovesExplored(0);
     cutNodes = 0;
     movesTransposed = 0;
     quiesceExplored = 0;
-    clearPieceLists();
     stopped = false;
 
     // tell the GUI what move we want to make
-    std::cout << "info score cp " << prevBestScore << std::endl;
-    std::cout << "bestmove " << prevBestMove.TerseOut() << std::endl;
+    if (prevBestScore == 999999999) {
+        int distance = (PV.size() / 2) + (PV.size() % 2);
+        std::cout << "info score mate " << distance << " depth " << (deep - 1) << " pv" << pv << std::endl;
+    }
+    else if (prevBestScore == -999999999) {
+        int distance = -(PV.size() / 2) + -(PV.size() % 2);
+        std::cout << "info score mate " << distance << " depth " << (deep - 1) << " pv" << pv << std::endl;
+    }
+    else {
+        std::cout << "info score cp " << prevBestScore << " depth " << (deep - 1) << " pv" << pv << std::endl;
+    }
+    std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
 
-    makeMovePlay(board, bestMove);
+    board.make_move(prevBestMove);
+
+    std::cout << board.fen() << std::endl;
 }

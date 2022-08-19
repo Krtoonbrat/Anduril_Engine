@@ -7,7 +7,6 @@
 
 #include "Anduril.h"
 #include "PolyglotBook.h"
-#include "thc.h"
 #include "ZobristHasher.h"
 
 // opens a book
@@ -47,13 +46,13 @@ void Book::freeBook() {
 }
 
 // finds and returns a book move for the position
-thc::Move Book::getBookMove(thc::ChessRules &board) {
+libchess::Move Book::getBookMove(libchess::Position &board) {
     uint64_t key = Zobrist::zobristHash(board);
     int index = 0;
     bookEntry *entry;
     uint16_t move;
-    thc::Move bookMoves[32];
-    thc::Move tempMove;
+    libchess::Move bookMoves[32];
+    libchess::Move tempMove;
     int count = 0;
     std::random_device random;
 
@@ -61,7 +60,7 @@ thc::Move Book::getBookMove(thc::ChessRules &board) {
         if (key == endian_swap_u64(entry->key)) {
             move = endian_swap_u16(entry->move);
             tempMove = convertPolyToInternal(move, board);
-            if (tempMove.Valid()) {
+            if (tempMove.value() != 0) {
                 bookMoves[count++] = tempMove;
                 if (count > 32) {
                     break;
@@ -75,20 +74,20 @@ thc::Move Book::getBookMove(thc::ChessRules &board) {
         tempMove = bookMoves[random() % count];
     }
     else {
-        tempMove.Invalid();
+        tempMove = libchess::Move(0);
     }
 
     return tempMove;
 }
 
-thc::Move Book::convertPolyToInternal(uint16_t move, thc::ChessRules &board) {
+libchess::Move Book::convertPolyToInternal(uint16_t move, libchess::Position &board) {
     int fromFile = (move >> 6) & 7;
     int fromRank = (move >> 9) & 7;
     int toFile = (move >> 0) & 7;
     int toRank = (move >> 3) & 7;
     int promotion = (move >> 12) & 7;
     std::string movestr = "";
-    thc::Move output;
+    std::optional<libchess::Move> output;
 
     movestr += intToFile[fromFile];
     movestr += intToRank[fromRank];
@@ -106,9 +105,12 @@ thc::Move Book::convertPolyToInternal(uint16_t move, thc::ChessRules &board) {
         }
     }
 
-    output.TerseIn(&board, movestr.c_str());
+    output = libchess::Move::from(movestr);
 
-    return output;
+    if (output.has_value()) {
+        return *output;
+    }
+    return libchess::Move(0);
 
 }
 

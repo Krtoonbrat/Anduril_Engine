@@ -7,7 +7,7 @@
 
 #include <fstream>
 
-#include "thc.h"
+#include "libchess/Position.h"
 
 // this struct contains the information for book entries
 struct bookEntry {
@@ -24,10 +24,10 @@ public:
     ~Book() { freeBook(); }
 
     // getters and setters
-    bookEntry* getEntries() { return entries; }
-    long getNumEntries() const { return numEntries; }
-    bool getBookOpen() const { return bookOpen; }
-    void flipBookOpen() { bookOpen = !bookOpen; }
+    inline bookEntry* getEntries() { return entries; }
+    inline long getNumEntries() const { return numEntries; }
+    inline bool getBookOpen() const { return bookOpen; }
+    inline void flipBookOpen() { bookOpen = !bookOpen; }
     inline void closeBook() { bookOpen = false; }
     inline void openBook() { bookOpen = true; }
 
@@ -36,9 +36,9 @@ public:
     void freeBook();
 
     // finds and returns a book move for the position
-    thc::Move getBookMove(thc::ChessRules &board);
+    libchess::Move getBookMove(libchess::Position &board);
 
-    thc::Move convertPolyToInternal(uint16_t move, thc::ChessRules &board);
+    libchess::Move convertPolyToInternal(uint16_t move, libchess::Position &board);
 
     uint16_t endian_swap_u16(uint16_t x);
 

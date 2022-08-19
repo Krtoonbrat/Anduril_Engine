@@ -4,7 +4,7 @@
 
 #include <unordered_map>
 
-#include "thc.h"
+#include "libchess/Position.h"
 
 #ifndef ANDURIL_ENGINE_ZOBRISTHASHER_H
 #define ANDURIL_ENGINE_ZOBRISTHASHER_H
@@ -12,25 +12,19 @@
 namespace Zobrist {
 
     // calculates a zobristHash hash of the position
-    uint64_t zobristHash(thc::ChessRules &board);
+    uint64_t zobristHash(libchess::Position &board);
 
     // calculates the board part of a zobristHash hash
-    uint64_t hashBoard(thc::ChessRules &board);
+    uint64_t hashBoard(libchess::Position &board);
 
     // calculates hashing for castling rights
-    uint64_t hashCastling(thc::ChessRules &board);
+    uint64_t hashCastling(libchess::Position &board);
 
     // calculates hashing for en passant
-    uint64_t hashEP(thc::ChessRules &board);
+    uint64_t hashEP(libchess::Position &board);
 
     // calculates the hash for who's turn it is
-    uint64_t hashTurn(thc::ChessRules &board);
-
-    // calculates a hash for just pawns
-    // this is used for the pawn transposition table
-    // since the pawn score only depends on the position of the pawns
-    // we can just calculate the hash of the pawns position
-    uint64_t hashPawns(thc::ChessRules &board);
+    uint64_t hashTurn(libchess::Position &board);
 
     // offsets for each piece
     enum piece {PAWN=0, KNIGHT, BISHOP, ROOK, QUEEN, KING};

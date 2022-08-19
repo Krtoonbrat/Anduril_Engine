@@ -10,9 +10,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "limits.h"
+#include "limit.h"
+#include "libchess/Position.h"
 #include "Node.h"
-#include "thc.h"
 #include "TranspositionTable.h"
 #include "PolyglotBook.h"
 
@@ -24,49 +24,47 @@ public:
 
     // calls negamax and keeps track of the best move
     // this version will also interact with UCI
-    void go(thc::ChessRules &board);
+    void go(libchess::Position &board);
 
     // the negamax function.  Does the heavy lifting for the search
     template <NodeType nodeType>
-    int negamax(thc::ChessRules &board, int depth, int alpha, int beta);
+    int negamax(libchess::Position &board, int depth, int alpha, int beta);
 
-    // the quiesce search
+    // the quiescence search
     // searches possible captures to make sure we aren't mis-evaluating certain positions
     template <NodeType nodeType>
-    int quiesce(thc::ChessRules &board, int alpha, int beta);
+    int quiescence(libchess::Position &board, int alpha, int beta);
 
     // generates a static evaluation of the board
-    int evaluateBoard(thc::ChessRules &board);
+    int evaluateBoard(libchess::Position &board);
 
     // calls negamax and keeps track of the best move
     // this is the debug version, it only uses console control and has zero UCI function
-    void goDebug(thc::ChessRules &board, int depth);
+    void goDebug(libchess::Position &board, int depth);
 
     // getter and setter for moves explored
     int getMovesExplored() const { return movesExplored; }
 
     void setMovesExplored(int moves) { movesExplored = moves; }
 
-    // generates a move list in the order we want to search them
-    std::vector<std::tuple<int, thc::Move>> getMoveList(thc::ChessRules &board, Node *node);
+    // generates a move list of pseudo-legal moves we want to search
+    std::vector<std::tuple<int, libchess::Move>> getMoveList(libchess::Position &board, Node *node);
+
+    // generates a move list of legal moves we want to search
+    std::vector<std::tuple<int, libchess::Move>> getMoveList(libchess::Position &board);
 
     // generates a move list with only captures
-    std::vector<std::tuple<int, thc::Move>> getQMoveList(thc::ChessRules &board, Node *node);
+    std::vector<std::tuple<int, libchess::Move>> getQMoveList(libchess::Position &board, Node *node);
 
     // finds and returns the principal variation
-    std::vector<thc::Move> getPV(thc::ChessRules &board, int depth, thc::Move bestMove);
-
-    // this version of make move uses the "play move" function instead of "push move"
-    // it should only be used on moves that are final (player moves and the move the engine chose)
-    // the reason we need this is to add the board position to the position stack
-    void makeMovePlay(thc::ChessRules &board, thc::Move move);
+    std::vector<libchess::Move> getPV(libchess::Position &board, int depth, libchess::Move bestMove);
 
     // stores the zobrist hash of previous positions to find threefold repetition
     // this is public so that we can add the start position from outside the object
     std::vector<uint64_t> positionStack;
 
     // the transposition table
-    TranspositionTable table = TranspositionTable(1024);
+    TranspositionTable table = TranspositionTable(256);
 
     // pawn transposition table
     HashTable<SimpleNode, 128> pTable = HashTable<SimpleNode, 128>();
@@ -74,8 +72,8 @@ public:
     // transposition table for evaluations
     HashTable<SimpleNode, 128> evalTable = HashTable<SimpleNode, 128>();
 
-    // the limits the GUI could send
-    limits limits;
+    // the limit the GUI could send
+    limit limits;
 
     // time we started the search
     std::chrono::time_point<std::chrono::steady_clock> startTime;
@@ -90,25 +88,11 @@ public:
     bool stopped = false;
 
     // values for CLOP to tune
-    // pawn value
-    int pMG = 100;
-    int pEG = 110;
-
-    // knight value
+    // knight values
     int kMG = 337;
     int kEG = 281;
-
-    // bishop value
-    int bMG = 365;
-    int bEG = 297;
-
-    // rook value
-    int rMG = 477;
-    int rEG = 512;
-
-    // queen value
-    int qMG = 1025;
-    int qEG = 936;
+    int out = 10;
+    int trp = 150;
 
 private:
     // total number of moves Anduril searched
@@ -129,45 +113,17 @@ private:
     // the ply of the root node
     int rootPly = 0;
 
-    // piece location lists
-    std::vector<thc::Square> whitePawns;
-    std::vector<thc::Square> blackPawns;
-
-    std::vector<thc::Square> whiteKnights;
-    std::vector<thc::Square> blackKnights;
-
-    std::vector<thc::Square> whiteBishops;
-    std::vector<thc::Square> blackBishops;
-
-    std::vector<thc::Square> whiteRooks;
-    std::vector<thc::Square> blackRooks;
-
-    std::vector<thc::Square> whiteQueens;
-    std::vector<thc::Square> blackQueens;
-
     // returns the amount of non pawn material (excluding kings)
-    int nonPawnMaterial(bool whiteToPlay);
+    int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
 
     // can we reduce the depth of our search for this move?
-    bool isLateReduction(thc::ChessRules &board, thc::Move &move);
+    bool isLateReduction(libchess::Position &board, libchess::Move &move);
 
     // returns the next move to search
-    thc::Move pickNextMove(std::vector<std::tuple<int, thc::Move>> &moveListWithScores, int currentIndex);
-
-    // creates the piece lists for the board
-    void fillPieceLists(thc::ChessRules &board);
-
-    // clears the piece lists
-    void clearPieceLists();
-
-    // make a move and update the board and piece lists
-    void makeMove(thc::ChessRules &board, thc::Move move);
-
-    // undo a move and update the board and piece lists
-    void undoMove (thc::ChessRules &board, thc::Move move);
+    libchess::Move pickNextMove(std::vector<std::tuple<int, libchess::Move>> &moveListWithScores, int currentIndex);
 
     // insert a move to the killer list
-    void insertKiller(int ply, thc::Move move) {
+    void insertKiller(int ply, libchess::Move move) {
         if (std::count(killers[ply].begin(), killers[ply].end(), move) == 0) {
             killers[ply][0] = killers[ply][1];
             killers[ply][1] = move;
@@ -176,40 +132,37 @@ private:
 
     // finds the raw material score for the position
     // it returns a pointer to an array containing a middlegame and endgame value
-    std::vector<int> getMaterialScore(thc::ChessRules &board);
+    std::vector<int> getMaterialScore(libchess::Position &board);
 
     // gets the phase of the game for evaluation
-    double getPhase(thc::ChessRules &board);
+    double getPhase(libchess::Position &board);
 
     // finds the pawn structure bonus for the position
-    int getPawnScore(thc::ChessRules &board);
+    int getPawnScore(libchess::Position &board);
 
     // finds the king safety bonus for the position
-    int getKingSafety(thc::ChessRules &board, thc::Square whiteKing, thc::Square blackKing);
+    int getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing);
 
     // evaluates knights for tropism
-    void evaluateKnights(thc::ChessRules &board, thc::Square square, bool white);
+    void evaluateKnights(libchess::Position &board, bool white, libchess::Square square);
 
     // evaluates bishops for tropism
-    void evaluateBishops(thc::ChessRules &board, thc::Square square, bool white);
+    void evaluateBishops(libchess::Position &board, bool white, libchess::Square square);
 
     // evaluates rooks for tropism
-    void evaluateRooks(thc::ChessRules &board, thc::Square square, bool white);
+    void evaluateRooks(libchess::Position &board, bool white, libchess::Square square);
 
     // evaluates queens for tropism
-    void evaluateQueens(thc::ChessRules &board, thc::Square square, bool white);
+    void evaluateQueens(libchess::Position &board, bool white, libchess::Square square);
 
     // gives a score to each capture
-    int MVVLVA(thc::ChessRules &board, int src, int dst);
+    int MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst);
 
     // returns if the position is a draw
-    bool isDraw(thc::ChessRules &board);
+    bool isDraw(libchess::Position &board);
 
     // killer moves
-    std::vector<std::vector<thc::Move>> killers;
-
-    // history heuristic
-    int history[2][6][64] = {0};
+    std::vector<std::vector<libchess::Move>> killers;
 
     // futility margins
     int margin[4] = {0, 200, 300, 500};
@@ -227,8 +180,8 @@ private:
     int attackWeight[2] = {0};
 
     // contains the squares that are the "king zone"
-    std::unordered_set<thc::Square> kingZoneW;
-    std::unordered_set<thc::Square> kingZoneB;
+    libchess::Bitboard kingZoneWBB;
+    libchess::Bitboard kingZoneBBB;
 
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', 100},
@@ -243,26 +196,14 @@ private:
                                                  {'r', -500},
                                                  {'q', -900},
                                                  {'k', -20000}};
-
-    // this will return the index value for the history heuristic
-    std::unordered_map<char, int> pieceIndex = {{'P', 0},
-                                                {'N', 1},
-                                                {'B', 2},
-                                                {'R', 3},
-                                                {'Q', 4},
-                                                {'K', 5},
-                                                {'p', 0},
-                                                {'n', 1},
-                                                {'b', 2},
-                                                {'r', 3},
-                                                {'q', 4},
-                                                {'k', 5}};
+    // piece values used for see
+    std::array<int, 6> seeValues = {100, 300, 300, 500, 900, 0};
 
     // this will be used to make sure the same color doesn't do a null move twice in a row
     bool nullAllowed = true;
 
     // piece square tables
-    // these are set up from white's perspective, and their indexing is
+    // these are set up from black's perspective, and their indexing is
     // the same as the representation for squares
 
     /* values from Rofchade: http://www.talkchess.com/forum3/viewtopic.php?f=2&t=68311&start=19 */

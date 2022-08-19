@@ -5,11 +5,11 @@
 #ifndef ANDURIL_ENGINE_NODE_H
 #define ANDURIL_ENGINE_NODE_H
 
-#include "thc.h"
+#include "libchess/Position.h"
 
 class Node {
 public:
-    Node() {nodeScore = -999999999; nodeType = -1; bestMove.Invalid(); nodeDepth = -99; key = 0;};
+    Node() {nodeScore = -999999999; nodeType = -1; bestMove = libchess::Move(0); nodeDepth = -99; key = 0;};
 
     // the evaluation of the node
     int nodeScore;
@@ -27,7 +27,7 @@ public:
     uint64_t key;
 
     // the best move for the node
-    thc::Move bestMove;
+    libchess::Move bestMove;
 
 
 };

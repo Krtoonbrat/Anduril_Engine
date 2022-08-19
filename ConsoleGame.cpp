@@ -9,17 +9,19 @@
 
 // goes through the process of a turn
 // we need an instance of Anduril so that we can update its position stack through the makeMovePlay method
-void Game::turn(thc::ChessRules &board, Anduril &AI) {
+void Game::turn(libchess::Position &board, Anduril &AI) {
     std::string move = "";
-    thc::Move playerMove;
+    libchess::Move playerMove;
 
     while (move == ""){
         move = getUserMove();
     }
 
-    thc::Square possiblePromotion = thc::make_square(move[0], move[1]);
+    libchess::Square possiblePromotion = *libchess::Square::from(move.substr(0, 2));
+    libchess::Rank proRank = possiblePromotion.rank();
 
-    if ((thc::get_rank(possiblePromotion) == '7' && board.squares[possiblePromotion] == 'P') || (thc::get_rank(possiblePromotion) == '2' && board.squares[possiblePromotion] == 'p')) {
+    if ((proRank == libchess::constants::RANK_7 && *board.piece_on(possiblePromotion) == libchess::constants::WHITE_PAWN)
+        || (proRank == libchess::constants::RANK_2 && *board.piece_on(possiblePromotion) == libchess::constants::BLACK_PAWN)) {
         while (true) {
             std::string promotion;
             std::cout << "Please chose a piece to promote to.  q:Queen, r:Rook, n:Knight, b:Bishop: ";
@@ -34,8 +36,10 @@ void Game::turn(thc::ChessRules &board, Anduril &AI) {
         }
     }
 
-    if (playerMove.TerseIn(&board, move.c_str())){
-        AI.makeMovePlay(board, playerMove);
+    playerMove.from(move);
+
+    if (board.is_legal_move(playerMove)){
+        board.make_move(playerMove);
     }
     else{
         std::cout << "Illegal Move." << std::endl;
