@@ -22,7 +22,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Anduril.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/evaluation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.cpp" afterDir="false" />
     </list>
@@ -67,20 +73,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/80hugkev/Documents/La libchess es la leche&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;CMakeSettings&quot;,
-    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "last_opened_file_path": "C:/Users/Hughe/Documents/Anduril_Engine_Libchess/Anduril_Engine",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
+    "structure.view.defaults.are.configured": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
+    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
+      <method v="2">
+        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="Anduril_Engine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Anduril_Engine" TARGET_NAME="Anduril_Engine" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Anduril_Engine" RUN_TARGET_NAME="Anduril_Engine">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -147,6 +159,7 @@
       <workItem from="1659113984741" duration="43000" />
       <workItem from="1660860628576" duration="244000" />
       <workItem from="1660918293213" duration="19000" />
+      <workItem from="1663347511002" duration="546000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -379,6 +392,10 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/libchess" />
+      <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
+    </ignored-roots>
     <MESSAGE value="Fixed black piece square table from using mirrored values to rotated values" />
     <MESSAGE value="Added evaluation for rooks on open and semi open files" />
     <MESSAGE value="Changed piece values for bishops and knights.  Changed some values for the King Square Table" />

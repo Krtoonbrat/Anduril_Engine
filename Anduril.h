@@ -22,6 +22,14 @@ public:
     // the type of node we are searching
     enum NodeType {PV, NonPV};
 
+    // enumeration type for the pieces
+    enum PieceType { PAWN,
+                     KNIGHT,
+                     BISHOP,
+                     ROOK,
+                     QUEEN,
+                     KING };
+
     // calls negamax and keeps track of the best move
     // this version will also interact with UCI
     void go(libchess::Position &board);
@@ -43,9 +51,16 @@ public:
     void goDebug(libchess::Position &board, int depth);
 
     // getter and setter for moves explored
-    int getMovesExplored() const { return movesExplored; }
+    inline int getMovesExplored() const { return movesExplored; }
 
-    void setMovesExplored(int moves) { movesExplored = moves; }
+    inline void setMovesExplored(int moves) { movesExplored = moves; }
+
+    // reset the ply
+    inline void resetPly() { ply = 0; }
+
+    // increment and decrement the ply
+    inline void incPly() { ply++; }
+    inline void decPly() { ply--; }
 
     // generates a move list of pseudo-legal moves we want to search
     std::vector<std::tuple<int, libchess::Move>> getMoveList(libchess::Position &board, Node *node);
@@ -59,6 +74,10 @@ public:
     // finds and returns the principal variation
     std::vector<libchess::Move> getPV(libchess::Position &board, int depth, libchess::Move bestMove);
 
+    // gets the attacks by a team of a certain piece
+    template<PieceType pt, bool white>
+    static libchess::Bitboard attackByPiece(libchess::Position &board);
+
     // stores the zobrist hash of previous positions to find threefold repetition
     // this is public so that we can add the start position from outside the object
     std::vector<uint64_t> positionStack;
@@ -67,10 +86,10 @@ public:
     TranspositionTable table = TranspositionTable(256);
 
     // pawn transposition table
-    HashTable<SimpleNode, 128> pTable = HashTable<SimpleNode, 128>();
+    HashTable<SimpleNode, 8> pTable = HashTable<SimpleNode, 8>();
 
     // transposition table for evaluations
-    HashTable<SimpleNode, 128> evalTable = HashTable<SimpleNode, 128>();
+    HashTable<SimpleNode, 16> evalTable = HashTable<SimpleNode, 16>();
 
     // the limit the GUI could send
     limit limits;
@@ -87,12 +106,19 @@ public:
     // did the GUI tell us to stop the search?
     bool stopped = false;
 
+    // piece values used for see
+    constexpr static std::array<int, 6> seeValues = {100, 300, 300, 500, 900, 0};
+
     // values for CLOP to tune
-    // knight values
-    int kMG = 337;
-    int kEG = 281;
-    int out = 10;
-    int trp = 150;
+    // razoring values
+    int rv1 = 348;
+    int rv2 = 258;
+
+    // null move pruning values
+    int nmp = 1300;
+
+    // probcut
+    int pcb = 200;
 
 private:
     // total number of moves Anduril searched
@@ -113,6 +139,9 @@ private:
     // the ply of the root node
     int rootPly = 0;
 
+    // current ply
+    int ply = 0;
+
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
 
@@ -123,10 +152,10 @@ private:
     libchess::Move pickNextMove(std::vector<std::tuple<int, libchess::Move>> &moveListWithScores, int currentIndex);
 
     // insert a move to the killer list
-    void insertKiller(int ply, libchess::Move move) {
-        if (std::count(killers[ply].begin(), killers[ply].end(), move) == 0) {
-            killers[ply][0] = killers[ply][1];
-            killers[ply][1] = move;
+    inline void insertKiller(libchess::Move move, int depth) {
+        if (std::count(killers[depth].begin(), killers[depth].end(), move) == 0) {
+            killers[depth][0] = killers[depth][1];
+            killers[depth][1] = move;
         }
     }
 
@@ -144,22 +173,23 @@ private:
     int getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing);
 
     // evaluates knights for tropism
-    void evaluateKnights(libchess::Position &board, bool white, libchess::Square square);
+    template<bool white>
+    void evaluateKnights(libchess::Position &board, libchess::Square square);
 
     // evaluates bishops for tropism
-    void evaluateBishops(libchess::Position &board, bool white, libchess::Square square);
+    template<bool white>
+    void evaluateBishops(libchess::Position &board, libchess::Square square);
 
     // evaluates rooks for tropism
-    void evaluateRooks(libchess::Position &board, bool white, libchess::Square square);
+    template<bool white>
+    void evaluateRooks(libchess::Position &board, libchess::Square square);
 
     // evaluates queens for tropism
-    void evaluateQueens(libchess::Position &board, bool white, libchess::Square square);
+    template<bool white>
+    void evaluateQueens(libchess::Position &board, libchess::Square square);
 
     // gives a score to each capture
     int MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst);
-
-    // returns if the position is a draw
-    bool isDraw(libchess::Position &board);
 
     // killer moves
     std::vector<std::vector<libchess::Move>> killers;
@@ -183,6 +213,16 @@ private:
     libchess::Bitboard kingZoneWBB;
     libchess::Bitboard kingZoneBBB;
 
+    // contains the attack maps for each team
+    libchess::Bitboard wAttackMap;
+    libchess::Bitboard bAttackMap;
+
+    // mask for the central squares we are looking for in space evaluations
+    libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
+                                     & (libchess::lookups::RANK_2_MASK | libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_4_MASK);
+    libchess::Bitboard centerBlack = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
+                                     & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_6_MASK | libchess::lookups::RANK_5_MASK);
+
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', 100},
                                                  {'N', 300},
@@ -196,8 +236,6 @@ private:
                                                  {'r', -500},
                                                  {'q', -900},
                                                  {'k', -20000}};
-    // piece values used for see
-    std::array<int, 6> seeValues = {100, 300, 300, 500, 900, 0};
 
     // this will be used to make sure the same color doesn't do a null move twice in a row
     bool nullAllowed = true;

@@ -43,10 +43,10 @@ namespace UCI {
         std::cout << "id name Anduril" << std::endl;
         std::cout << "id author Krtoonbrat" << std::endl;
         std::cout << "uciok" << std::endl;
-        std::cout << "option name kMG type spin default 337 min 200 max 500" << std::endl;
-        std::cout << "option name kEG type spin default 281 min 200 max 500" << std::endl;
-        std::cout << "option name out type spin default 10 min 0 max 100" << std::endl;
-        std::cout << "option name trp type spin default 150 min 0 max 200" << std::endl;
+        std::cout << "option name rv1 type spin default 348 min 50 max 500" << std::endl;
+        std::cout << "option name rv2 type spin default 258 min 50 max 500" << std::endl;
+        std::cout << "option name nmp type spin default 1300 min 1000 max 2000" << std::endl;
+        std::cout << "option name pcb type spin default 350 min 50 max 500" << std::endl;
 
 
 
@@ -79,8 +79,8 @@ namespace UCI {
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
                 AI.table.clear();
-                AI.pTable = HashTable<SimpleNode, 128>();
-                AI.evalTable = HashTable<SimpleNode, 128>();
+                AI.pTable = HashTable<SimpleNode, 8>();
+                AI.evalTable = HashTable<SimpleNode, 16>();
                 parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "go", 2)) {
@@ -94,10 +94,10 @@ namespace UCI {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
                 std::cout << "uciok" << std::endl;
-                std::cout << "option name kMG type spin default 337 min 200 max 500" << std::endl;
-                std::cout << "option name kEG type spin default 281 min 200 max 500" << std::endl;
-                std::cout << "option name out type spin default 10 min 0 max 100" << std::endl;
-                std::cout << "option name trp type spin default 150 min 0 max 200" << std::endl;
+                std::cout << "option name rv1 type spin default 348 min 50 max 500" << std::endl;
+                std::cout << "option name rv2 type spin default 258 min 50 max 500" << std::endl;
+                std::cout << "option name nmp type spin default 1300 min 1000 max 2000" << std::endl;
+                std::cout << "option name pcb type spin default 350 min 50 max 500" << std::endl;
 
 
             }
@@ -111,20 +111,20 @@ namespace UCI {
         char *ptr = NULL;
 
         // setoption name pMG value 100
-        if ((ptr = strstr(line, "kMG"))) {
-            AI.kMG = atoi(ptr + 10);
+        if ((ptr = strstr(line, "rv1"))) {
+            AI.rv1 = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kEG"))) {
-            AI.kEG = atoi(ptr + 10);
+        if ((ptr = strstr(line, "rv2"))) {
+            AI.rv2 = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "out"))) {
-            AI.out = atoi(ptr + 10);
+        if ((ptr = strstr(line, "nmp"))) {
+            AI.nmp = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "trp"))) {
-            AI.trp = atoi(ptr + 10);
+        if ((ptr = strstr(line, "pcb"))) {
+            AI.pcb = atoi(ptr + 10);
         }
     }
 
@@ -243,6 +243,9 @@ namespace UCI {
             }
         }
 
+        // reset the ply counter
+        AI.resetPly();
+
         // set up the variable for parsing the moves
         ptrToken = strstr(line, "moves");
         libchess::Move move(0);
@@ -261,6 +264,7 @@ namespace UCI {
                 move = *libchess::Move::from(moveStr);
                 if (move.value() == 0) { break; }
                 board.make_move(move);
+                AI.incPly();
                 AI.positionStack.push_back(board.hash());
                 while (*ptrToken && *ptrToken != ' ') {
                     ptrToken++;
@@ -342,6 +346,8 @@ void Anduril::go(libchess::Position &board) {
     libchess::Move bestMove(0);
     libchess::Move prevBestMove = bestMove;
 
+
+
     // this is for debugging
     std::string boardFENs = board.fen();
     char *boardFEN = &boardFENs[0];
@@ -359,7 +365,7 @@ void Anduril::go(libchess::Position &board) {
         killer = std::vector<libchess::Move>(2);
     }
 
-    rootPly = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
+    rootPly = ply;
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
@@ -368,10 +374,6 @@ void Anduril::go(libchess::Position &board) {
     double avgBranchingFactor = 0;
     bool research = false;
     std::vector<int> misses;
-    // this makes sure the score is reported correctly
-    // if the AI is controlling black, we need to
-    // multiply the score by -1 to report it correctly to the player
-    int flipped = 1;
 
     // we need to values for alpha because we need to change alpha based on
     // our results, but we also need a copy of the original alpha for the
@@ -383,10 +385,6 @@ void Anduril::go(libchess::Position &board) {
 
     // this starts our move to search at the first move in the list
     libchess::Move move = std::get<1>(moveListWithScores[0]);
-
-    if (board.side_to_move()){
-        flipped = -1;
-    }
 
     int score = -999999999;
     int deep = 1;
@@ -431,7 +429,9 @@ void Anduril::go(libchess::Position &board) {
             deep--;
             movesExplored++;
             depthNodes++;
+            incPly();
             score = -negamax<PV>(board, deep, -beta, -alphaTheSecond);
+            decPly();
             deep++;
             board.unmake_move();
 
@@ -464,7 +464,7 @@ void Anduril::go(libchess::Position &board) {
 
 
         std::cout << "info score cp " << prevBestScore << " depth " << deep << " nodes " <<
-        movesExplored << " nps " << (int)(getMovesExplored() / (timeElapsed.count()/1000)) << " time " << timeElapsed.count();
+                  movesExplored << " nps " << (int)(getMovesExplored() / (timeElapsed.count()/1000)) << " time " << timeElapsed.count();
 
         std::vector<libchess::Move> PV = getPV(board, deep, bestMove);
         std::string pv = "";
@@ -484,15 +484,15 @@ void Anduril::go(libchess::Position &board) {
         // we only actually use the aspiration window at depths greater than 4.
         // this is because we don't have a decent picture of the position yet
         // and the search falls outside the window often causing instability
-        if (deep >= 4) {
+        if (deep >= 5) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
                 if (!limits.timeSet) { finalDepth = false; }
                 misses.push_back(deep);
                 aspMissesL++;
-                alpha = bestScore - 25 * (std::pow(3, aspMissesL));
-                beta = bestScore + 25 * (std::pow(3, aspMissesH));
+                alpha = bestScore - 30 * (std::pow(3, aspMissesL));
+                beta = bestScore + 30 * (std::pow(3, aspMissesH));
                 research = true;
             }
                 // fail high
@@ -500,14 +500,14 @@ void Anduril::go(libchess::Position &board) {
                 if (!limits.timeSet) { finalDepth = false; }
                 misses.push_back(deep);
                 aspMissesH++;
-                alpha = bestScore - 25 * (std::pow(3, aspMissesL));
-                beta = bestScore + 25 * (std::pow(3, aspMissesH));
+                alpha = bestScore - 30 * (std::pow(3, aspMissesL));
+                beta = bestScore + 30 * (std::pow(3, aspMissesH));
                 research = true;
             }
                 // the search didn't fall outside the window, we can move to the next depth
             else {
-                alpha = bestScore - 25 * (std::pow(3, aspMissesL));
-                beta = bestScore + 25 * (std::pow(3, aspMissesH));
+                alpha = bestScore - 30 * (std::pow(3, aspMissesL));
+                beta = bestScore + 30 * (std::pow(3, aspMissesH));
                 deep++;
                 research = false;
             }
@@ -531,6 +531,7 @@ void Anduril::go(libchess::Position &board) {
             avgBranchingFactor = ((avgBranchingFactor * (deep - 2)) + branchingFactor) / (deep - 1);
             n1 = depthNodes;
             depthNodes = 0;
+            std::cout << "Branching factor: " << avgBranchingFactor << std::endl;
         }
 
 
@@ -576,6 +577,7 @@ void Anduril::go(libchess::Position &board) {
     std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
 
     board.make_move(prevBestMove);
+    incPly();
 
     std::cout << board.fen() << std::endl;
 }

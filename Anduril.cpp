@@ -18,14 +18,30 @@ int Anduril::MVVLVA(libchess::Position &board, libchess::Square src, libchess::S
 
 // generates a move list in the order we want to search them
 std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Position &board, Node *node) {
-    // current ply for finding killer moves
-    int ply = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
-
     // this is the list of moves with their assigned scores
     std::vector<std::tuple<int, libchess::Move>> movesWithScores;
 
     // get a list of possible moves
     libchess::MoveList moves = board.pseudo_legal_move_list();
+
+    // find pieces threatened by pieces of lesser value
+    libchess::Bitboard pawnThreat, minorThreat, rookThreat, threatenedPieces;
+    int threatValue = 0;
+
+    if (!board.side_to_move()) {
+        pawnThreat = attackByPiece<PAWN, false>(board);
+        minorThreat = attackByPiece<KNIGHT, false>(board) | attackByPiece<BISHOP, false>(board) | pawnThreat;
+        rookThreat = attackByPiece<ROOK, false>(board) | minorThreat;
+    }
+    else {
+        pawnThreat = attackByPiece<PAWN, true>(board);
+        minorThreat = attackByPiece<KNIGHT, true>(board) | attackByPiece<BISHOP, true>(board) | pawnThreat;
+        rookThreat = attackByPiece<ROOK, true>(board) | minorThreat;
+    }
+
+    threatenedPieces =  (board.piece_type_bb(libchess::constants::QUEEN, board.side_to_move()) & rookThreat)
+                      | (board.piece_type_bb(libchess::constants::ROOK, board.side_to_move()) & minorThreat)
+                      | ((board.piece_type_bb(libchess::constants::KNIGHT, board.side_to_move()) | board.piece_type_bb(libchess::constants::BISHOP, board.side_to_move())) & pawnThreat);
 
     // loop through the board, give each move a score, and add it to the list
     for (auto i = moves.begin(); i < moves.end(); i++) {
@@ -47,15 +63,31 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Posi
             continue;
         }
 
+        // is the piece threatened?
+        threatValue = 0;
+        if (threatenedPieces & libchess::Bitboard(i->from_square())) {
+            switch (*board.piece_type_on(i->from_square())) {
+                case libchess::constants::QUEEN:
+                    threatValue = !(libchess::Bitboard(i->to_square()) & rookThreat) ? 10 : 0;
+                    break;
+                case libchess::constants::ROOK:
+                    threatValue = !(libchess::Bitboard(i->to_square()) & minorThreat) ? 5 : 0;
+                    break;
+                case libchess::constants::BISHOP:
+                case libchess::constants::KNIGHT:
+                    threatValue = !(libchess::Bitboard(i->to_square()) & pawnThreat) ? 3 : 0;
+            }
+        }
+
         // next check for killer moves
         if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), *i) != 0) {
-            movesWithScores.emplace_back(-10, *i);
+            movesWithScores.emplace_back(-10 + threatValue, *i);
             continue;
         }
 
         // the move isn't special, mark it to be searched with every other non-capture
         // the value of -1000 was chosen because it makes sure the moves are searched after killers and losing captures
-        movesWithScores.emplace_back(-1000, *i);
+        movesWithScores.emplace_back(-1000 + threatValue, *i);
     }
 
     return movesWithScores;
@@ -63,9 +95,6 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Posi
 
 // generates a move list of legal moves we want to search
 std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Position &board) {
-    // current ply for finding killer moves
-    int ply = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
-
     // this is the list of moves with their assigned scores
     std::vector<std::tuple<int, libchess::Move>> movesWithScores;
 
@@ -127,6 +156,7 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getQMoveList(libchess::Pos
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
 int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
+    movesExplored++;
     constexpr bool PvNode = nodeType == PV;
 
     // did we receive a stop command?
@@ -139,6 +169,18 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     // incomplete search if we weren't screwed anyways
     if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
         return 0;
+    }
+
+    // check for a game over
+    switch (board.game_state()) {
+        case libchess::Position::GameState::CHECKMATE:
+            return -999999999;
+        case libchess::Position::GameState::STALEMATE:
+        case libchess::Position::GameState::THREEFOLD_REPETITION:
+        case libchess::Position::GameState::FIFTY_MOVES:
+            return 0;
+        case libchess::Position::GameState::IN_PROGRESS:
+            break;
     }
 
     // represents the best score we have found so far
@@ -221,7 +263,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
             return standPat;
         }
     }
-    // if we are in check, we need to generate all the possible evasions and search them
+        // if we are in check, we need to generate all the possible evasions and search them
     else {
         // generate a move list
         if (found) {
@@ -267,9 +309,10 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 
         board.make_move(move);
 
-        movesExplored++;
         quiesceExplored++;
+        incPly();
         score = -quiescence<nodeType>(board, -beta, -alpha);
+        decPly();
         board.unmake_move();
 
         if (score > bestScore) {
@@ -299,7 +342,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 // the negamax function.  Does the heavy lifting for the search
 template <Anduril::NodeType nodeType>
 int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) {
-    depthNodes++;
     constexpr bool PvNode = nodeType == PV;
 
     // did we receive a stop command?
@@ -308,15 +350,20 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
     }
 
     // is the time up?
-    // we return a "checkmate" score here so that the engine throws out the
-    // incomplete search if we weren't screwed anyways
     if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
         return 0;
     }
 
-    // check for draw
-    if (isDraw(board)) {
-        return 0;
+    // check for a game over
+    switch (board.game_state()) {
+        case libchess::Position::GameState::CHECKMATE:
+            return -999999999;
+        case libchess::Position::GameState::STALEMATE:
+        case libchess::Position::GameState::THREEFOLD_REPETITION:
+        case libchess::Position::GameState::FIFTY_MOVES:
+            return 0;
+        case libchess::Position::GameState::IN_PROGRESS:
+            break;
     }
 
     // are we in check?
@@ -336,6 +383,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
         return quiescence<PvNode ? PV : NonPV>(board, alpha, beta);
     }
 
+    // increment counters now that we know we aren't going into quiescence
+    depthNodes++;
+    movesExplored++;
+
     // represents our next move to search
     libchess::Move move;
     libchess::Move bestMove = move;
@@ -345,9 +396,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
 
     // holds the score of the move we just searched
     int score = -999999999;
-
-    // current ply (white moves + black moves from the starting position)
-    int ply = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
 
     // transposition lookup
     uint64_t hash = board.hash();
@@ -395,8 +443,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
     if (!PvNode
         && !check
         && depth <= 7
-        && staticEval < alpha - 348 - 258 * depth * depth) {
+        && staticEval < alpha - rv1 - rv2 * depth * depth) {
+        incPly();
         score = quiescence<NonPV>(board, alpha - 1, alpha);
+        decPly();
         if (score < alpha) {
             return score;
         }
@@ -408,14 +458,16 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
         && !check
         && staticEval >= beta
         && depth >= 4
-        && nonPawnMaterial(!board.side_to_move(), board) > 1300) {
+        && nonPawnMaterial(!board.side_to_move(), board) > nmp) {
 
         nullAllowed = false;
 
         int R = depth >= 6 ? 3 : 2;
 
         board.make_null_move();
+        incPly();
         int nullScore = -negamax<NonPV>(board, depth - R - 1, -beta, -beta + 1);
+        decPly();
         board.unmake_move();
 
         nullAllowed = true;
@@ -438,24 +490,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
         moveList = getMoveList(board, nullptr);
     }
 
-    // if the move list is empty, we found mate or stalemate and the current player lost
-    if (moveList.empty()){
-        // find out how the game ended
-        libchess::Position::GameState endType = board.game_state();
-
-        // if it's mate, return "-infinity"
-        if (endType == libchess::Position::GameState::CHECKMATE) {
-            return -999999999;
-        }
-
-        // if it's not checkmate, then it's stalemate
-        return 0;
-    }
-
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
     // the position would most likely cut at a full depth search as well
-    int probCutBeta = beta + 350;
+    int probCutBeta = beta + pcb;
     if (!PvNode
         && depth > 4
         && !check
@@ -474,14 +512,23 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
                 continue;
             }
 
+            // only search captures that can improve the position
+            if (!board.is_capture_move(move) || board.see_for(move, seeValues) < probCutBeta - staticEval) {
+                continue;
+            }
+
             board.make_move(move);
 
             // perform a qsearch to verify that the move still is less than beta
+            incPly();
             score = -quiescence<NonPV>(board, -probCutBeta, -probCutBeta + 1);
+            decPly();
 
             // if the qsearch holds, do a regular one
             if (score >= probCutBeta) {
+                incPly();
                 score = -negamax<NonPV>(board, depth - 4, -probCutBeta, -probCutBeta + 1);
+                decPly();
             }
 
             board.unmake_move();
@@ -527,8 +574,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
             continue;
         }
 
-        movesExplored++;
-
         // futility pruning
         if (futile
             && move.type() != libchess::Move::Type::CAPTURE
@@ -551,7 +596,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
         if (!PvNode && depth > 1 && i > 2 && isLateReduction(board, move)) {
             int reduction = i > 6 ? 2 : 1;
             board.make_move(move);
+            incPly();
             score = -negamax<NonPV>(board, depth - reduction - 1, -(alpha + 1), -alpha);
+            decPly();
             doFullSearch = score > alpha && score < beta;
             board.unmake_move();
         }
@@ -560,14 +607,18 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
         }
         if (doFullSearch) {
             board.make_move(move);
+            incPly();
             score = -negamax<NonPV>(board, depth - 1, -(alpha + 1), -alpha);
+            decPly();
             board.unmake_move();
         }
 
         // full PV search for the first move and for moves that fail in the zero window
         if (PvNode && (i == 0 || (score > alpha && score < beta))) {
             board.make_move(move);
+            incPly();
             score = -negamax<PV>(board, depth - 1, -beta, -alpha);
+            decPly();
             board.unmake_move();
         }
 
@@ -579,7 +630,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta) 
                     cutNodes++;
                     node->nodeType = 2;
                     if (move.type() == libchess::Move::Type::CAPTURE) {
-                        insertKiller(ply - rootPly, move);
+                        insertKiller(move, depth);
                     }
                     node->nodeScore = score;
                     node->bestMove = bestMove;
@@ -622,7 +673,7 @@ void Anduril::goDebug(libchess::Position &board, int depth) {
         killer = std::vector<libchess::Move>(2);
     }
 
-    rootPly = !board.side_to_move() ? (board.fullmoves() * 2) - 1 : board.fullmoves() * 2;
+    rootPly = ply;
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
@@ -681,7 +732,9 @@ void Anduril::goDebug(libchess::Position &board, int depth) {
             deep--;
             movesExplored++;
             depthNodes++;
+            incPly();
             score = -negamax<PV>(board, deep, -beta, -alphaTheSecond);
+            decPly();
             deep++;
             board.unmake_move();
 
@@ -815,30 +868,9 @@ void Anduril::goDebug(libchess::Position &board, int depth) {
     cutNodes = 0;
     movesTransposed = 0;
     quiesceExplored = 0;
+    incPly();
 
     board.make_move(bestMove);
-}
-
-bool Anduril::isDraw(libchess::Position &board) {
-    // first check for 50 move rule
-    if (board.halfmoves() >= 100) {
-        return true;
-    }
-
-    // next check for repetition
-    uint64_t currentHash = board.hash();
-    int repetitions = 0;
-    for (int i = 0; i < positionStack.size(); i++) {
-        if (currentHash == positionStack[i]) {
-            repetitions++;
-        }
-    }
-
-    if (repetitions >= 3) {
-        return true;
-    }
-
-    return false;
 }
 
 int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
@@ -942,4 +974,57 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
     }
 
     return PV;
+}
+
+// gets the attacks by a team of a certain piece
+template<Anduril::PieceType pt, bool white>
+libchess::Bitboard Anduril::attackByPiece(libchess::Position &board) {
+    constexpr libchess::Color c = white ? libchess::constants::WHITE : libchess::constants::BLACK;
+    libchess::Bitboard attacks;
+    libchess::Bitboard pieces;
+    libchess::PieceType type = libchess::constants::PAWN;
+
+    // grab the correct bitboard
+    if constexpr (pt == PAWN) {
+        pieces = board.piece_type_bb(type, c);
+    }
+    else if constexpr (pt == KNIGHT) {
+        type = libchess::constants::KNIGHT;
+        pieces = board.piece_type_bb(type, c);
+    }
+    else if constexpr (pt == BISHOP) {
+        type = libchess::constants::BISHOP;
+        pieces = board.piece_type_bb(type, c);
+    }
+    else if constexpr (pt == ROOK) {
+        type = libchess::constants::ROOK;
+        pieces = board.piece_type_bb(type, c);
+    }
+    else if constexpr (pt == QUEEN) {
+        type = libchess::constants::QUEEN;
+        pieces = board.piece_type_bb(type, c);
+    }
+    else if constexpr (pt == KING) {
+        type = libchess::constants::KING;
+        pieces = board.piece_type_bb(type, c);
+    }
+
+    // loop through the pieces
+    // special case for pawns because it uses a different function
+    if constexpr (pt == PAWN) {
+        while (pieces) {
+            libchess::Square square = pieces.forward_bitscan();
+            attacks |= libchess::lookups::pawn_attacks(square, c);
+            pieces.forward_popbit();
+        }
+    }
+    else {
+        while (pieces) {
+            libchess::Square square = pieces.forward_bitscan();
+            attacks |= libchess::lookups::non_pawn_piece_type_attacks(type, square, board.occupancy_bb());
+            pieces.forward_popbit();
+        }
+    }
+
+    return attacks;
 }

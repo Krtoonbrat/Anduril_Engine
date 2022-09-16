@@ -1,6 +1,2 @@
 /cmake-build-debug/
 /cmake-build-release/
-/cmake-build-relwithdebinfo/
-/libchess/.circleci/
-/libchess/.github/
-/libchess/.vs/
