@@ -21,16 +21,16 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/Anduril.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Added libchess files.  Many adjustments/additions to engine as well.">
+      <change beforePath="$PROJECT_DIR$/.idea/Anduril.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Anduril.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Node.h" beforeDir="false" afterPath="$PROJECT_DIR$/Node.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/evaluation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libchess/Position.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,26 +73,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "last_opened_file_path": "C:/Users/Hughe/Documents/Anduril_Engine_Libchess/Anduril_Engine",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
-    "structure.view.defaults.are.configured": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Hughe/Documents/Anduril_Engine&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.editor&quot;,
+    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Anduril_Engine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Anduril_Engine" TARGET_NAME="Anduril_Engine" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Anduril_Engine" RUN_TARGET_NAME="Anduril_Engine">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -159,7 +158,32 @@
       <workItem from="1659113984741" duration="43000" />
       <workItem from="1660860628576" duration="244000" />
       <workItem from="1660918293213" duration="19000" />
-      <workItem from="1663347511002" duration="546000" />
+      <workItem from="1663347511002" duration="797000" />
+      <workItem from="1663348480533" duration="9758000" />
+      <workItem from="1663370707715" duration="130000" />
+      <workItem from="1663371188279" duration="662000" />
+      <workItem from="1664303980268" duration="1769000" />
+      <workItem from="1664471011832" duration="15411000" />
+      <workItem from="1664519546260" duration="145000" />
+      <workItem from="1665438031872" duration="1508000" />
+      <workItem from="1665594369806" duration="9665000" />
+      <workItem from="1665630353454" duration="3464000" />
+      <workItem from="1665784585222" duration="7124000" />
+      <workItem from="1665861401559" duration="4323000" />
+      <workItem from="1665976605822" duration="1378000" />
+      <workItem from="1666030664732" duration="3865000" />
+      <workItem from="1666114932347" duration="3851000" />
+      <workItem from="1666121659113" duration="11905000" />
+      <workItem from="1666205275521" duration="1884000" />
+      <workItem from="1666289694842" duration="891000" />
+      <workItem from="1666373085190" duration="10805000" />
+      <workItem from="1666404343070" duration="3229000" />
+      <workItem from="1666494117054" duration="231000" />
+      <workItem from="1666654439918" duration="377000" />
+      <workItem from="1666669437614" duration="50000" />
+      <workItem from="1666669614737" duration="20000" />
+      <workItem from="1666725319470" duration="6313000" />
+      <workItem from="1666736618099" duration="2594000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -364,7 +388,14 @@
       <option name="project" value="LOCAL" />
       <updated>1656097785184</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Added libchess files.  Many adjustments/additions to engine as well.">
+      <created>1663348282484</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1663348282484</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -396,7 +427,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Fixed black piece square table from using mirrored values to rotated values" />
     <MESSAGE value="Added evaluation for rooks on open and semi open files" />
     <MESSAGE value="Changed piece values for bishops and knights.  Changed some values for the King Square Table" />
     <MESSAGE value="Added trapped knights, trapped rooks, and fianchettos to the evaluation" />
@@ -421,6 +451,18 @@
     <MESSAGE value="Adjusted rules for standing pat in the quiescence search" />
     <MESSAGE value="Added in the HashMap for transposing simpler features.  HashMap is now used for pawn eval transposition and eval transposition" />
     <MESSAGE value="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR" />
+    <MESSAGE value="Added libchess files.  Many adjustments/additions to engine as well." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added libchess files.  Many adjustments/additions to engine as well." />
+  </component>
+  <component name="XDebuggerManager">
+    <watches-manager>
+      <configuration name="CMakeRunConfiguration">
+        <watch expression="move.to_str()" language="ObjectiveC" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

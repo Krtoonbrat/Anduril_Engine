@@ -9,10 +9,13 @@
 
 class Node {
 public:
-    Node() {nodeScore = -999999999; nodeType = -1; bestMove = libchess::Move(0); nodeDepth = -99; key = 0;};
+    Node() : nodeScore(-999999999), nodeType(-1), bestMove(), nodeDepth(-99), key(0), nodeEval(-999999999) {}
 
-    // the evaluation of the node
+    // the evaluation of the node after a full search
     int nodeScore;
+
+	// the static eval of a node
+	int nodeEval;
 
     // the depth (ply) the node has been searched to
     int nodeDepth;

@@ -20,7 +20,7 @@ class Anduril {
 public:
 
     // the type of node we are searching
-    enum NodeType {PV, NonPV};
+    enum NodeType {PV, NonPV, Root};
 
     // enumeration type for the pieces
     enum PieceType { PAWN,
@@ -36,7 +36,7 @@ public:
 
     // the negamax function.  Does the heavy lifting for the search
     template <NodeType nodeType>
-    int negamax(libchess::Position &board, int depth, int alpha, int beta);
+    int negamax(libchess::Position &board, int depth, int alpha, int beta, bool cutNode);
 
     // the quiescence search
     // searches possible captures to make sure we aren't mis-evaluating certain positions
@@ -107,18 +107,14 @@ public:
     bool stopped = false;
 
     // piece values used for see
-    constexpr static std::array<int, 6> seeValues = {100, 300, 300, 500, 900, 0};
+    constexpr static std::array<int, 6> seeValues = {88, 337, 365, 477, 1025, 0};
 
     // values for CLOP to tune
     // razoring values
-    int rv1 = 348;
-    int rv2 = 258;
-
-    // null move pruning values
-    int nmp = 1300;
-
-    // probcut
-    int pcb = 200;
+    int kMG = 337;
+    int kEG = 281;
+    int out = 10;
+    int trp = 150;
 
 private:
     // total number of moves Anduril searched
@@ -141,6 +137,9 @@ private:
 
     // current ply
     int ply = 0;
+
+    // list of moves at root position
+    std::vector<std::tuple<int, libchess::Move>> rootMoves;
 
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
@@ -194,8 +193,15 @@ private:
     // killer moves
     std::vector<std::vector<libchess::Move>> killers;
 
+    // counter moves
+    libchess::Move counterMoves[64][64];
+
+    // history table
+    int moveHistory[2][64][64] = {0};
+
     // futility margins
-    int margin[4] = {0, 200, 300, 500};
+    int margin[5] = {0, 100, 200, 400, 600};
+    int reverseMargin[5] = {0,200,330,600,800};
 
     // point bonus that increases the value of knights with more pawns on the board
     int knightPawnBonus[9] = { -20, -16, -12, -8, -4,  0,  4,  8, 12 };
@@ -208,6 +214,10 @@ private:
 
     // weight of the attackers on the king zone
     int attackWeight[2] = {0};
+
+    // mobility scores
+    int whiteMobility[2] = {0};
+    int blackMobility[2] = {0};
 
     // contains the squares that are the "king zone"
     libchess::Bitboard kingZoneWBB;

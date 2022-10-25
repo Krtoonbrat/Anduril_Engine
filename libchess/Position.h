@@ -152,7 +152,6 @@ protected:
         int halfmoves_ = 0;
     };
 
-    // moved this to public for use in Anduril
     [[nodiscard]] int ply() const {
         return ply_;
     }

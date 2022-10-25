@@ -3,7 +3,6 @@
 //
 
 #include <iostream> // we need this for debugging if we print the board
-#include <unordered_set>
 
 #include "Anduril.h"
 
@@ -22,6 +21,10 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     // squares the kings are on
     libchess::Square wKingSquare = board.king_square(libchess::constants::WHITE);
     libchess::Square bKingSquare = board.king_square(libchess::constants::BLACK);
+
+    // reset the mobility scores
+    whiteMobility[0] = 0, whiteMobility[1] = 0;
+    blackMobility[0] = 0, blackMobility[1] = 0;
 
     // reset the king tropism variables
     attackCount[0] = 0, attackCount[1] = 0;
@@ -69,6 +72,12 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         scoreMG -= SafetyTable[attackWeight[0]];
         scoreEG -= SafetyTable[attackWeight[0]];
     }
+
+    // mobility
+    scoreMG += whiteMobility[0];
+    scoreMG -= blackMobility[0];
+    scoreEG += whiteMobility[1];
+    scoreEG -= blackMobility[1];
 
     // give the AI a slap for moving the queen too early
     if (*board.piece_on(libchess::constants::D1) != libchess::constants::WHITE_QUEEN) {
@@ -157,15 +166,18 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     }
 
     // space advantages
-    // white
-    libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap;
-    scoreMG += 5 * wCenterAttacks.popcount();
-    scoreEG += 5 * wCenterAttacks.popcount();
+    // only relevant if not in an endgame.  3000 seems like a decent number.  It was totally pulled out of my ass
+    if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) > 3000) {
+        // white
+        libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap;
+        scoreMG += 5 * wCenterAttacks.popcount();
+        scoreEG += 5 * wCenterAttacks.popcount();
 
-    // black
-    libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap;
-    scoreMG += 5 * bCenterAttacks.popcount();
-    scoreEG += 5 * bCenterAttacks.popcount();
+        // black
+        libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap;
+        scoreMG += 5 * bCenterAttacks.popcount();
+        scoreEG += 5 * bCenterAttacks.popcount();
+    }
 
     // get the phase for tapered eval
     double phase = getPhase(board);
@@ -187,13 +199,27 @@ void Anduril::evaluateKnights(libchess::Position &board, libchess::Square square
 
     // white
     if constexpr (white) {
+        // get the squares we can actually move to
         attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 4 * (attackedSquares.popcount() - 4);
+        whiteMobility[1] += 4 * (attackedSquares.popcount() - 4);
+
+        // king zone attacks
         wAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
     else {
+        // get the squares we can actually move to
         attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 4 * (attackedSquares.popcount() - 4);
+        blackMobility[1] += 4 * (attackedSquares.popcount() - 4);
+
+        // king zone attacks
         bAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
@@ -214,12 +240,24 @@ void Anduril::evaluateBishops(libchess::Position &board, libchess::Square square
     // white
     if constexpr (white) {
         attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 3 * (attackedSquares.popcount() - 7);
+        whiteMobility[1] += 3 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
         wAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
     else {
         attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 3 * (attackedSquares.popcount() - 7);
+        blackMobility[1] += 3 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
         bAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
@@ -240,12 +278,25 @@ void Anduril::evaluateRooks(libchess::Position &board, libchess::Square square) 
     // white
     if constexpr (white) {
         attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 2 * (attackedSquares.popcount() - 7);
+        whiteMobility[1] += 4 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
         wAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
     else {
         attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 2 * (attackedSquares.popcount() - 7);
+        blackMobility[1] += 4 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
+        bAttackMap |= attackedSquares;
         bAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
@@ -266,12 +317,24 @@ void Anduril::evaluateQueens(libchess::Position &board, libchess::Square square)
     // white
     if constexpr (white) {
         attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 1 * (attackedSquares.popcount() - 14);
+        whiteMobility[1] += 2 * (attackedSquares.popcount() - 14);
+
+        // king zone attacks
         wAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
     else {
         attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 1 * (attackedSquares.popcount() - 14);
+        blackMobility[1] += 2 * (attackedSquares.popcount() - 14);
+
+        // king zone attacks
         bAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
@@ -312,8 +375,8 @@ std::vector<int> Anduril::getMaterialScore(libchess::Position &board) {
                 case libchess::constants::KNIGHT:
                     if (!currPiece->color()) {
                         int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score[0] += 337 + knightSquareTableMG[tableCoords];
-                        score[1] += 281 + knightSquareTableEG[tableCoords];
+                        score[0] += kMG + knightSquareTableMG[tableCoords];
+                        score[1] += kEG + knightSquareTableEG[tableCoords];
 
                         score[0] += knightPawnBonus[board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE).popcount()];
                         score[1] += knightPawnBonus[board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE).popcount()];
@@ -322,35 +385,35 @@ std::vector<int> Anduril::getMaterialScore(libchess::Position &board) {
                         if (square > libchess::constants::H4
                             && (board.attackers_to(square, libchess::constants::WHITE) & board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE))
                             && !(board.attackers_to(square, libchess::constants::BLACK) & board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK))) {
-                            score[0] += 10;
-                            score[1] += 10;
+                            score[0] += out;
+                            score[1] += out;
                         }
 
                         // trapped knights
                         if ((square == libchess::constants::H8 && (board.piece_on(libchess::constants::H7)->to_char() == 'p' || board.piece_on(libchess::constants::F7)->to_char() == 'p'))
                             || (square == libchess::constants::A8 && (board.piece_on(libchess::constants::A7)->to_char() == 'p' || board.piece_on(libchess::constants::C7)->to_char() == 'p'))) {
-                            score[0] -= 150;
-                            score[1] -= 150;
+                            score[0] -= trp;
+                            score[1] -= trp;
                         }
                         else if (square == libchess::constants::H7
                                  && (board.piece_on(libchess::constants::G7)->to_char() == 'p'
                                      && (board.piece_on(libchess::constants::H6)->to_char() == 'p' || board.piece_on(libchess::constants::F6)->to_char() == 'p'))) {
-                            score[0] -= 150;
-                            score[1] -= 150;
+                            score[0] -= trp;
+                            score[1] -= trp;
                         }
                         else if (square == libchess::constants::A7
                                  && (board.piece_on(libchess::constants::B7)->to_char() == 'p'
                                      && (board.piece_on(libchess::constants::A6)->to_char() == 'p' || board.piece_on(libchess::constants::C6)->to_char() == 'p'))) {
-                            score[0] -= 150;
-                            score[1] -= 150;
+                            score[0] -= trp;
+                            score[1] -= trp;
                         }
 
                         evaluateKnights<true>(board, square);
 
                     }
                     else {
-                        score[0] -= 337 + knightSquareTableMG[square];
-                        score[1] -= 281 + knightSquareTableEG[square];
+                        score[0] -= kMG + knightSquareTableMG[square];
+                        score[1] -= kEG + knightSquareTableEG[square];
 
                         score[0] -= knightPawnBonus[board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK).popcount()];
                         score[0] -= knightPawnBonus[board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK).popcount()];
@@ -359,27 +422,27 @@ std::vector<int> Anduril::getMaterialScore(libchess::Position &board) {
                         if (square < libchess::constants::H5
                             && (board.attackers_to(square, libchess::constants::BLACK) & board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK))
                             && !(board.attackers_to(square, libchess::constants::WHITE) & board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE))) {
-                            score[0] -= 10;
-                            score[1] -= 10;
+                            score[0] -= out;
+                            score[1] -= out;
                         }
 
                         // trapped knights
                         if ((square == libchess::constants::H1 && (board.piece_on(libchess::constants::H2)->to_char() == 'P' || board.piece_on(libchess::constants::F2)->to_char() == 'P'))
                             || (square == libchess::constants::A1 && (board.piece_on(libchess::constants::A2)->to_char() == 'P' || board.piece_on(libchess::constants::C2)->to_char() == 'P'))) {
-                            score[0] += 150;
-                            score[1] += 150;
+                            score[0] += trp;
+                            score[1] += trp;
                         }
                         else if (square == libchess::constants::H2
                                  && (board.piece_on(libchess::constants::G2)->to_char() == 'P'
                                      && (board.piece_on(libchess::constants::H3)->to_char() == 'P' || board.piece_on(libchess::constants::F3)->to_char() == 'P'))) {
-                            score[0] += 150;
-                            score[1] += 150;
+                            score[0] += trp;
+                            score[1] += trp;
                         }
                         else if (square == libchess::constants::A2
                                  && (board.piece_on(libchess::constants::B2)->to_char() == 'P'
                                      && (board.piece_on(libchess::constants::A3)->to_char() == 'P' || board.piece_on(libchess::constants::C3)->to_char() == 'P'))) {
-                            score[0] += 150;
-                            score[1] += 150;
+                            score[0] += trp;
+                            score[1] += trp;
                         }
                         evaluateKnights<false>(board, square);
 
