@@ -389,16 +389,20 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
             continue;
         }
 
-        // don't search moves with negative see
-        if (board.see_for(move, seeValues) < 0) {
-            continue;
-        }
+        // just in case we are searching evasions
+        if (board.is_capture_move(move)) {
+            // don't search moves with negative see
+            if (board.see_for(move, seeValues) < 0) {
+                continue;
+            }
 
-        // delta pruning
-        if (standPat + abs(pieceValues[board.piece_on(move.to_square())->to_char()]) + 200 < alpha
-            && nonPawnMaterial(board.side_to_move(), board) - abs(pieceValues[board.piece_on(move.to_square())->to_char()]) > 1300
-            && move.type() != libchess::Move::Type::PROMOTION) {
-            continue;
+            // delta pruning
+            if (standPat + abs(pieceValues[board.piece_on(move.to_square())->to_char()]) + 200 < alpha
+                && nonPawnMaterial(board.side_to_move(), board) -
+                   abs(pieceValues[board.piece_on(move.to_square())->to_char()]) > 1300
+                && move.type() != libchess::Move::Type::PROMOTION) {
+                continue;
+            }
         }
 
         board.make_move(move);
@@ -520,7 +524,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         movesTransposed++;
 
         // stockfish does this to get around the graph history interaction problem, which is an issue where the same
-        // game position will behave differently when reached using different paths.  When halfmoves is high, we dont
+        // game position will behave differently when reached using different paths.  When halfmoves is high, we don't
         // produce transposition cutoffs because the engine might accidentally hit the 50 move rule if we do
         if (board.halfmoves() < 90) {
             return node->nodeScore;
@@ -565,7 +569,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // razoring
     // weird magic values stolen straight from stockfish
     if (!check
-        && staticEval < alpha - 348 - 258 * depth * depth) {
+        && staticEval < alpha - 258 * depth * depth) {
         incPly();
         score = quiescence<NonPV>(board, alpha - 1, alpha);
         decPly();
@@ -738,10 +742,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // search with zero window
         // first check if we can reduce
-        doFullDepthZWSearch = false;
         if (depth > 1 && i > 2 && isLateReduction(board, move)) {
             // find our reduction
-            int reduction = 2;
+            int reduction = 3;
             // decrease if position is not likely to fail low
             if (!likelyFailLow) {
                 reduction--;
@@ -750,6 +753,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             // increase reduction for cut nodes
             if (cutNode) {
                 reduction += 2;
+            }
+
+            // increase reduction if transposition move is a capture
+            if (found && board.is_capture_move(std::get<1>(moveList[0]))) {
+                reduction++;
             }
 
             // decrease reduction for PvNodes based on depth (values from stockfish)
