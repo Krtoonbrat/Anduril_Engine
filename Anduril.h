@@ -48,6 +48,7 @@ public:
 
     // calls negamax and keeps track of the best move
     // this is the debug version, it only uses console control and has zero UCI function
+    // basically depreciated
     void goDebug(libchess::Position &board, int depth);
 
     // getter and setter for moves explored
@@ -106,15 +107,30 @@ public:
     // did the GUI tell us to stop the search?
     bool stopped = false;
 
-    // piece values used for see
-    constexpr static std::array<int, 6> seeValues = {88, 337, 365, 477, 1025, 0};
-
     // values for CLOP to tune
     // razoring values
     int kMG = 337;
     int kEG = 281;
-    int out = 10;
-    int trp = 150;
+
+    int pMG = 88;
+    int pEG = 138;
+
+    // at the time of commit (12:10 11/28/2022), these are the values CLOP came up with.  oMG, oEG, and tEG all seem
+    // to be good(ish), tMG is not converged at all.
+    int oMG = 27;
+    int oEG = 36;
+    int tMG = 247;
+    int tEG = 127;
+
+    // phase values
+    double Pph = 0.125;
+    double Kph = 1;
+    double Bph = 1;
+    double Rph = 2;
+    double Qph = 4;
+
+    // piece values used for see
+    std::array<int, 6> seeValues = {pMG, kMG, 365, 477, 1025, 0};
 
 private:
     // total number of moves Anduril searched
@@ -160,10 +176,10 @@ private:
 
     // finds the raw material score for the position
     // it returns a pointer to an array containing a middlegame and endgame value
-    std::vector<int> getMaterialScore(libchess::Position &board);
+    std::tuple<int, int> getMaterialScore(libchess::Position &board);
 
     // gets the phase of the game for evaluation
-    double getPhase(libchess::Position &board);
+    int getPhase(libchess::Position &board);
 
     // finds the pawn structure bonus for the position
     int getPawnScore(libchess::Position &board);
@@ -207,7 +223,7 @@ private:
     int knightPawnBonus[9] = { -20, -16, -12, -8, -4,  0,  4,  8, 12 };
 
     // point bonus that increases the value of rooks with less pawns
-    int rookPawnBonus[9] = { 15,  12,   9,  6,  3,  0, -3, -6, -9 };
+    int rookPawnBonus[9] = { 15,  12,  9,  6,  3,  0, -3, -6, -9 };
 
     // number of pieces attacking the king zone
     int attackCount[2] = {0};
@@ -234,18 +250,18 @@ private:
                                      & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_6_MASK | libchess::lookups::RANK_5_MASK);
 
     // the piece values
-    std::unordered_map<char, int> pieceValues = {{'P', 100},
-                                                 {'N', 300},
-                                                 {'B', 300},
-                                                 {'R', 500},
-                                                 {'Q', 900},
-                                                 {'K', 20000},
-                                                 {'p', -100},
-                                                 {'n', -300},
-                                                 {'b', -300},
-                                                 {'r', -500},
-                                                 {'q', -900},
-                                                 {'k', -20000}};
+    std::unordered_map<char, int> pieceValues = {{'P', pMG},
+                                                 {'N', kMG},
+                                                 {'B', 365},
+                                                 {'R', 477},
+                                                 {'Q', 1025},
+                                                 {'K', 0},
+                                                 {'p', -pMG},
+                                                 {'n', -kMG},
+                                                 {'b', -365},
+                                                 {'r', -477},
+                                                 {'q', -1025},
+                                                 {'k', 0}};
 
     // this will be used to make sure the same color doesn't do a null move twice in a row
     bool nullAllowed = true;

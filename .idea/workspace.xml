@@ -18,12 +18,12 @@
     <configurations>
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
       <configuration PROFILE_NAME="Release" ENABLED="true" CONFIG_NAME="Release" />
+      <configuration PROFILE_NAME="RelWithDebInfo" ENABLED="true" CONFIG_NAME="RelWithDebInfo" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Lots and lots of changes and fixes.  Some notables: Changed Transposition Table behavior, Mate distance pruning, mobility score added, PVS at root, history and counter move heuristic, changes to move ordering, reverse futility pruning, improved LMR.">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Numerous bug fixes and optimizations.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +34,7 @@
     <option name="clangTidyViaClangd" value="false" />
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Release" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="Git.Settings">
     <option name="PREVIOUS_COMMIT_AUTHORS">
       <list>
@@ -184,7 +184,27 @@
       <workItem from="1667325781997" duration="72000" />
       <workItem from="1667326365651" duration="1732000" />
       <workItem from="1667329615699" duration="707000" />
-      <workItem from="1667413346630" duration="9000" />
+      <workItem from="1667413346630" duration="327000" />
+      <workItem from="1667501286221" duration="2921000" />
+      <workItem from="1667582909101" duration="141000" />
+      <workItem from="1667935588738" duration="260000" />
+      <workItem from="1667935959286" duration="5624000" />
+      <workItem from="1667947876214" duration="10470000" />
+      <workItem from="1668032297150" duration="247000" />
+      <workItem from="1668191636252" duration="445000" />
+      <workItem from="1668195971871" duration="1180000" />
+      <workItem from="1668545523841" duration="814000" />
+      <workItem from="1668547465669" duration="4927000" />
+      <workItem from="1668624115783" duration="661000" />
+      <workItem from="1668802405234" duration="311000" />
+      <workItem from="1669050009186" duration="5856000" />
+      <workItem from="1669056085823" duration="51000" />
+      <workItem from="1669066465774" duration="294000" />
+      <workItem from="1669230459290" duration="271000" />
+      <workItem from="1669598690832" duration="804000" />
+      <workItem from="1669600246522" duration="134000" />
+      <workItem from="1669615824378" duration="369000" />
+      <workItem from="1669648648148" duration="1000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -403,7 +423,21 @@
       <option name="project" value="LOCAL" />
       <updated>1666739667848</updated>
     </task>
-    <option name="localTasksCounter" value="32" />
+    <task id="LOCAL-00032" summary="Minor modification to searching moves in quiescence.  Lowered razoring threshold.  Initial reduction is now 3 instead of 2 and added a reduction for if the transposition move is a capture">
+      <created>1667413541098</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1667413541098</updated>
+    </task>
+    <task id="LOCAL-00033" summary="Numerous bug fixes and optimizations.">
+      <created>1669616153655</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1669616153655</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -435,8 +469,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Changed piece values for bishops and knights.  Changed some values for the King Square Table" />
-    <MESSAGE value="Added trapped knights, trapped rooks, and fianchettos to the evaluation" />
     <MESSAGE value="Added polyglot opening book and various bug fixes" />
     <MESSAGE value="Created transposition table class to replace the simple STL hash map" />
     <MESSAGE value="Switched pawn transpositions to custom table class" />
@@ -460,7 +492,9 @@
     <MESSAGE value="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR" />
     <MESSAGE value="Added libchess files.  Many adjustments/additions to engine as well." />
     <MESSAGE value="Lots and lots of changes and fixes.  Some notables: Changed Transposition Table behavior, Mate distance pruning, mobility score added, PVS at root, history and counter move heuristic, changes to move ordering, reverse futility pruning, improved LMR." />
-    <option name="LAST_COMMIT_MESSAGE" value="Lots and lots of changes and fixes.  Some notables: Changed Transposition Table behavior, Mate distance pruning, mobility score added, PVS at root, history and counter move heuristic, changes to move ordering, reverse futility pruning, improved LMR." />
+    <MESSAGE value="Minor modification to searching moves in quiescence.  Lowered razoring threshold.  Initial reduction is now 3 instead of 2 and added a reduction for if the transposition move is a capture" />
+    <MESSAGE value="Numerous bug fixes and optimizations." />
+    <option name="LAST_COMMIT_MESSAGE" value="Numerous bug fixes and optimizations." />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

@@ -88,8 +88,19 @@ namespace UCI {
 
                 std::cout << "option name kMG type spin default 337 min -1000 max 1000" << std::endl;
                 std::cout << "option name kEG type spin default 281 min -1000 max 1000" << std::endl;
-                std::cout << "option name out type spin default 10  min -1000 max 1000" << std::endl;
-                std::cout << "option name trp type spin default 150 min -1000 max 1000" << std::endl;
+                std::cout << "option name oMG type spin default 10  min -1000 max 1000" << std::endl;
+                std::cout << "option name oEG type spin default 10  min -1000 max 1000" << std::endl;
+                std::cout << "option name tMG type spin default 150 min -1000 max 1000" << std::endl;
+                std::cout << "option name tEG type spin default 150 min -1000 max 1000" << std::endl;
+
+                std::cout << "option name pMG type spin default 88 min -1000 max 1000" << std::endl;
+                std::cout << "option name pEG type spin default 138 min -1000 max 1000" << std::endl;
+
+                std::cout << "option name Pph type spin default 125 min 0 max 10000" << std::endl;
+                std::cout << "option name Kph type spin default 1000 min 0 max 10000" << std::endl;
+                std::cout << "option name Bph type spin default 1000 min 0 max 10000" << std::endl;
+                std::cout << "option name Rph type spin default 2000 min 0 max 10000" << std::endl;
+                std::cout << "option name Qph type spin default 4000 min 0 max 10000" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -113,12 +124,48 @@ namespace UCI {
             AI.kEG = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "out"))) {
-            AI.out = atoi(ptr + 10);
+        if ((ptr = strstr(line, "oMG"))) {
+            AI.oMG = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "trp"))) {
-            AI.trp = atoi(ptr + 10);
+        if ((ptr = strstr(line, "oEG"))) {
+            AI.oEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "tMG"))) {
+            AI.tMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "tEG"))) {
+            AI.tEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "pMG"))) {
+            AI.pMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "pEG"))) {
+            AI.pEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "Pph"))) {
+            AI.Pph = atof(ptr + 10) / 1000;
+        }
+
+        if ((ptr = strstr(line, "Kph"))) {
+            AI.Kph = atof(ptr + 10) / 1000;
+        }
+
+        if ((ptr = strstr(line, "Bph"))) {
+            AI.Bph = atof(ptr + 10) / 1000;
+        }
+
+        if ((ptr = strstr(line, "Rph"))) {
+            AI.Rph = atof(ptr + 10) / 1000;
+        }
+
+        if ((ptr = strstr(line, "Qph"))) {
+            AI.Qph = atof(ptr + 10) / 1000;
         }
     }
 
@@ -339,6 +386,9 @@ void Anduril::go(libchess::Position &board) {
     //std::cout << board.fen() << std::endl;
     libchess::Move bestMove(0);
     libchess::Move prevBestMove = bestMove;
+
+    // prep the board for search
+    board.prep_search();
 
     // this is for debugging
     std::string boardFENs = board.fen();

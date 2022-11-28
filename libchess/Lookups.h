@@ -206,7 +206,21 @@ inline std::array<std::array<Bitboard, 64>, 64> intervening() {
     return intervening_bb;
 }
 
+// added by krtoonbrat
+inline std::array<Bitboard, 64> squares() {
+    std::array<Bitboard, 64> squares_bb{};
+    for (Square s = constants::A1; s <= constants::H8; s++) {
+        squares_bb[s] = Bitboard(s);
+    }
+    return squares_bb;
+}
+
 }  // namespace init
+
+// added by krtoonbrat
+// Square bitboards
+extern std::array<Bitboard, 64> SQUARES;
+
 // Direction bitboards
 extern std::array<Bitboard, 64> NORTH;
 extern std::array<Bitboard, 64> SOUTH;
@@ -217,6 +231,11 @@ extern std::array<Bitboard, 64> SOUTHWEST;
 extern std::array<Bitboard, 64> NORTHEAST;
 extern std::array<Bitboard, 64> SOUTHEAST;
 extern std::array<std::array<Bitboard, 64>, 64> INTERVENING;
+
+// added by krtoonbrat
+static Bitboard square(Square square) {
+    return SQUARES[square];
+}
 
 static Bitboard north(Square square) {
     return NORTH[square];
