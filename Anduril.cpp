@@ -53,17 +53,17 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Posi
 
         // is the piece threatened?
         threatValue = 0;
-        if (threatenedPieces & libchess::Bitboard(i->from_square())) {
+        if (threatenedPieces & libchess::lookups::square(i->from_square())) {
             switch (*board.piece_type_on(i->from_square())) {
                 case libchess::constants::QUEEN:
-                    threatValue = !(libchess::Bitboard(i->to_square()) & rookThreat) ? 10 : 0;
+                    threatValue = !(libchess::lookups::square(i->to_square()) & rookThreat) ? 10 : 0;
                     break;
                 case libchess::constants::ROOK:
-                    threatValue = !(libchess::Bitboard(i->to_square()) & minorThreat) ? 5 : 0;
+                    threatValue = !(libchess::lookups::square(i->to_square()) & minorThreat) ? 5 : 0;
                     break;
                 case libchess::constants::BISHOP:
                 case libchess::constants::KNIGHT:
-                    threatValue = !(libchess::Bitboard(i->to_square()) & pawnThreat) ? 3 : 0;
+                    threatValue = !(libchess::lookups::square(i->to_square()) & pawnThreat) ? 3 : 0;
             }
         }
 
@@ -137,17 +137,17 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Posi
     for (auto i = moves.begin(); i < moves.end(); i++) {
         // is the piece threatened?
         threatValue = 0;
-        if (threatenedPieces & libchess::Bitboard(i->from_square())) {
+        if (threatenedPieces & libchess::lookups::square(i->from_square())) {
             switch (*board.piece_type_on(i->from_square())) {
                 case libchess::constants::QUEEN:
-                    threatValue = !(libchess::Bitboard(i->to_square()) & rookThreat) ? 10 : 0;
+                    threatValue = !(libchess::lookups::square(i->to_square()) & rookThreat) ? 10 : 0;
                     break;
                 case libchess::constants::ROOK:
-                    threatValue = !(libchess::Bitboard(i->to_square()) & minorThreat) ? 5 : 0;
+                    threatValue = !(libchess::lookups::square(i->to_square()) & minorThreat) ? 5 : 0;
                     break;
                 case libchess::constants::BISHOP:
                 case libchess::constants::KNIGHT:
-                    threatValue = !(libchess::Bitboard(i->to_square()) & pawnThreat) ? 3 : 0;
+                    threatValue = !(libchess::lookups::square(i->to_square()) & pawnThreat) ? 3 : 0;
             }
         }
 
@@ -228,17 +228,17 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getQMoveList(libchess::Pos
 
             // is the piece threatened?
             threatValue = 0;
-            if (threatenedPieces & libchess::Bitboard(i->from_square())) {
+            if (threatenedPieces & libchess::lookups::square(i->from_square())) {
                 switch (*board.piece_type_on(i->from_square())) {
                     case libchess::constants::QUEEN:
-                        threatValue = !(libchess::Bitboard(i->to_square()) & rookThreat) ? 10 : 0;
+                        threatValue = !(libchess::lookups::square(i->to_square()) & rookThreat) ? 10 : 0;
                         break;
                     case libchess::constants::ROOK:
-                        threatValue = !(libchess::Bitboard(i->to_square()) & minorThreat) ? 5 : 0;
+                        threatValue = !(libchess::lookups::square(i->to_square()) & minorThreat) ? 5 : 0;
                         break;
                     case libchess::constants::BISHOP:
                     case libchess::constants::KNIGHT:
-                        threatValue = !(libchess::Bitboard(i->to_square()) & pawnThreat) ? 3 : 0;
+                        threatValue = !(libchess::lookups::square(i->to_square()) & pawnThreat) ? 3 : 0;
                 }
             }
 
@@ -592,7 +592,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && !check
         && staticEval >= beta
         && depth >= 3
-        && nonPawnMaterial(!board.side_to_move(), board) > 1100) {
+        && nonPawnMaterial(!board.side_to_move(), board) > 1300) {
 
         nullAllowed = false;
 
@@ -1072,18 +1072,18 @@ void Anduril::goDebug(libchess::Position &board, int depth) {
 int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
     int material = 0;
     if (whiteToPlay) {
-        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE).popcount() * 300;
-        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() * 300;
-        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::WHITE).popcount() * 500;
-        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE).popcount() * 900;
+        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE).popcount() * kMG;
+        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() * 365;
+        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::WHITE).popcount() * 477;
+        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE).popcount() * 1025;
 
         return material;
     }
     else {
-        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK).popcount() * 300;
-        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() * 300;
-        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::BLACK).popcount() * 500;
-        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK).popcount() * 900;
+        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK).popcount() * kMG;
+        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() * 365;
+        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::BLACK).popcount() * 477;
+        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK).popcount() * 1025;
 
         return material;
     }

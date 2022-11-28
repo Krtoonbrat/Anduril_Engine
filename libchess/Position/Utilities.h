@@ -156,6 +156,7 @@ inline std::optional<Move> Position::smallest_capture_move_to(Square square) con
     return std::nullopt;
 }
 
+// modified by Krtoonbrat
 inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
     auto smallest_capture_move = smallest_capture_move_to(square);
     if (!smallest_capture_move) {
@@ -174,11 +175,18 @@ inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
         piece_val +=
             piece_values.at(smallest_capture_move_prom_piece_type->value()) - piece_values.at(0);
     }
-    Position pos = *this;
-    pos.make_move(*smallest_capture_move);
-    return 0 > piece_val - pos.see_to(square, piece_values) ? 0 : piece_val - pos.see_to(square, piece_values);
+
+    // removed the need to copy the entire position and operate on the new position.  This improved performance as
+    // there is now no need to allocate memory, which was a huge time waster.
+    //Position pos = *this;
+    this->make_move(*smallest_capture_move);
+    int seeVal = piece_val - this->see_to(square, piece_values);
+    this->unmake_move();
+
+    return 0 > seeVal ? 0 : seeVal;
 }
 
+// modified by Krtoonbrat
 inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
     bool is_enpassant = move_type_of(move) == Move::Type::ENPASSANT;
 
@@ -192,10 +200,17 @@ inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
     if (move_prom_piece_type) {
         piece_val += piece_values.at(move_prom_piece_type->value()) - piece_values.at(0);
     }
-    Position pos = *this;
-    pos.make_move(move);
-    return 0 > piece_val - pos.see_to(move.to_square(), piece_values) ? 0 : piece_val - pos.see_to(move.to_square(), piece_values);
-}
+
+    // removed the need to copy the entire position and operate on the new position.  This improved performance as
+    // there is now no need to allocate memory, which was a huge time waster.
+    //Position pos = *this;
+    this->make_move(move);
+    int seeVal = piece_val - this->see_to(move.to_square(), piece_values);
+    this->unmake_move();
+
+    return 0 > seeVal ? 0 : seeVal;
+
+    }
 
 inline std::optional<Position> Position::from_fen(const std::string& fen) {
     Position pos;

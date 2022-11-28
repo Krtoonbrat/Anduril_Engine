@@ -20,7 +20,7 @@ void TranspositionTable::clear() {
 }
 
 Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
-    Node *entry = &table[(uint32_t) key & tableSize].entry[0];
+    Node *entry = &table[key & tableSize].entry[0];
 
     // look for a matching node or one that needs to be filled
     for (int i = 0; i < 2; i++) {

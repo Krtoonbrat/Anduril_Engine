@@ -127,6 +127,14 @@ class Position {
     static std::optional<Position> from_fen(const std::string& fen);
     static std::optional<Position> from_uci_position_line(const std::string& line);
 
+    // added by Krtoonbrat
+    // One of the largest performance hits in Anduril currently is allocating memory for the state vector when we
+    // make a move.  If we make sure the capacity of the vector is ply+100 (100 being Anduril's max depth) at root, the
+    // vector shouldn't have to dynamically allocate, and if it does it won't be often enough to be significant
+    void prep_search() {
+        history_.reserve(ply_ + 100);
+    }
+
 protected:
     // clang-format off
     constexpr static int castling_spoilers[64] = {

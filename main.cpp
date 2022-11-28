@@ -6,6 +6,8 @@
 #include "libchess/Position.h"
 #include "UCI.h"
 
+std::array<libchess::Bitboard, 64> libchess::lookups::SQUARES;
+
 std::array<libchess::Bitboard, 64> libchess::lookups::NORTH;
 std::array<libchess::Bitboard, 64> libchess::lookups::SOUTH;
 std::array<libchess::Bitboard, 64> libchess::lookups::EAST;
@@ -29,6 +31,8 @@ libchess::lookups::MagicAttacksLookup<libchess::lookups::SlidingPieceType::BISHO
 std::array<std::array<libchess::Bitboard, 64>, 64> libchess::lookups::FULL_RAY;
 
 int main() {
+    libchess::lookups::SQUARES = libchess::lookups::init::squares();
+
     libchess::lookups::NORTH = libchess::lookups::init::north();
     libchess::lookups::SOUTH = libchess::lookups::init::south();
     libchess::lookups::EAST = libchess::lookups::init::east();
@@ -55,6 +59,14 @@ int main() {
     bool useUCI = true;
 
     if (useUCI) {
+        // for profiling
+        /*
+        Anduril AI;
+        AI.limits.depth = 15;
+        libchess::Position board("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
+        AI.startTime = std::chrono::steady_clock::now();
+        AI.go(board);
+        */
         UCI::loop();
     }
 

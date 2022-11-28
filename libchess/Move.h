@@ -121,37 +121,37 @@ class Move {
     value_type value_;
 };
 
+// modified by Krtoonbrat
+// I changed the container from a vector to an array.  This was done to get rid of the allocation that is necessary
+// for vectors, increasing performance.
 class MoveList {
    public:
-    using value_type = std::vector<Move>;
+    using value_type = std::array<Move, 256>;
     using iterator = value_type::iterator;
     using const_iterator = value_type::const_iterator;
-
-    MoveList() {
-        values_.reserve(32);
-    }
 
     iterator begin() {
         return values_.begin();
     }
     iterator end() {
-        return values_.end();
+        return values_.begin() + last;
     }
     const_iterator cbegin() const {
         return values_.cbegin();
     }
     const_iterator cend() const {
-        return values_.cend();
+        return values_.cbegin() + last;
     }
 
     void pop_back() {
-        values_.pop_back();
+        last--;
+        values_[last] = Move();
     }
     void add(Move move) {
-        values_.push_back(move);
+        values_[last] = move;
+        last++;
     }
     void add(const MoveList& move_list) noexcept {
-        values_.reserve(size() + move_list.size());
         for (auto iter = move_list.cbegin(); iter != move_list.cend(); ++iter) {
             add(*iter);
         }
@@ -180,14 +180,11 @@ class MoveList {
             moves[j] = moving_move;
         }
     }
-    void clear() noexcept {
-        values_.clear();
-    }
     bool empty() const noexcept {
-        return values_.empty();
+        return values_[0].value() == 0;
     }
     int size() const {
-        return values_.size();
+        return last;
     }
     const value_type& values() const {
         return values_;
@@ -203,6 +200,7 @@ class MoveList {
 
    private:
     value_type values_;
+    int last = 0;
 };
 
 inline std::ostream& operator<<(std::ostream& ostream, Move move) {
