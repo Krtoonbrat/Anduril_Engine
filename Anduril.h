@@ -79,15 +79,11 @@ public:
     template<PieceType pt, bool white>
     static libchess::Bitboard attackByPiece(libchess::Position &board);
 
-    // stores the zobrist hash of previous positions to find threefold repetition
-    // this is public so that we can add the start position from outside the object
-    std::vector<uint64_t> positionStack;
-
     // the transposition table
     TranspositionTable table = TranspositionTable(256);
 
     // pawn transposition table
-    HashTable<SimpleNode, 8> pTable = HashTable<SimpleNode, 8>();
+    HashTable<PawnEntry, 8> pTable = HashTable<PawnEntry, 8>();
 
     // transposition table for evaluations
     HashTable<SimpleNode, 16> evalTable = HashTable<SimpleNode, 16>();
@@ -115,12 +111,10 @@ public:
     int pMG = 88;
     int pEG = 138;
 
-    // at the time of commit (12:10 11/28/2022), these are the values CLOP came up with.  oMG, oEG, and tEG all seem
-    // to be good(ish), tMG is not converged at all.
-    int oMG = 27;
-    int oEG = 36;
-    int tMG = 247;
-    int tEG = 127;
+    int oMG = 20;
+    int oEG = 5;
+    int tMG = 150;
+    int tEG = 150;
 
     // phase values
     double Pph = 0.125;
@@ -176,13 +170,13 @@ private:
 
     // finds the raw material score for the position
     // it returns a pointer to an array containing a middlegame and endgame value
-    std::tuple<int, int> getMaterialScore(libchess::Position &board);
+    std::pair<int, int> getMaterialScore(libchess::Position &board);
 
     // gets the phase of the game for evaluation
     int getPhase(libchess::Position &board);
 
     // finds the pawn structure bonus for the position
-    int getPawnScore(libchess::Position &board);
+    std::pair<int, int> getPawnScore(libchess::Position &board);
 
     // finds the king safety bonus for the position
     int getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing);
@@ -224,6 +218,11 @@ private:
 
     // point bonus that increases the value of rooks with less pawns
     int rookPawnBonus[9] = { 15,  12,  9,  6,  3,  0, -3, -6, -9 };
+
+    // passed pawn bonuses by rank
+    // values stolen from stockfish (their values are reported to the GUI using v * 100 / 361, which is already applied)
+    int passedBonusMG[7] = {0, 1, 4, 6, 18, 46, 78};
+    int passedBonusEG[7] = {0, 10, 10, 14, 22, 51, 74};
 
     // number of pieces attacking the king zone
     int attackCount[2] = {0};

@@ -80,6 +80,11 @@ class Position {
     void make_move(Move move);
     void make_null_move();
 
+    // added by Krtoonbrat
+    // this is exactly the same as make_move() except I commented out calculating both hashes.  They aren't needed
+    // inside of see and are destroyed directly after anyway.  All it did was waste time.
+    void make_see_move(Move move);
+
     // Attacks
     [[nodiscard]] Bitboard checkers_to(Color c) const;
     [[nodiscard]] Bitboard attackers_to(Square square) const;

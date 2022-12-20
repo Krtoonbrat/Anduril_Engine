@@ -179,7 +179,7 @@ inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
     // removed the need to copy the entire position and operate on the new position.  This improved performance as
     // there is now no need to allocate memory, which was a huge time waster.
     //Position pos = *this;
-    this->make_move(*smallest_capture_move);
+    this->make_see_move(*smallest_capture_move);
     int seeVal = piece_val - this->see_to(square, piece_values);
     this->unmake_move();
 
@@ -204,7 +204,7 @@ inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
     // removed the need to copy the entire position and operate on the new position.  This improved performance as
     // there is now no need to allocate memory, which was a huge time waster.
     //Position pos = *this;
-    this->make_move(move);
+    this->make_see_move(move);
     int seeVal = piece_val - this->see_to(move.to_square(), piece_values);
     this->unmake_move();
 

@@ -71,7 +71,7 @@ namespace UCI {
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
                 AI.table.clear();
-                AI.pTable = HashTable<SimpleNode, 8>();
+                AI.pTable = HashTable<PawnEntry, 8>();
                 AI.evalTable = HashTable<SimpleNode, 16>();
                 parsePosition(line, board, AI);
             }
@@ -85,6 +85,8 @@ namespace UCI {
             else if (!strncmp(line, "uci", 3)) {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
+
+                std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
 
                 std::cout << "option name kMG type spin default 337 min -1000 max 1000" << std::endl;
                 std::cout << "option name kEG type spin default 281 min -1000 max 1000" << std::endl;
@@ -114,6 +116,11 @@ namespace UCI {
 
     void parseOption(char* line, Anduril &AI) {
         char *ptr = NULL;
+
+        // set hash size
+        if ((ptr = strstr(line, "Hash"))) {
+            AI.table.resize(atoi(ptr + 10));
+        }
 
         // setoption name pMG value 100
         if ((ptr = strstr(line, "kMG"))) {
@@ -269,18 +276,15 @@ namespace UCI {
         // instructions for different commands we could receive
         if (strncmp(line, "startpos", 8) == 0) {
             board = *libchess::Position::from_fen(StartFEN);
-            AI.positionStack.push_back(board.hash());
         }
         else {
             ptrToken = strstr(line, "fen");
             if (ptrToken == NULL) {
                 board = *libchess::Position::from_fen(StartFEN);
-                AI.positionStack.push_back(board.hash());
             }
             else {
                 ptrToken += 4;
                 board = *libchess::Position::from_fen(ptrToken);
-                AI.positionStack.push_back(board.hash());
             }
         }
 
@@ -306,7 +310,6 @@ namespace UCI {
                 if (move.value() == 0) { break; }
                 board.make_move(move);
                 AI.incPly();
-                AI.positionStack.push_back(board.hash());
                 while (*ptrToken && *ptrToken != ' ') {
                     ptrToken++;
                 }
@@ -400,7 +403,6 @@ void Anduril::go(libchess::Position &board) {
     int prevBestScore = bestScore;
 
     // set the killer vector to have the correct number of slots
-    // and the root node's ply
     // the vector is padded a little at the end in case of the search being extended
     killers = std::vector<std::vector<libchess::Move>>(218); // 218 is the "max moves" defined in thc.h
     for (auto & killer : killers) {

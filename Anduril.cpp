@@ -69,7 +69,7 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Posi
 
         // next check if the move is a capture
         if (board.is_capture_move(*i)) {
-            movesWithScores.emplace_back(MVVLVA(board, i->from_square(), i->to_square()) + threatValue + 50000, *i);
+            movesWithScores.emplace_back(board.see_for(*i, seeValues) + threatValue + 50000, *i);
             continue;
         }
 
@@ -243,7 +243,7 @@ std::vector<std::tuple<int, libchess::Move>> Anduril::getQMoveList(libchess::Pos
             }
 
             // if it isn't a hash move, add it with its MVVLVA score
-            movesWithScores.emplace_back(MVVLVA(board, i->from_square(), i->to_square()) + threatValue + 50000, *i);
+            movesWithScores.emplace_back(board.see_for(*i, seeValues) + threatValue + 50000, *i);
         }
     }
 
@@ -299,6 +299,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 		// reset the node information so that we can rewrite it
 		// this isn't the best way to do it, but imma do it anyways
 		node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
+        node->nodeEval = bestScore;
 		node->nodeType = -1;
 		node->bestMove = libchess::Move(0);
 		node->key = hash;
@@ -541,6 +542,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 	else {
 	    // reset the node information so that we can rewrite it
 	    node->nodeScore = bestScore; // bestScore is already set to our "replace me" flag
+        node->nodeEval = bestScore;
 	    node->nodeType = -1;
 	    node->bestMove = libchess::Move(0);
 	    node->key = hash;
@@ -703,9 +705,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // current depth, and the result was a fail low
     bool likelyFailLow = PvNode && node->bestMove.value() != 0 && node->nodeType == 3 && node->nodeDepth >= depth;
 
-    // do we need to search a move with the full depth?
-    bool doFullDepthZWSearch = false;
-
     // loop through the possible moves and score each
     for (int i = 0; i < moveList.size(); i++) {
         move = pickNextMove(moveList, i);
@@ -731,7 +730,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             // there is one check we need to do before pruning that requires the move to
             // be made.  I put it separately so that we don't make the move and unmake it
             // every single iteration
-            board.make_move(move);
+            board.make_see_move(move);
             if (!board.in_check()) {
                 board.unmake_move();
                 continue;
@@ -1105,7 +1104,7 @@ bool Anduril::isLateReduction(libchess::Position &board, libchess::Move &move) {
     if (board.in_check()) {
         return false;
     }
-    board.make_move(move);
+    board.make_see_move(move);
     if (board.in_check()) {
         board.unmake_move();
         return false;

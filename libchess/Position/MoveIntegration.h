@@ -127,6 +127,96 @@ inline void Position::unmake_move() {
     }
 }
 
+inline void Position::make_see_move(Move move) {
+    Color stm = side_to_move();
+    if (stm == constants::BLACK) {
+        ++fullmoves_;
+    }
+    ++ply_;
+    history_.push_back(State{});
+    State& prev_state = state_mut_ref(ply_ - 1);
+    State& next_state = state_mut_ref();
+    next_state.halfmoves_ = prev_state.halfmoves_ + 1;
+    next_state.previous_move_ = move;
+    next_state.enpassant_square_ = {};
+
+    Square from_square = move.from_square();
+    Square to_square = move.to_square();
+
+    next_state.castling_rights_ = CastlingRights{prev_state.castling_rights_.value() &
+                                                 castling_spoilers[from_square.value()] &
+                                                 castling_spoilers[to_square.value()]};
+
+    std::optional<PieceType> moving_pt = piece_type_on(from_square);
+    std::optional<PieceType> captured_pt = piece_type_on(to_square);
+    std::optional<PieceType> promotion_pt = move.promotion_piece_type();
+
+    Move::Type move_type = move_type_of(move);
+
+    if (moving_pt == constants::PAWN || captured_pt) {
+        next_state.halfmoves_ = 0;
+    }
+
+    switch (move_type) {
+        case Move::Type::NORMAL:
+            move_piece(from_square, to_square, *moving_pt, stm);
+            break;
+        case Move::Type::CAPTURE:
+            remove_piece(to_square, *captured_pt, !stm);
+            move_piece(from_square, to_square, *moving_pt, stm);
+            break;
+        case Move::Type::DOUBLE_PUSH:
+            move_piece(from_square, to_square, constants::PAWN, stm);
+            next_state.enpassant_square_ =
+                    stm == constants::WHITE ? Square(from_square + 8) : Square(from_square - 8);
+            break;
+        case Move::Type::ENPASSANT:
+            move_piece(from_square, to_square, constants::PAWN, stm);
+            remove_piece(stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8),
+                         constants::PAWN,
+                         !stm);
+            break;
+        case Move::Type::CASTLING:
+            move_piece(from_square, to_square, constants::KING, stm);
+            switch (to_square) {
+                case constants::C1:
+                    move_piece(constants::A1, constants::D1, constants::ROOK, stm);
+                    break;
+                case constants::G1:
+                    move_piece(constants::H1, constants::F1, constants::ROOK, stm);
+                    break;
+                case constants::C8:
+                    move_piece(constants::A8, constants::D8, constants::ROOK, stm);
+                    break;
+                case constants::G8:
+                    move_piece(constants::H8, constants::F8, constants::ROOK, stm);
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case Move::Type::PROMOTION:
+            remove_piece(from_square, constants::PAWN, stm);
+            put_piece(to_square, *promotion_pt, stm);
+            break;
+        case Move::Type::CAPTURE_PROMOTION:
+            remove_piece(to_square, *captured_pt, !stm);
+            remove_piece(from_square, constants::PAWN, stm);
+            put_piece(to_square, *promotion_pt, stm);
+            break;
+        case Move::Type::NONE:
+            break;
+    }
+
+    next_state.captured_pt_ = captured_pt;
+    next_state.move_type_ = move_type;
+    reverse_side_to_move();
+
+    // commented out because they are the time wasters
+    //next_state.hash_ = calculate_hash();
+    //next_state.pawn_hash_ = calculate_pawn_hash();
+}
+
 inline void Position::make_move(Move move) {
     Color stm = side_to_move();
     if (stm == constants::BLACK) {

@@ -16,6 +16,8 @@ class TranspositionTable {
 public:
     explicit TranspositionTable(size_t tSize);
 
+    ~TranspositionTable();
+
     void resize(size_t tSize);
 
     void clear();
@@ -23,7 +25,7 @@ public:
     Node* probe(uint64_t key, bool &foundNode);
 
 private:
-    std::vector<Cluster> table;
+    Cluster *tPtr = nullptr;
 
     int tableSize = 0;
 

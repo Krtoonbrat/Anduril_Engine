@@ -84,7 +84,6 @@ int main() {
 
         Game::displayBoard(board);
         std::cout << "Board FEN: " << board.fen() << std::endl;
-        AI.positionStack.push_back(board.hash());
 
         // main game loop
         while (board.game_state() == libchess::Position::GameState::IN_PROGRESS) {

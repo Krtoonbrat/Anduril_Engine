@@ -43,4 +43,10 @@ struct SimpleNode {
     uint64_t key = 0;
 };
 
+struct PawnEntry {
+    std::pair<int, int> score = {0, 0};
+
+    uint64_t key = 0;
+};
+
 #endif //ANDURIL_ENGINE_NODE_H
