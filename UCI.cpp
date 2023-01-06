@@ -73,6 +73,7 @@ namespace UCI {
                 AI.table.clear();
                 AI.pTable = HashTable<PawnEntry, 8>();
                 AI.evalTable = HashTable<SimpleNode, 16>();
+                AI.resetHistories();
                 parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "go", 2)) {

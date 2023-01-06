@@ -79,6 +79,17 @@ public:
     template<PieceType pt, bool white>
     static libchess::Bitboard attackByPiece(libchess::Position &board);
 
+    // reset the move and counter move tables
+    inline void resetHistories() {
+        for (int i = 0; i < 64; i++) {
+            for (int j = 0; j < 64; j++) {
+                counterMoves[i][j] = libchess::Move(0);
+                moveHistory[0][i][j] = 0;
+                moveHistory[1][i][j] = 0;
+            }
+        }
+    }
+
     // the transposition table
     TranspositionTable table = TranspositionTable(256);
 

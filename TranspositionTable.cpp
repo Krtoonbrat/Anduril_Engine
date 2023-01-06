@@ -14,6 +14,7 @@ TranspositionTable::~TranspositionTable() {
 }
 
 void TranspositionTable::resize(size_t tSize) {
+    std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
     int nodeCount = (tSize * 1024 * 1024) / sizeof(Cluster);
     delete[] tPtr;
     tPtr = new Cluster[nodeCount];

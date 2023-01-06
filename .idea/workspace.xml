@@ -22,8 +22,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Numerous bug fixes and optimizations.">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TranspositionTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,7 +37,7 @@
     <option name="clangTidyViaClangd" value="false" />
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Release" />
   <component name="Git.Settings">
     <option name="PREVIOUS_COMMIT_AUTHORS">
       <list>
@@ -82,8 +85,9 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;CPPToolchains&quot;,
-    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;MakefileSettings&quot;,
+    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
   <component name="RunManager">
@@ -204,7 +208,29 @@
       <workItem from="1669598690832" duration="804000" />
       <workItem from="1669600246522" duration="134000" />
       <workItem from="1669615824378" duration="369000" />
-      <workItem from="1669648648148" duration="1000" />
+      <workItem from="1669648648148" duration="118000" />
+      <workItem from="1670274610023" duration="60000" />
+      <workItem from="1670357086559" duration="1430000" />
+      <workItem from="1670434793212" duration="5663000" />
+      <workItem from="1670442472982" duration="884000" />
+      <workItem from="1670445303049" duration="285000" />
+      <workItem from="1670446738607" duration="189000" />
+      <workItem from="1670447959980" duration="310000" />
+      <workItem from="1670448703871" duration="209000" />
+      <workItem from="1670625063302" duration="5523000" />
+      <workItem from="1670865836232" duration="2309000" />
+      <workItem from="1670868821169" duration="5154000" />
+      <workItem from="1670962473767" duration="3582000" />
+      <workItem from="1670971260607" duration="216000" />
+      <workItem from="1671049888299" duration="3759000" />
+      <workItem from="1671139328481" duration="2471000" />
+      <workItem from="1671347731114" duration="2683000" />
+      <workItem from="1671488802431" duration="664000" />
+      <workItem from="1671500882245" duration="1554000" />
+      <workItem from="1671504848535" duration="855000" />
+      <workItem from="1671672491196" duration="365000" />
+      <workItem from="1671673276291" duration="175000" />
+      <workItem from="1672980817336" duration="1000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -437,7 +463,21 @@
       <option name="project" value="LOCAL" />
       <updated>1669616153655</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="Numerous bug fixes and optimizations.">
+      <created>1669648712483</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1669648712483</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement.">
+      <created>1671501185196</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1671501185196</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -469,7 +509,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Added polyglot opening book and various bug fixes" />
     <MESSAGE value="Created transposition table class to replace the simple STL hash map" />
     <MESSAGE value="Switched pawn transpositions to custom table class" />
     <MESSAGE value="Moved all the evaluation functions to their own file for better organization" />
@@ -494,7 +533,8 @@
     <MESSAGE value="Lots and lots of changes and fixes.  Some notables: Changed Transposition Table behavior, Mate distance pruning, mobility score added, PVS at root, history and counter move heuristic, changes to move ordering, reverse futility pruning, improved LMR." />
     <MESSAGE value="Minor modification to searching moves in quiescence.  Lowered razoring threshold.  Initial reduction is now 3 instead of 2 and added a reduction for if the transposition move is a capture" />
     <MESSAGE value="Numerous bug fixes and optimizations." />
-    <option name="LAST_COMMIT_MESSAGE" value="Numerous bug fixes and optimizations." />
+    <MESSAGE value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
+    <option name="LAST_COMMIT_MESSAGE" value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
