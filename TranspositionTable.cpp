@@ -30,11 +30,13 @@ Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
     Node *entry = &tPtr[key & tableSize].entry[0];
 
     // look for a matching node or one that needs to be filled
-    for (int i = 0; i < 2; i++) {
-        if (entry[i].key == key || entry[i].key == 0) {
-            entry[i].key == key ? foundNode = true : foundNode = false;
-            return &entry[i];
-        }
+    if (entry[0].key == key || entry[0].key  == 0) {
+        entry[0].key == key ? foundNode = true : foundNode = false;
+        return &entry[0];
+    }
+    else if (entry[1].key == key || entry[1].key  == 0) {
+        entry[1].key == key ? foundNode = true : foundNode = false;
+        return &entry[1];
     }
 
     // no nodes matched, determine which gets replaced
