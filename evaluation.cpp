@@ -492,8 +492,8 @@ std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
                 case libchess::constants::BISHOP:
                     if (!currPiece->color()) {
                         int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += 365 + bishopSquareTableMG[tableCoords];
-                        score.second += 297 + bishopSquareTableEG[tableCoords];
+                        score.first  += bMG + bishopSquareTableMG[tableCoords];
+                        score.second += bEG + bishopSquareTableEG[tableCoords];
 
                         // fianchetto
                         if ((square == libchess::constants::G2 && board.king_square(libchess::constants::WHITE) == libchess::constants::G1)
@@ -505,8 +505,8 @@ std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
 
                     }
                     else {
-                        score.first  -= 365 + bishopSquareTableMG[square];
-                        score.second -= 297 + bishopSquareTableEG[square];
+                        score.first  -= bMG + bishopSquareTableMG[square];
+                        score.second -= bEG + bishopSquareTableEG[square];
 
                         // fianchetto
                         if ((square == libchess::constants::G7 && board.king_square(libchess::constants::BLACK) == libchess::constants::G8)
@@ -521,8 +521,8 @@ std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
                 case libchess::constants::ROOK:
                     if (!currPiece->color()) {
                         int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += 477 + rookSquareTableMG[tableCoords];
-                        score.second += 512 + rookSquareTableEG[tableCoords];
+                        score.first  += rMG + rookSquareTableMG[tableCoords];
+                        score.second += rEG + rookSquareTableEG[tableCoords];
 
                         score.first  += rookPawnBonus[whitePawns.popcount()];
                         score.second += rookPawnBonus[whitePawns.popcount()];
@@ -571,8 +571,8 @@ std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
 
                     }
                     else {
-                       score.first  -= 477 + rookSquareTableMG[square];
-                       score.second -= 512 + rookSquareTableEG[square];
+                       score.first  -= rMG + rookSquareTableMG[square];
+                       score.second -= rEG + rookSquareTableEG[square];
 
                         score.first  -= rookPawnBonus[blackPawns.popcount()];
                         score.second -= rookPawnBonus[blackPawns.popcount()];
@@ -624,14 +624,14 @@ std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
                 case libchess::constants::QUEEN:
                     if (!currPiece->color()) {
                         int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += 1025 + queenSquareTableMG[tableCoords];
-                        score.second += 936  + queenSquareTableEG[tableCoords];
+                        score.first  += qMG + queenSquareTableMG[tableCoords];
+                        score.second += qEG  + queenSquareTableEG[tableCoords];
                         evaluateQueens<true>(board, square);
 
                     }
                     else {
-                        score.first  -= 1025 + queenSquareTableMG[square];
-                        score.second -= 936  + queenSquareTableEG[square];
+                        score.first  -= qMG + queenSquareTableMG[square];
+                        score.second -= qEG  + queenSquareTableEG[square];
                         evaluateQueens<false>(board, square);
 
                     }

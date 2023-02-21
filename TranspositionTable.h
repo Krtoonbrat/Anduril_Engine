@@ -27,7 +27,7 @@ public:
 private:
     Cluster *tPtr = nullptr;
 
-    int tableSize = 0;
+    size_t clusterCount = 0;
 
 };
 

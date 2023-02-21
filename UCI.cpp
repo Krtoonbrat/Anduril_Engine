@@ -45,7 +45,8 @@ namespace UCI {
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
         Anduril AI;
-        Book openingBook = Book(R"(book\Performance.bin)");
+        Book openingBook = Book(R"(..\book\Performance.bin)");
+        bool bookOpen = true;
 
         while (true) {
             // clear the line and flush stdout in case of buffer issues
@@ -66,7 +67,7 @@ namespace UCI {
                 parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "setoption", 9)) {
-                parseOption(line, AI);
+                parseOption(line, AI, bookOpen);
             }
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
@@ -77,7 +78,7 @@ namespace UCI {
                 parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "go", 2)) {
-                parseGo(line, board, AI, openingBook);
+                parseGo(line, board, AI, openingBook, bookOpen);
             }
             else if (!strncmp(line, "quit", 4)) {
                 AI.quit = true;
@@ -88,16 +89,26 @@ namespace UCI {
                 std::cout << "id author Krtoonbrat" << std::endl;
 
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
+                std::cout << "option name Book type check default true" << std::endl;
 
-                std::cout << "option name kMG type spin default 337 min -1000 max 1000" << std::endl;
-                std::cout << "option name kEG type spin default 281 min -1000 max 1000" << std::endl;
+                std::cout << "option name kMG type spin default 337 min -4000 max 4000" << std::endl;
+                std::cout << "option name kEG type spin default 281 min -4000 max 4000" << std::endl;
                 std::cout << "option name oMG type spin default 10  min -1000 max 1000" << std::endl;
                 std::cout << "option name oEG type spin default 10  min -1000 max 1000" << std::endl;
                 std::cout << "option name tMG type spin default 150 min -1000 max 1000" << std::endl;
                 std::cout << "option name tEG type spin default 150 min -1000 max 1000" << std::endl;
 
-                std::cout << "option name pMG type spin default 88 min -1000 max 1000" << std::endl;
-                std::cout << "option name pEG type spin default 138 min -1000 max 1000" << std::endl;
+                std::cout << "option name pMG type spin default 88 min -4000 max 4000" << std::endl;
+                std::cout << "option name pEG type spin default 138 min -4000 max 4000" << std::endl;
+
+                std::cout << "option name bMG type spin default 365 min -4000 max 4000" << std::endl;
+                std::cout << "option name bEG type spin default 297 min -4000 max 4000" << std::endl;
+
+                std::cout << "option name rMG type spin default 477 min -4000 max 4000" << std::endl;
+                std::cout << "option name rEG type spin default 512 min -4000 max 4000" << std::endl;
+
+                std::cout << "option name qMG type spin default 1025 min -4000 max 4000" << std::endl;
+                std::cout << "option name qEG type spin default 936 min -4000 max 4000" << std::endl;
 
                 std::cout << "option name Pph type spin default 125 min 0 max 10000" << std::endl;
                 std::cout << "option name Kph type spin default 1000 min 0 max 10000" << std::endl;
@@ -115,12 +126,22 @@ namespace UCI {
         }
     }
 
-    void parseOption(char* line, Anduril &AI) {
+    void parseOption(char* line, Anduril &AI, bool &bookOpen) {
         char *ptr = NULL;
 
         // set hash size
         if ((ptr = strstr(line, "Hash"))) {
             AI.table.resize(atoi(ptr + 10));
+        }
+
+        // set book open or closed
+        if ((ptr = strstr(line, "Book"))) {
+            if ((ptr = strstr(line, "true"))) {
+                bookOpen = true;
+            }
+            else {
+                bookOpen = false;
+            }
         }
 
         // setoption name pMG value 100
@@ -130,6 +151,30 @@ namespace UCI {
 
         if ((ptr = strstr(line, "kEG"))) {
             AI.kEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "bMG"))) {
+            AI.bMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "bEG"))) {
+            AI.bEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "rMG"))) {
+            AI.rMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "rEG"))) {
+            AI.rEG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "qMG"))) {
+            AI.qMG = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "qEG"))) {
+            AI.qEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "oMG"))) {
@@ -177,9 +222,9 @@ namespace UCI {
         }
     }
 
-    void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook) {
+    void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook, bool &bookOpen) {
         // reset all the limit
-        int depth = -1; int moveTime = -1; int mtg = 25;
+        int depth = -1; int moveTime = -1; int mtg = 30;
         int time = -1;
         int increment = -1;
         AI.limits.timeSet = false;
@@ -187,7 +232,9 @@ namespace UCI {
 
         // the opening book stays open unless we are doing an infinite search
         // jk no opening book rn cuz of CLOP
-        openingBook.closeBook();
+        if (!bookOpen) {
+            openingBook.closeBook();
+        }
 
         // commands
         if ((ptr = strstr(line, "infinite"))) {
@@ -398,9 +445,9 @@ void Anduril::go(libchess::Position &board) {
     std::string boardFENs = board.fen();
     char *boardFEN = &boardFENs[0];
 
-    int alpha = -999999999;
-    int beta = 999999999;
-    int bestScore = -999999999;
+    int alpha = -32001;
+    int beta = 32001;
+    int bestScore = -32001;
     int prevBestScore = bestScore;
 
     // set the killer vector to have the correct number of slots
@@ -411,6 +458,7 @@ void Anduril::go(libchess::Position &board) {
     }
 
     rootPly = ply;
+    age++;
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
@@ -420,15 +468,9 @@ void Anduril::go(libchess::Position &board) {
     bool research = false;
     std::vector<int> misses;
 
-    // we need to values for alpha because we need to change alpha based on
-    // our results, but we also need a copy of the original alpha for the
-    // aspiration window
-    int alphaTheSecond = alpha;
-
     // get the move list
     rootMoves = getMoveList(board);
 
-    int score = -999999999;
     int deep = 1;
     bool finalDepth = false;
     bool incomplete = false;
@@ -449,7 +491,6 @@ void Anduril::go(libchess::Position &board) {
             finalDepth = true;
         }
 
-        alphaTheSecond = alpha;
         incomplete = false;
 
         // search for the best score
@@ -525,15 +566,15 @@ void Anduril::go(libchess::Position &board) {
         }
 
         if (!incomplete) {
-            if (prevBestScore >= 99000) {
-                int distance = ((-prevBestScore + 100000) / 2) + (prevBestScore % 2);
+            if (prevBestScore >= 31000) {
+                int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                 std::cout << "info score mate " << distance << " depth " << deep - 1 << " nodes " <<
                           movesExplored << " nps " << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
                           << " time "
                           << timeElapsed.count() << " pv" << pv << std::endl;
             }
-            else if (prevBestScore <= -99000) {
-                int distance = -((prevBestScore + 100000) / 2) + -(prevBestScore % 2);
+            else if (prevBestScore <= -31000) {
+                int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                 std::cout << "info score mate " << distance << " depth " << deep - 1 << " nodes " <<
                           movesExplored << " nps " << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
                           << " time "
@@ -582,9 +623,7 @@ void Anduril::go(libchess::Position &board) {
 
         // reset the variables to prepare for the next loop
         if (!finalDepth) {
-            bestScore = -999999999;
-            alphaTheSecond = -999999999;
-            score = -999999999;
+            bestScore = -32001;
         }
     }
 

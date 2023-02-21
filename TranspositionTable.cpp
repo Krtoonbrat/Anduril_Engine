@@ -4,6 +4,21 @@
 
 #include "TranspositionTable.h"
 
+// this was the stockfish way to find the index for a cluster.  If it works for them, it works for me
+inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
+#if defined(__GNUC__) && defined(IS_64BIT)
+    __extension__ typedef unsigned __int128 uint128;
+    return ((uint128)a * (uint128)b) >> 64;
+#else
+    uint64_t aL = (uint32_t)a, aH = a >> 32;
+    uint64_t bL = (uint32_t)b, bH = b >> 32;
+    uint64_t c1 = (aL * bL) >> 32;
+    uint64_t c2 = aH * bL + c1;
+    uint64_t c3 = aL * bH + (uint32_t)c2;
+    return aH * bH + (c2 >> 32) + (c3 >> 32);
+#endif
+}
+
 TranspositionTable::TranspositionTable(size_t tSize) {
     resize(tSize);
     clear();
@@ -15,33 +30,34 @@ TranspositionTable::~TranspositionTable() {
 
 void TranspositionTable::resize(size_t tSize) {
     std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
-    int nodeCount = (tSize * 1024 * 1024) / sizeof(Cluster);
+    clusterCount = (tSize * 1024 * 1024) / sizeof(Cluster);
     delete[] tPtr;
-    tPtr = new Cluster[nodeCount];
-    tableSize = nodeCount - 1;
+    tPtr = new Cluster[clusterCount];
 }
 
 void TranspositionTable::clear() {
     delete[] tPtr;
-    tPtr = new Cluster[tableSize + 1];
+    tPtr = new Cluster[clusterCount];
 }
 
 Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
-    Node *entry = &tPtr[key & tableSize].entry[0];
+    Node *entry = &tPtr[mul_hi64(key, clusterCount)].entry[0];
+
+    uint16_t k = (uint16_t)key;
 
     // look for a matching node or one that needs to be filled
-    if (entry[0].key == key || entry[0].key  == 0) {
-        entry[0].key == key ? foundNode = true : foundNode = false;
+    if (entry[0].key == k || entry[0].key  == 0) {
+        entry[0].key == k ? foundNode = true : foundNode = false;
         return &entry[0];
     }
-    else if (entry[1].key == key || entry[1].key  == 0) {
-        entry[1].key == key ? foundNode = true : foundNode = false;
+    else if (entry[1].key == k || entry[1].key  == 0) {
+        entry[1].key == k ? foundNode = true : foundNode = false;
         return &entry[1];
     }
 
     // no nodes matched, determine which gets replaced
     Node *replace = entry;
-    if (entry[0].nodeDepth > entry[1].nodeDepth) {
+    if (entry[0].age > entry[1].age || entry[0].nodeDepth > entry[1].nodeDepth) {
         replace = &entry[1];
     }
 

@@ -81,6 +81,7 @@ public:
 
     // reset the move and counter move tables
     inline void resetHistories() {
+        age = 0;
         for (int i = 0; i < 64; i++) {
             for (int j = 0; j < 64; j++) {
                 counterMoves[i][j] = libchess::Move(0);
@@ -115,12 +116,20 @@ public:
     bool stopped = false;
 
     // values for CLOP to tune
-    // razoring values
     int kMG = 337;
     int kEG = 281;
 
     int pMG = 88;
     int pEG = 138;
+
+    int bMG = 365;
+    int bEG = 297;
+
+    int rMG = 477;
+    int rEG = 512;
+
+    int qMG = 1025;
+    int qEG = 936;
 
     int oMG = 20;
     int oEG = 5;
@@ -135,7 +144,7 @@ public:
     double Qph = 4;
 
     // piece values used for see
-    std::array<int, 6> seeValues = {pMG, kMG, 365, 477, 1025, 0};
+    std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
 
 private:
     // total number of moves Anduril searched
@@ -158,6 +167,9 @@ private:
 
     // current ply
     int ply = 0;
+
+    // age tracker for transposition table
+    int age = 0;
 
     // list of moves at root position
     std::vector<std::tuple<int, libchess::Move>> rootMoves;
@@ -262,15 +274,15 @@ private:
     // the piece values
     std::unordered_map<char, int> pieceValues = {{'P', pMG},
                                                  {'N', kMG},
-                                                 {'B', 365},
-                                                 {'R', 477},
-                                                 {'Q', 1025},
+                                                 {'B', bMG},
+                                                 {'R', rMG},
+                                                 {'Q', qMG},
                                                  {'K', 0},
                                                  {'p', -pMG},
                                                  {'n', -kMG},
-                                                 {'b', -365},
-                                                 {'r', -477},
-                                                 {'q', -1025},
+                                                 {'b', -bMG},
+                                                 {'r', -rMG},
+                                                 {'q', -qMG},
                                                  {'k', 0}};
 
     // this will be used to make sure the same color doesn't do a null move twice in a row

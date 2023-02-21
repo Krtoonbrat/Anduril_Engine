@@ -14,6 +14,7 @@ bool Book::readBook(const char *file) {
     book = fopen(file, "rb");
 
     if (book == nullptr) {
+        //std::cout << "Failed to read book, file did not open" << std::endl;
         bookOpen = false;
         return false;
     }
@@ -22,6 +23,7 @@ bool Book::readBook(const char *file) {
         long position = ftell(book);
 
         if (position < sizeof(bookEntry)) {
+            //std::cout << "Failed to read book." << std::endl;
             bookOpen = false;
             return false;
         }
