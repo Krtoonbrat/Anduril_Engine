@@ -19,6 +19,28 @@ inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
 #endif
 }
 
+// saves the information passed to the node, possibly overwrting the old position
+void Node::save(uint64_t k, int s, int t, int d, libchess::Move m, int a, int ev) {
+    // keep the move the same for the same position
+    if (m.value() != 0 || (uint16_t)k != key) {
+        bestMove = m;
+    }
+
+    // overwrite less valuable entries (cheapest check first)
+    if (t == 1
+        || (uint16_t)k != key
+        || (int8_t)d > nodeDepth) {
+        key = (uint16_t)k;
+        nodeScore = (int16_t)s;
+        nodeEval = (int16_t)ev;
+        age = (int16_t)a;
+        nodeDepth = (int8_t)d;
+        nodeType = (int8_t)t;
+
+    }
+
+}
+
 TranspositionTable::TranspositionTable(size_t tSize) {
     resize(tSize);
     clear();

@@ -293,23 +293,10 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 		movesTransposed++;
 		return node->nodeScore;
 	}
-	else if (!found && node->nodeDepth <= -1) {
-		// reset the node information so that we can rewrite it
-		// this isn't the best way to do it, but imma do it anyways
-		node->nodeScore = (int16_t)bestScore; // bestScore is already set to our "replace me" flag
-        node->nodeEval = (int16_t)bestScore;
-		node->nodeType = -1;
-		node->bestMove = libchess::Move(0);
-		node->key = (uint16_t)hash;
-		node->nodeDepth = -1;
-        node->age = 0;
-	}
 
     // are we in check?
     bool check = board.in_check();
 
-    // did this node increase alpha?
-    bool alphaChange = false;
 
     // get a move list
     std::vector<std::tuple<int, libchess::Move>> moveList;
@@ -324,27 +311,21 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
             }
             else {
                 standPat = evaluateBoard(board);
-                node->nodeEval = (int16_t)standPat;
             }
         }
         else {
             standPat = evaluateBoard(board);
-            if (node->nodeDepth <= -1) {
-                node->nodeEval = (int16_t)standPat;
-                node->nodeScore = (int16_t)standPat;
-            }
         }
         bestScore = standPat;
 
         // adjust alpha and beta based on the stand pat
         if (standPat >= beta) {
-			if (!found && node->nodeDepth <= -1) {
-				node->nodeType = 2;
+			if (!found) {
+                node->save(hash, standPat, 2, -1, libchess::Move(0), age, standPat);
 			}
             return standPat;
         }
         if (PvNode && standPat > alpha) {
-            alphaChange = true;
             alpha = standPat;
         }
 
@@ -419,30 +400,21 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 
         if (score > bestScore) {
             bestScore = score;
-            bestMove = move;
             if (score > alpha) {
-                if (score >= beta) {
-                    cutNodes++;
-					if (node->nodeDepth <= -1) {
-						node->nodeType = 2;
-						node->nodeScore = (int16_t)bestScore;
-						node->bestMove = bestMove;
-                        node->age = age;
-					}
-                    return bestScore;
+                bestMove = move;
+                if (PvNode && score < beta) {
+                    alpha = score;
                 }
-                alphaChange = true;
-                alpha = score;
+                else {
+                    cutNodes++;
+                    break;
+                }
+
             }
         }
     }
 
-	if (node->nodeDepth <= -1) {
-		alphaChange ? node->nodeType = 1 : node->nodeType = 3;
-		node->nodeScore = (int16_t)bestScore;
-		node->bestMove = bestMove;
-        node->age = age;
-	}
+    node->save(hash, bestScore, bestScore >= beta ? 2 : 3, -1, bestMove, age, standPat);
     return bestScore;
 
 }
@@ -541,16 +513,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             return nScore;
         }
 	}
-	else {
-	    // reset the node information so that we can rewrite it
-	    node->nodeScore = (int16_t)bestScore; // bestScore is already set to our "replace me" flag
-        node->nodeEval = (int16_t)bestScore;
-	    node->nodeType = -1;
-	    node->bestMove = libchess::Move(0);
-	    node->key = (uint16_t)hash;
-	    node->nodeDepth = -99;
-        node->age = 0;
-    }
 
 	// get the static evaluation
     // it won't be needed if in check however
@@ -562,7 +524,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         // little check in case something gets messed up
         if (node->nodeEval == -32001) {
             staticEval = evaluateBoard(board);
-            node->nodeEval = (int16_t)staticEval;
         }
         else {
             staticEval = node->nodeEval;
@@ -570,7 +531,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
     else {
         staticEval = evaluateBoard(board);
-        node->nodeEval = (int16_t)staticEval;
+        node->save(hash, -32001, -1, -99, libchess::Move(0), 0, staticEval);
     }
 
     // razoring
@@ -682,11 +643,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 if (!(found
                     && nDepth >= depth - 3
                     && nScore != -32001)) {
-                    node->nodeDepth = depth - 3;
-                    node->nodeScore = score;
-                    node->nodeType = 2;
-                    node->bestMove = move;
-                    node->age = age;
+                    node->save(hash, score, 2, depth - 3, move, age, staticEval);
+
                 }
                 cutNodes++;
                 return score;
@@ -819,33 +777,26 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         if (score > bestScore) {
             bestScore = score;
-            bestMove = move;
             if (score > alpha) {
-                if (score >= beta) {
+                bestMove = move;
+                if (PvNode && score < beta) {
+                    alpha = score;
+                    alphaChange = true;
+                }
+                else {
                     cutNodes++;
-                    node->nodeType = 2;
                     if (move.type() == libchess::Move::Type::CAPTURE) {
                         insertKiller(move, depth);
                         counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] = move;
                         moveHistory[board.side_to_move()][move.from_square()][move.to_square()] += depth * depth;
                     }
-                    node->nodeDepth = (int8_t)depth;
-                    node->nodeScore = (int16_t)score;
-                    node->bestMove = bestMove;
-                    node->age = age;
-                    return bestScore;
+                    break;
                 }
-                alphaChange = true;
-                alpha = score;
             }
         }
     }
 
-    alphaChange ? node->nodeType = 1 : node->nodeType = 3;
-    node->nodeDepth = (int8_t)depth;
-    node->nodeScore = (int16_t)bestScore;
-    node->bestMove = bestMove;
-    node->age = age;
+    node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove, age, staticEval);
     return bestScore;
 
 }

@@ -11,6 +11,9 @@ class Node {
 public:
     Node() : nodeScore(-32001), nodeType(-1), bestMove(), nodeDepth(-99), key(0), nodeEval(-32001), age(0) {}
 
+    // saves the information passed in to the node
+    void save(uint64_t k, int s, int b, int d, libchess::Move m, int a, int ev);
+
     // the evaluation of the node after a full search
     int16_t nodeScore;
 
