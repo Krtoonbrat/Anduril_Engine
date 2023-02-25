@@ -491,6 +491,11 @@ void Anduril::go(libchess::Position &board) {
             finalDepth = true;
         }
 
+        // reset selDepth
+        if (!incomplete) {
+            selDepth = 0;
+        }
+
         incomplete = false;
 
         // search for the best score
@@ -568,23 +573,35 @@ void Anduril::go(libchess::Position &board) {
         if (!incomplete) {
             if (prevBestScore >= 31000) {
                 int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
-                std::cout << "info score mate " << distance << " depth " << deep - 1 << " nodes " <<
-                          movesExplored << " nps " << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "
-                          << timeElapsed.count() << " pv" << pv << std::endl;
+                std::cout << "info "
+                             << "score mate " << distance
+                             << " depth "     << deep - 1
+                             << " seldepth "  << selDepth
+                             << " nodes "     << movesExplored
+                             << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
+                             << " time "      << timeElapsed.count()
+                             << " pv"         << pv << std::endl;
             }
             else if (prevBestScore <= -31000) {
                 int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
-                std::cout << "info score mate " << distance << " depth " << deep - 1 << " nodes " <<
-                          movesExplored << " nps " << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "
-                          << timeElapsed.count() << " pv" << pv << std::endl;
+                std::cout << "info "
+                             << "score mate " << distance
+                             << " depth "     << deep - 1
+                             << " seldepth "  << selDepth
+                             << " nodes "     << movesExplored
+                             << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
+                             << " time "      << timeElapsed.count()
+                             << " pv"         << pv << std::endl;
             }
             else {
-                std::cout << "info score cp " << prevBestScore << " depth " << deep - 1 << " nodes " <<
-                          movesExplored << " nps " << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "
-                          << timeElapsed.count() << " pv" << pv << std::endl;
+                std::cout << "info "
+                             << "score cp "   << prevBestScore
+                             << " depth "     << deep - 1
+                             << " seldepth "  << selDepth
+                             << " nodes "     << movesExplored
+                             << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
+                             << " time "      << timeElapsed.count()
+                             << " pv"         << pv << std::endl;
             }
         }
 

@@ -480,6 +480,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // increment counters now that we know we aren't going into quiescence
     depthNodes++;
     movesExplored++;
+    if (PvNode && selDepth < (ply - rootPly) + 1) {
+        selDepth = (ply - rootPly) + 1;
+    }
 
     // represents our next move to search
     libchess::Move move;
@@ -680,8 +683,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         // if we are at root, give the gui some information
         if constexpr (rootNode) {
             auto now = std::chrono::steady_clock::now();
-            auto elapsed = now - startTime;
-            if (elapsed.count() >= 1000 && depth > 5) {
+            std::chrono::duration<double, std::milli> elapsed = now - startTime;
+            if (elapsed.count() > 3000 && depth > 5) {
                 std::cout << "info currmove " << move.to_str() << " currmovenumber " << i + 1 << std::endl;
             }
         }

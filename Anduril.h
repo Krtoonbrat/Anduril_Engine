@@ -171,6 +171,9 @@ private:
     // age tracker for transposition table
     int age = 0;
 
+    // selective depth
+    int selDepth = 0;
+
     // list of moves at root position
     std::vector<std::tuple<int, libchess::Move>> rootMoves;
 

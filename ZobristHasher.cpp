@@ -51,7 +51,7 @@ namespace Zobrist {
             // magic values at the end of the expression mirror i to the opposite
             // side of the board because the zobirst array is mirrored along the
             // x axis compared to our squares
-            hash ^= zobristArray[64 * pieceIndex + piece];
+            hash ^= zobristArray[64 * pieceIndex + piece.value()];
 
             pieces.forward_popbit();
         }
@@ -90,35 +90,41 @@ namespace Zobrist {
         // this finds the square where en passant is possible
         // then it applies an offset based on the file en passant
         // is possible in
-        if (enpassantSquare){
+        if (enpassantSquare) {
             libchess::Square target = *enpassantSquare;
-            switch (target.file()){
-                case libchess::constants::FILE_A:
-                    fileMask = 0;
-                    break;
-                case libchess::constants::FILE_B:
-                    fileMask = 1;
-                    break;
-                case libchess::constants::FILE_C:
-                    fileMask = 2;
-                    break;
-                case libchess::constants::FILE_D:
-                    fileMask = 3;
-                    break;
-                case libchess::constants::FILE_E:
-                    fileMask = 4;
-                    break;
-                case libchess::constants::FILE_F:
-                    fileMask = 5;
-                    break;
-                case libchess::constants::FILE_G:
-                    fileMask = 6;
-                    break;
-                case libchess::constants::FILE_H:
-                    fileMask = 7;
-                    break;
+            // check if enpassant is possible
+            libchess::Bitboard enpassant = board.piece_type_bb(libchess::constants::PAWN, board.side_to_move()) &
+                                           libchess::lookups::pawn_attacks(target, !board.side_to_move());
+
+            if (enpassant) {
+                switch (target.file()) {
+                    case libchess::constants::FILE_A:
+                        fileMask = 0;
+                        break;
+                    case libchess::constants::FILE_B:
+                        fileMask = 1;
+                        break;
+                    case libchess::constants::FILE_C:
+                        fileMask = 2;
+                        break;
+                    case libchess::constants::FILE_D:
+                        fileMask = 3;
+                        break;
+                    case libchess::constants::FILE_E:
+                        fileMask = 4;
+                        break;
+                    case libchess::constants::FILE_F:
+                        fileMask = 5;
+                        break;
+                    case libchess::constants::FILE_G:
+                        fileMask = 6;
+                        break;
+                    case libchess::constants::FILE_H:
+                        fileMask = 7;
+                        break;
                 }
-            return zobristArray[772 + fileMask];
+                return zobristArray[772 + fileMask];
+            }
         }
 
         return 0;
