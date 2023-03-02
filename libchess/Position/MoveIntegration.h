@@ -1,6 +1,8 @@
 #ifndef LIBCHESS_MOVEINTEGRATION_H
 #define LIBCHESS_MOVEINTEGRATION_H
 #include <iostream>
+#include "../Move.h"
+#include "../Position.h"
 
 namespace libchess {
 
@@ -217,6 +219,8 @@ inline void Position::make_see_move(Move move) {
     //next_state.pawn_hash_ = calculate_pawn_hash();
 }
 
+// edited by Krtoonbrat
+// changed to incrementally update hashes
 inline void Position::make_move(Move move) {
     Color stm = side_to_move();
     if (stm == constants::BLACK) {
@@ -243,6 +247,13 @@ inline void Position::make_move(Move move) {
 
     Move::Type move_type = move_type_of(move);
 
+    hash_type hash = prev_state.hash_;
+    hash_type phash = prev_state.pawn_hash_;
+    if (prev_state.enpassant_square_) {
+        hash ^= zobrist::enpassant_key(*prev_state.enpassant_square_);
+    }
+    hash ^= zobrist::side_to_move_key(constants::WHITE);
+
     if (moving_pt == constants::PAWN || captured_pt) {
         next_state.halfmoves_ = 0;
     }
@@ -250,36 +261,60 @@ inline void Position::make_move(Move move) {
     switch (move_type) {
         case Move::Type::NORMAL:
             move_piece(from_square, to_square, *moving_pt, stm);
+            hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+            if (*moving_pt == constants::PAWN) {
+                phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+            }
             break;
         case Move::Type::CAPTURE:
             remove_piece(to_square, *captured_pt, !stm);
+            hash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
+            if (*captured_pt == constants::PAWN) {
+                phash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
+            }
             move_piece(from_square, to_square, *moving_pt, stm);
+            hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+            if (*moving_pt == constants::PAWN) {
+                phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+            }
             break;
         case Move::Type::DOUBLE_PUSH:
             move_piece(from_square, to_square, constants::PAWN, stm);
+            hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+            phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             next_state.enpassant_square_ =
                     stm == constants::WHITE ? Square(from_square + 8) : Square(from_square - 8);
+            hash ^= zobrist::enpassant_key(*next_state.enpassant_square_);
             break;
         case Move::Type::ENPASSANT:
             move_piece(from_square, to_square, constants::PAWN, stm);
+            hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+            phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             remove_piece(stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8),
                          constants::PAWN,
                          !stm);
+            hash ^= zobrist::piece_square_key(stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8), constants::PAWN, !stm);
+            phash ^= zobrist::piece_square_key(stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8), constants::PAWN, !stm);
             break;
         case Move::Type::CASTLING:
             move_piece(from_square, to_square, constants::KING, stm);
+            hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             switch (to_square) {
                 case constants::C1:
                     move_piece(constants::A1, constants::D1, constants::ROOK, stm);
+                    hash ^= zobrist::piece_square_key(constants::A1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D1, constants::ROOK, stm);
                     break;
                 case constants::G1:
                     move_piece(constants::H1, constants::F1, constants::ROOK, stm);
+                    hash ^= zobrist::piece_square_key(constants::H1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F1, constants::ROOK, stm);
                     break;
                 case constants::C8:
                     move_piece(constants::A8, constants::D8, constants::ROOK, stm);
+                    hash ^= zobrist::piece_square_key(constants::A8, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D8, constants::ROOK, stm);
                     break;
                 case constants::G8:
                     move_piece(constants::H8, constants::F8, constants::ROOK, stm);
+                    hash ^= zobrist::piece_square_key(constants::H8, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F8, constants::ROOK, stm);
                     break;
                 default:
                     break;
@@ -287,22 +322,47 @@ inline void Position::make_move(Move move) {
             break;
         case Move::Type::PROMOTION:
             remove_piece(from_square, constants::PAWN, stm);
+            hash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
+            phash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
             put_piece(to_square, *promotion_pt, stm);
+            hash ^= zobrist::piece_square_key(to_square, *promotion_pt, stm);
             break;
         case Move::Type::CAPTURE_PROMOTION:
             remove_piece(to_square, *captured_pt, !stm);
+            hash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
+            if (*captured_pt == constants::PAWN) {
+                phash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
+            }
             remove_piece(from_square, constants::PAWN, stm);
+            hash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
+            phash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
             put_piece(to_square, *promotion_pt, stm);
+            hash ^= zobrist::piece_square_key(to_square, *promotion_pt, stm);
             break;
         case Move::Type::NONE:
             break;
     }
 
+    // I do castling rights separately because they depend on the last positions rights and this ones
+    // because you can't gain back castling rights, we check to see if they were allowed, but no longer are
+    if (prev_state.castling_rights_.is_allowed(constants::WHITE_KINGSIDE) && !next_state.castling_rights_.is_allowed(constants::WHITE_KINGSIDE)) {
+        hash ^= zobrist::castling_rights_key(CastlingRights(constants::WHITE_KINGSIDE));
+    }
+    if (prev_state.castling_rights_.is_allowed(constants::WHITE_QUEENSIDE) && !next_state.castling_rights_.is_allowed(constants::WHITE_QUEENSIDE)) {
+        hash ^= zobrist::castling_rights_key(CastlingRights(constants::WHITE_QUEENSIDE));
+    }
+    if (prev_state.castling_rights_.is_allowed(constants::BLACK_KINGSIDE) && !next_state.castling_rights_.is_allowed(constants::BLACK_KINGSIDE)) {
+        hash ^= zobrist::castling_rights_key(CastlingRights(constants::BLACK_KINGSIDE));
+    }
+    if (prev_state.castling_rights_.is_allowed(constants::BLACK_QUEENSIDE) && !next_state.castling_rights_.is_allowed(constants::BLACK_QUEENSIDE)) {
+        hash ^= zobrist::castling_rights_key(CastlingRights(constants::BLACK_QUEENSIDE));
+    }
+
     next_state.captured_pt_ = captured_pt;
     next_state.move_type_ = move_type;
     reverse_side_to_move();
-    next_state.hash_ = calculate_hash();
-    next_state.pawn_hash_ = calculate_pawn_hash();
+    next_state.hash_ = hash;
+    next_state.pawn_hash_ = phash;
 }
 
 inline void Position::make_null_move() {

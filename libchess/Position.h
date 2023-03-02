@@ -199,7 +199,24 @@ protected:
         if (ep_sq) {
             hash_value ^= zobrist::enpassant_key(*ep_sq);
         }
-        hash_value ^= zobrist::castling_rights_key(castling_rights());
+        CastlingRights rights = castling_rights();
+        if (rights.is_allowed(constants::WHITE_KINGSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::WHITE_KINGSIDE);
+        }
+        if (rights.is_allowed(constants::WHITE_QUEENSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::WHITE_QUEENSIDE);
+        }
+        if (rights.is_allowed(constants::BLACK_KINGSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::BLACK_KINGSIDE);
+        }
+        if (rights.is_allowed(constants::BLACK_QUEENSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::BLACK_QUEENSIDE);
+        }
+        //hash_value ^= zobrist::castling_rights_key(castling_rights());
         hash_value ^= zobrist::side_to_move_key(side_to_move());
         return hash_value;
     }
