@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <optional>
 #include <vector>
+#include <array>
 
 #include "PieceType.h"
 #include "Square.h"

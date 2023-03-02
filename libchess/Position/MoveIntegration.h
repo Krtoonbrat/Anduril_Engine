@@ -318,8 +318,16 @@ inline void Position::make_null_move() {
     next.halfmoves_ = prev.halfmoves_ + 1;
     next.enpassant_square_ = {};
     next.castling_rights_ = prev.castling_rights_;
-    next.hash_ = calculate_hash();
-    next.pawn_hash_ = calculate_pawn_hash();
+
+    // editied by Krtoonbrat
+    // We should be able to incrementally update the hash for null moves.  The only things that change are the turn
+    // and enpassant
+    next.hash_ = prev.hash_ ^ zobrist::side_to_move_key(constants::WHITE);
+    if (prev.enpassant_square_) {
+        next.hash_ ^= zobrist::enpassant_key(*prev.enpassant_square_);
+    }
+    // the pawn hash shouldn't change at all
+    next.pawn_hash_ = prev.pawn_hash_;
 }
 
 }  // namespace libchess

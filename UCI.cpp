@@ -224,7 +224,7 @@ namespace UCI {
 
     void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook, bool &bookOpen) {
         // reset all the limit
-        int depth = -1; int moveTime = -1; int mtg = 30;
+        int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
         int increment = -1;
         AI.limits.timeSet = false;

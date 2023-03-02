@@ -207,21 +207,24 @@ private:
     // finds the king safety bonus for the position
     int getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing);
 
-    // evaluates knights for tropism
+    // evaluates knights for tropism and calculates mobility
     template<bool white>
     void evaluateKnights(libchess::Position &board, libchess::Square square);
 
-    // evaluates bishops for tropism
+    // evaluates bishops for tropism and calculates mobility
     template<bool white>
     void evaluateBishops(libchess::Position &board, libchess::Square square);
 
-    // evaluates rooks for tropism
+    // evaluates rooks for tropism and calculates mobility
     template<bool white>
     void evaluateRooks(libchess::Position &board, libchess::Square square);
 
-    // evaluates queens for tropism
+    // evaluates queens for tropism and calculates mobility
     template<bool white>
     void evaluateQueens(libchess::Position &board, libchess::Square square);
+
+    // calculates all mobility scores and tropism
+    std::pair<int, int> positionalMobilityTropism(libchess::Position &board);
 
     // gives a score to each capture
     int MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst);
