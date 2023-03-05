@@ -11,6 +11,24 @@
 #include "ConsoleGame.h"
 #include "UCI.h"
 
+// prefetches an address in memory to CPU cache that doesn't block execution
+// this should speed up the program by reducing the amount of time we wait for transposition table probes
+// copied from Stockfish
+void prefetch(void* addr) {
+
+#  if defined(__INTEL_COMPILER)
+    // This hack prevents prefetches from being optimized away by
+   // Intel compiler. Both MSVC and gcc seem not be affected by this.
+   __asm__ ("");
+#  endif
+
+#  if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+    _mm_prefetch((char*)addr, _MM_HINT_T0);
+#  else
+    __builtin_prefetch(addr);
+#  endif
+}
+
 // Most Valuable Victim, Least Valuable Attacker
 int Anduril::MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst) {
     return std::abs(pieceValues[board.piece_on(dst)->to_char()]) - std::abs(pieceValues[board.piece_on(src)->to_char()]);
@@ -382,13 +400,19 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
             }
 
             // delta pruning
-            if (standPat + abs(pieceValues[board.piece_on(move.to_square())->to_char()]) + 200 < alpha
+            // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
+            // we can just skip delta pruning there and it shouldn't cost too much
+            if (board.piece_type_on(move.to_square())
+                && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
                 && nonPawnMaterial(board.side_to_move(), board) -
-                   abs(pieceValues[board.piece_on(move.to_square())->to_char()]) > 1300
+                   seeValues[board.piece_type_on(move.to_square())->value()] > 1300
                 && move.type() != libchess::Move::Type::PROMOTION) {
                 continue;
             }
         }
+
+        // prefetch before we make a move
+        prefetch(table.firstEntry(board.hashAfter(move)));
 
         board.make_move(move);
 
@@ -704,6 +728,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             board.unmake_move();
         }
 
+        // prefetch before we make a move
+        prefetch(table.firstEntry(board.hashAfter(move)));
 
         // search with zero window
         // first check if we can reduce

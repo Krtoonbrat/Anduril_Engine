@@ -4,21 +4,6 @@
 
 #include "TranspositionTable.h"
 
-// this was the stockfish way to find the index for a cluster.  If it works for them, it works for me
-inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
-#if defined(__GNUC__) && defined(IS_64BIT)
-    __extension__ typedef unsigned __int128 uint128;
-    return ((uint128)a * (uint128)b) >> 64;
-#else
-    uint64_t aL = (uint32_t)a, aH = a >> 32;
-    uint64_t bL = (uint32_t)b, bH = b >> 32;
-    uint64_t c1 = (aL * bL) >> 32;
-    uint64_t c2 = aH * bL + c1;
-    uint64_t c3 = aL * bH + (uint32_t)c2;
-    return aH * bH + (c2 >> 32) + (c3 >> 32);
-#endif
-}
-
 // saves the information passed to the node, possibly overwrting the old position
 void Node::save(uint64_t k, int s, int t, int d, libchess::Move m, int a, int ev) {
     // keep the move the same for the same position
@@ -63,7 +48,7 @@ void TranspositionTable::clear() {
 }
 
 Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
-    Node *entry = &tPtr[mul_hi64(key, clusterCount)].entry[0];
+    Node *entry = firstEntry(key);
 
     uint16_t k = (uint16_t)key;
 

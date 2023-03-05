@@ -60,6 +60,7 @@ class Position {
     [[nodiscard]] std::optional<Color> color_of(Square square) const;
     [[nodiscard]] std::optional<Piece> piece_on(Square square) const;
     [[nodiscard]] hash_type hash() const;
+    [[nodiscard]] hash_type hashAfter(Move move);
     [[nodiscard]] hash_type pawn_hash() const;
     [[nodiscard]] Square king_square(Color color) const;
     [[nodiscard]] int halfmoves() const;
