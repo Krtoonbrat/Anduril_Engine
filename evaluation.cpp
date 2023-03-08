@@ -3,737 +3,732 @@
 //
 
 #include <iostream> // we need this for debugging if we print the board
-#include <unordered_set>
 
 #include "Anduril.h"
-#include "thc.h"
-#include "ZobristHasher.h"
-
-// these were totally stolen from the thc.cpp file directly
-// Macro to convert chess notation to Square convention,
-//  eg SQ('c','5') -> c5
-//  (We didn't always have such a sensible Square convention. SQ() remains
-//  useful for cases like SQ(file,rank), but you may actually see examples
-//  like the hardwired SQ('c','5') which can safely be changed to simply
-//  c5).
-
-#define SQ(f,r)  ( (thc::Square) ( ('8'-(r))*8 + ((f)-'a') )   )
-
-// More Square macros
-#define FILE(sq)    ( (char) (  ((sq)&0x07) + 'a' ) )           // eg c5->'c'
-#define RANK(sq)    ( (char) (  '8' - (((sq)>>3) & 0x07) ) )    // eg c5->'5'
-#define IFILE(sq)   (  (int)(sq) & 0x07 )                       // eg c5->2
-#define IRANK(sq)   (  7 - ((((int)(sq)) >>3) & 0x07) )         // eg c5->4
-#define SOUTH(sq)   (  (thc::Square)((sq) + 8) )                     // eg c5->c4
-#define NORTH(sq)   (  (thc::Square)((sq) - 8) )                     // eg c5->c6
-#define SW(sq)      (  (thc::Square)((sq) + 7) )                     // eg c5->b4
-#define SE(sq)      (  (thc::Square)((sq) + 9) )                     // eg c5->d4
-#define NW(sq)      (  (thc::Square)((sq) - 9) )                     // eg c5->b6
-#define NE(sq)      (  (thc::Square)((sq) - 7) )                     // eg c5->d6
-
 
 // generates a static evaluation of the board
-int Anduril::evaluateBoard(thc::ChessRules &board) {
+int Anduril::evaluateBoard(libchess::Position &board) {
     // first check for transpositions
-    uint64_t hash = Zobrist::zobristHash(board);
+    uint64_t hash = board.hash();
     SimpleNode *eNode = evalTable[hash];
     if (eNode->key == hash) {
         return eNode->score;
     }
-    else {
-        eNode->key = hash;
-    }
 
-    // check for mate first
-    thc::TERMINAL mate = thc::NOT_TERMINAL;
-    board.Evaluate(mate);
-    if (mate == thc::TERMINAL_WCHECKMATE || mate == thc::TERMINAL_BCHECKMATE) {
-        return board.WhiteToPlay() ? 999999999 : -999999999;
-    }
+    // squares the kings are on
+    libchess::Square wKingSquare = board.king_square(libchess::constants::WHITE);
+    libchess::Square bKingSquare = board.king_square(libchess::constants::BLACK);
+
+    // reset the mobility scores
+    whiteMobility[0] = 0, whiteMobility[1] = 0;
+    blackMobility[0] = 0, blackMobility[1] = 0;
 
     // reset the king tropism variables
     attackCount[0] = 0, attackCount[1] = 0;
     attackWeight[0] = 0, attackWeight[1] = 0;
-    kingZoneW.clear(), kingZoneB.clear();
+    kingZoneWBB = libchess::Bitboard(wKingSquare);
+    kingZoneBBB = libchess::Bitboard(bKingSquare);
+
+    // reset each colors attack map
+    wAttackMap = libchess::Bitboard();
+    bAttackMap = libchess::Bitboard();
 
     // fill the king zone
-    // white
-    int startSquare = static_cast<int>(board.wking_square) - 1;
-    int endSquare = static_cast<int>(board.wking_square) + 1;
-    int startRankModifier = -3;
-    int endRankModifier = 1;
-    // grab the modifier for the startSquare if needed
-    switch (thc::get_file(board.wking_square)) {
-        case 'a':
-            startSquare++;
-            break;
-        case 'h':
-            endSquare--;
-            break;
-    }
-    // grab the modifier for the startRankModifier if needed
-    switch (thc::get_rank(board.wking_square)) {
-        case '1':
-            endRankModifier--;
-            break;
-        case '6':
-            startRankModifier++;
-            break;
-        case '7':
-            startRankModifier += 2;
-            break;
-        case '8':
-            startRankModifier += 3;
-            break;
-    }
-    for (int modifier = startRankModifier; modifier <= endRankModifier; modifier++) {
-        for (int square = startSquare; square <= endSquare; square++) {
-            kingZoneW.insert(static_cast<thc::Square>(square + (modifier * 8)));
-        }
-    }
-    // black
-    startSquare = static_cast<int>(board.bking_square) - 1;
-    endSquare = static_cast<int>(board.bking_square) + 1;
-    startRankModifier = -1;
-    endRankModifier = 3;
-    // grab the modifier for the startSquare if needed
-    switch (thc::get_file(board.bking_square)) {
-        case 'a':
-            startSquare++;
-            break;
-        case 'h':
-            endSquare--;
-            break;
-    }
-    // grab the modifier for the startRankModifier if needed
-    switch (thc::get_rank(board.bking_square)) {
-        case '1':
-            endRankModifier -= 3;
-            break;
-        case '2':
-            endRankModifier -= 2;
-            break;
-        case '3':
-            startRankModifier--;
-            break;
-        case '8':
-            startRankModifier++;
-            break;
-    }
-    for (int modifier = startRankModifier; modifier <= endRankModifier; modifier++) {
-        for (int square = startSquare; square <= endSquare; square++) {
-            kingZoneB.insert(static_cast<thc::Square>(square + (modifier * 8)));
-        }
-    }
+    kingZoneWBB |= libchess::lookups::king_attacks(board.king_square(libchess::constants::WHITE));
+    kingZoneBBB |= libchess::lookups::king_attacks(board.king_square(libchess::constants::BLACK));
+
+    kingZoneWBB |= kingZoneWBB << 16;
+    kingZoneBBB |= kingZoneBBB >> 16;
 
     int scoreMG = 0;
     int scoreEG = 0;
 
     // get the material score for the board
-    std::vector<int> matScore = getMaterialScore(board);
-    scoreMG += matScore[0];
-    scoreEG += matScore[1];
+    std::pair<int, int> matScore = getMaterialScore(board);
+    scoreMG += matScore.first;
+    scoreEG += matScore.second;
 
     // get the pawn score for the board
-    int p = getPawnScore(board);
-    scoreMG += p;
-    scoreEG += p;
-
+    std::pair<int, int> p = getPawnScore(board);
+    scoreMG += p.first;
+    scoreEG += p.second;
 
     // get king safety bonus for the board
-    int king = getKingSafety(board, board.wking_square, board.bking_square);
+    // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
+    int king = getKingSafety(board, wKingSquare, bKingSquare);
     scoreMG += king;
-    scoreEG += king;
+
+    // evaluate positional themes and gather mobility and tropism data
+    std::pair<int, int> positional = positionalMobilityTropism(board);
+    scoreMG += positional.first;
+    scoreEG += positional.second;
+
+    // king tropism (black is index 0, white is index 1)
+    // white
+    if (attackCount[1] >= 2) {
+        scoreMG += SafetyTable[attackWeight[1]];
+        scoreEG -= SafetyTable[attackWeight[1]];
+    }
+    // black
+    if (attackCount[0] >= 2) {
+        scoreMG -= SafetyTable[attackWeight[0]];
+        scoreEG -= SafetyTable[attackWeight[0]];
+    }
+
+    // mobility
+    scoreMG += whiteMobility[0];
+    scoreMG -= blackMobility[0];
+    scoreEG += whiteMobility[1];
+    scoreEG -= blackMobility[1];
 
     // give the AI a slap for moving the queen too early
-    if (board.squares[59] != 'Q') {
-        if (board.squares[57] == 'N') {
+    if (!(board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE)
+        & libchess::lookups::square(libchess::constants::D1))) {
+        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE)
+            & libchess::lookups::square(libchess::constants::B1)) {
             scoreMG -= 2;
-            scoreEG -= 2;
         }
-        if (board.squares[62] == 'N') {
+        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE)
+            & libchess::lookups::square(libchess::constants::G1)) {
             scoreMG -= 2;
-            scoreEG -= 2;
         }
-        if (board.squares[58] == 'B') {
+        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE)
+            & libchess::lookups::square(libchess::constants::C1)) {
             scoreMG -= 2;
-            scoreEG -= 2;
         }
-        if (board.squares[61] == 'B') {
+        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE)
+            & libchess::lookups::square(libchess::constants::F1)) {
             scoreMG -= 2;
-            scoreEG -= 2;
         }
     }
-    if (board.squares[3] != 'q') {
-        if (board.squares[1] == 'n') {
-            scoreMG -= 2;
-            scoreEG -= 2;
+    if (!(board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK)
+          & libchess::lookups::square(libchess::constants::D8))) {
+        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK)
+            & libchess::lookups::square(libchess::constants::B8)) {
+            scoreMG += 2;
         }
-        if (board.squares[6] == 'n') {
-            scoreMG -= 2;
-            scoreEG -= 2;
+        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK)
+            & libchess::lookups::square(libchess::constants::G8)) {
+            scoreMG += 2;
         }
-        if (board.squares[2] == 'b') {
-            scoreMG -= 2;
-            scoreEG -= 2;
+        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK)
+            & libchess::lookups::square(libchess::constants::C8)) {
+            scoreMG += 2;
         }
-        if (board.squares[5] == 'b') {
-            scoreMG -= 2;
-            scoreEG -= 2;
+        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK)
+            & libchess::lookups::square(libchess::constants::F8)) {
+            scoreMG += 2;
         }
     }
 
     // bishop pair
-    if (whiteBishops.size() >= 2) {
+    if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() >= 2) {
         scoreMG += 25;
         scoreEG += 40;
     }
-    if (blackBishops.size() >= 2) {
+    if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() >= 2) {
         scoreMG -= 25;
         scoreEG -= 40;
     }
 
     // rook on (semi)open files
-    bool half = false;
-    bool open = true;
-    // white
-    for (auto rook : whiteRooks) {
-        char rookFile = thc::get_file(rook);
-        // if we find a pawn on the same file, its not open
-        for (auto pawn : whitePawns) {
-            if (rookFile == thc::get_file(pawn)) {
-                open = false;
-                break;
-            }
-        }
+    libchess::Bitboard rooks = board.piece_type_bb(libchess::constants::ROOK);
+    while (rooks) {
+        libchess::Square currRook = rooks.forward_bitscan();
+        libchess::File rookFile = currRook.file();
 
-        // if the file is open, find out if its half or fully open, then apply bonus
-        if (open) {
-            for (auto enemyPawn : blackPawns) {
-                if (rookFile == thc::get_file(enemyPawn)) {
-                    half = true;
-                    break;
+        // white
+        if (!*board.color_of(currRook)) {
+            // is the file semi open?
+            if (!(board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE) & libchess::lookups::FILE_MASK[rookFile])) {
+                // is the file fully open?
+                if (!(board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK) & libchess::lookups::FILE_MASK[rookFile])) {
+                    scoreMG += 13;
+                    scoreEG += 7;
+                }
+                else {
+                    scoreMG += 5;
+                    scoreEG += 2;
                 }
             }
-
-            scoreMG += half ? 10 : 20;
-            scoreEG += half ? 10 : 20;
         }
-    }
-
-    // reset the variable for black
-    half = false;
-    open = true;
-    // black
-    for (auto rook : blackRooks) {
-        char rookFile = thc::get_file(rook);
-        // if we find a pawn on the same file, its not open
-        for (auto pawn : blackPawns) {
-            if (rookFile == thc::get_file(pawn)) {
-                open = false;
-                break;
-            }
-        }
-
-        // if the file is open, find out if its half or fully open, then apply bonus
-        if (open) {
-            for (auto enemyPawn : whitePawns) {
-                if (rookFile == thc::get_file(enemyPawn)) {
-                    half = true;
-                    break;
+            // black
+        else {
+            // is the file semi open?
+            if (!(board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK) & libchess::lookups::FILE_MASK[rookFile])) {
+                // is the file fully open?
+                if (!(board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE) & libchess::lookups::FILE_MASK[rookFile])) {
+                    scoreMG -= 13;
+                    scoreEG -= 7;
+                }
+                else {
+                    scoreMG -= 5;
+                    scoreEG -= 2;
                 }
             }
-
-            scoreMG -= half ? 10 : 20;
-            scoreEG -= half ? 10 : 20;
         }
+
+        rooks.forward_popbit();
     }
 
     // space advantages
-    // white
-    int whiteSafe = 0;
-    for (int i = 2; i <= 5; i++) {
-        for (int j = 48; j < 32; j -= 8) {
-            thc::Square square = thc::make_square(thc::get_file(static_cast<thc::Square>(i)), thc::get_rank(
-                    static_cast<thc::Square>(j)));
-            if (!board.AttackedSquare(square, false)) {
-                whiteSafe++;
-            }
-        }
-    }
-    scoreMG += whiteSafe * 5;
-    scoreEG += whiteSafe * 5;
+    // only relevant if not in an endgame.  3000 seems like a decent number.  It was totally pulled out of my ass
+    if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) > 3000) {
+        // white
+        libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap;
+        scoreMG += 5 * wCenterAttacks.popcount();
+        scoreEG += 5 * wCenterAttacks.popcount();
 
-    // black
-    int blackSafe = 0;
-    for (int i = 2; i <= 5; i++) {
-        for (int j = 8; j < 24; j += 8) {
-            thc::Square square = thc::make_square(thc::get_file(static_cast<thc::Square>(i)), thc::get_rank(
-                    static_cast<thc::Square>(j)));
-            if (!board.AttackedSquare(square, true)) {
-                blackSafe++;
-            }
-        }
+        // black
+        libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap;
+        scoreMG += 5 * bCenterAttacks.popcount();
+        scoreEG += 5 * bCenterAttacks.popcount();
     }
-    scoreMG -= blackSafe * 5;
-    scoreEG -= blackSafe * 5;
 
     // get the phase for tapered eval
-    double phase = getPhase(board);
+    int phase = getPhase(board);
 
     // for negamax to work, we must return a non-adjusted score for white
     // and a negated score for black
-    int finalScore = board.WhiteToPlay() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+    int finalScore = !board.side_to_move() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+
+    // save information to the node
+    eNode->key = hash;
     eNode->score = finalScore;
 
     return finalScore;
 }
 
-void Anduril::evaluateKnights(thc::ChessRules &board, thc::Square square, bool white) {
-    // list of moves for the knight
-    thc::MOVELIST list;
-    list.count = 0;
+// calculates all mobility scores and tropism
+std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board) {
+    // grab the pieces
+    libchess::Bitboard knights = board.piece_type_bb(libchess::constants::KNIGHT);
+    libchess::Bitboard bishops = board.piece_type_bb(libchess::constants::BISHOP);
+    libchess::Bitboard rooks = board.piece_type_bb(libchess::constants::ROOK);
+    libchess::Bitboard queens = board.piece_type_bb(libchess::constants::QUEEN);
 
-    // lookup table for the piece
-    const thc::lte *ptr = thc::knight_lookup[static_cast<int>(square)];
+    // a few of the features use the pawn bitboards, we grab them here so that we only have to do it once
+    libchess::Bitboard whitePawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE);
+    libchess::Bitboard blackPawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK);
 
-    // how many squares does it attack in the zone?
-    int attack = 0;
+    std::pair<int, int> score = {0, 0};
 
-    // generate the move list
-    board.ShortMoves(&list, square, ptr, thc::NOT_SPECIAL);
+    // knights
+    while (knights) {
+        libchess::Square square = knights.forward_bitscan();
+        std::optional<libchess::Color> color = board.color_of(square);
 
-    // white
-    if (white) {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneB.contains(list.moves[i].dst)) {
-                attack++;
+        if (!*color) {
+            // knight pawn bonus
+            score.first  += knightPawnBonus[whitePawns.popcount()];
+            score.second += knightPawnBonus[whitePawns.popcount()];
+
+            // outposts
+            if (square > libchess::constants::H3
+                && (board.attackers_to(square, libchess::constants::WHITE) & whitePawns)
+                && !(board.attackers_to(square, libchess::constants::BLACK) & blackPawns)) {
+                score.first  += oMG;
+                score.second += oEG;
             }
-        }
-    }
-    else {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneW.contains(list.moves[i].dst)) {
-                attack++;
+
+            // trapped knights
+            // Knight on H8 with black pawns on either F7 or H7
+            if (square == libchess::constants::H8) {
+                if ((libchess::lookups::square(libchess::constants::H7) & blackPawns)
+                    || (libchess::lookups::square(libchess::constants::F7) & blackPawns)) {
+                    score.first  -= tMG;
+                    score.second -= tEG;
+                }
             }
+                // Knight on A8 with black pawns on either A7 or C7
+            else if (square == libchess::constants::A8) {
+                if ((libchess::lookups::square(libchess::constants::A7) & blackPawns)
+                    || (libchess::lookups::square(libchess::constants::C7) & blackPawns)) {
+                    score.first  -= tMG;
+                    score.second -= tEG;
+                }
+            }
+                // Knight on H7 with black pawns on G7 and either H6 or F6
+            else if (square == libchess::constants::H7) {
+                if ((libchess::lookups::square(libchess::constants::G7) & blackPawns)
+                    && ((libchess::lookups::square(libchess::constants::H6) & blackPawns)
+                        || (libchess::lookups::square(libchess::constants::F6) & blackPawns))) {
+                    score.first  -= tMG;
+                    score.second -= tEG;
+                }
+            }
+                // Knight on A7 with black pawns on B7 and either A6 or C6
+            else if (square == libchess::constants::A7) {
+                if ((libchess::lookups::square(libchess::constants::B7) & blackPawns)
+                    && ((libchess::lookups::square(libchess::constants::A6) & blackPawns)
+                        || (libchess::lookups::square(libchess::constants::C6) & blackPawns))) {
+                    score.first  -= tMG;
+                    score.second -= tEG;
+                }
+            }
+
+            evaluateKnights<true>(board, square);
         }
+        else {
+            // knight pawn bonus
+            score.first  -= knightPawnBonus[blackPawns.popcount()];
+            score.second -= knightPawnBonus[blackPawns.popcount()];
+
+            // outposts
+            if (square < libchess::constants::H6
+                && (board.attackers_to(square, libchess::constants::BLACK) & blackPawns)
+                && !(board.attackers_to(square, libchess::constants::WHITE) & whitePawns)) {
+                score.first  -= oMG;
+                score.second -= oEG;
+            }
+
+            // trapped knights
+            // Knight on H1 with white pawns on either H2 or F2
+            if (square == libchess::constants::H1) {
+                if ((libchess::lookups::square(libchess::constants::H2) & whitePawns)
+                    || (libchess::lookups::square(libchess::constants::F2) & whitePawns)) {
+                    score.first  += tMG;
+                    score.second += tEG;
+                }
+            }
+                // Knight on A1 with white pawns on either A2 or C2
+            else if (square == libchess::constants::A1) {
+                if ((libchess::lookups::square(libchess::constants::A2) & whitePawns)
+                    || (libchess::lookups::square(libchess::constants::C2) & whitePawns)) {
+                    score.first  += tMG;
+                    score.second += tEG;
+                }
+            }
+                // Knight on H2 with white pawns on G2 and either H3 or F3
+            else if (square == libchess::constants::H2) {
+                if ((libchess::lookups::square(libchess::constants::G2) & whitePawns)
+                    && ((libchess::lookups::square(libchess::constants::H3) & whitePawns)
+                        || (libchess::lookups::square(libchess::constants::F3) & whitePawns))) {
+                    score.first  += tMG;
+                    score.second += tEG;
+                }
+            }
+                // Knight on A2 with white pawns on B2 and either A3 or C3
+            else if (square == libchess::constants::A2) {
+                if ((libchess::lookups::square(libchess::constants::B2) & whitePawns)
+                    && ((libchess::lookups::square(libchess::constants::A3) & whitePawns)
+                        || (libchess::lookups::square(libchess::constants::C3) & whitePawns))) {
+                    score.first  += tMG;
+                    score.second += tEG;
+                }
+            }
+
+            evaluateKnights<false>(board, square);
+        }
+
+        knights.forward_popbit();
     }
 
-    if (attack) {
-        attackCount[white]++;
-        attackWeight[white] += 2 * attack;
+    // bishops
+    while (bishops) {
+        libchess::Square square = bishops.forward_bitscan();
+        std::optional<libchess::Color> color = board.color_of(square);
+
+        if (!*color) {
+            // fianchetto
+            if ((square == libchess::constants::G2 && board.king_square(libchess::constants::WHITE) == libchess::constants::G1)
+                || (square == libchess::constants::B2 && board.king_square(libchess::constants::WHITE) == libchess::constants::B1)) {
+                score.first  += 10;
+                score.second += 1;
+            }
+
+            evaluateBishops<true>(board, square);
+        }
+        else {
+            // fianchetto
+            if ((square == libchess::constants::G7 && board.king_square(libchess::constants::BLACK) == libchess::constants::G8)
+                || (square == libchess::constants::B7 && board.king_square(libchess::constants::BLACK) == libchess::constants::B8)) {
+                score.first  -= 10;
+                score.second -= 1;
+            }
+
+            evaluateBishops<false>(board, square);
+        }
+
+        bishops.forward_popbit();
     }
 
+    // rooks
+    while (rooks) {
+        libchess::Square square = rooks.forward_bitscan();
+        std::optional<libchess::Color> color = board.color_of(square);
+
+        if (!*color) {
+            // rook pawn bonus
+            score.first  += rookPawnBonus[whitePawns.popcount()];
+            score.second += rookPawnBonus[whitePawns.popcount()];
+
+            // trapped rooks
+            libchess::Square kingSquare = board.king_square(libchess::constants::WHITE);
+            switch (square) {
+                case libchess::constants::H1:
+                    if (kingSquare == libchess::constants::E1 || kingSquare == libchess::constants::F1 || kingSquare == libchess::constants::G1) {
+                        score.first  -= 15;
+                        score.second -= 3;
+                    }
+                    break;
+                case libchess::constants::G1:
+                    if (kingSquare == libchess::constants::E1 || kingSquare == libchess::constants::F1) {
+                        score.first  -= 15;
+                        score.second -= 3;
+                    }
+                    break;
+                case libchess::constants::F1:
+                    if (kingSquare == libchess::constants::E1) {
+                        score.first  -= 15;
+                        score.second -= 3;
+                    }
+                    break;
+                case libchess::constants::A1:
+                    if (kingSquare == libchess::constants::B1 || kingSquare == libchess::constants::C1 || kingSquare == libchess::constants::D1) {
+                        score.first  -= 15;
+                        score.second -= 3;
+                    }
+                    break;
+                case libchess::constants::B1:
+                    if (kingSquare == libchess::constants::C1 || kingSquare == libchess::constants::D1) {
+                        score.first  -= 15;
+                        score.second -= 3;
+                    }
+                    break;
+                case libchess::constants::C1:
+                    if (kingSquare == libchess::constants::D1) {
+                        score.first  -= 15;
+                        score.second -= 3;
+                    }
+                    break;
+            }
+
+            evaluateRooks<true>(board, square);
+        }
+        else {
+            // rook pawn bonus
+            score.first  -= rookPawnBonus[blackPawns.popcount()];
+            score.second -= rookPawnBonus[blackPawns.popcount()];
+
+            // trapped rooks
+            libchess::Square kingSquare = board.king_square(libchess::constants::BLACK);
+            switch (square) {
+                case libchess::constants::H8:
+                    if (kingSquare == libchess::constants::E8 || kingSquare == libchess::constants::F8 || kingSquare == libchess::constants::G8) {
+                        score.first  += 15;
+                        score.second += 3;
+                    }
+                    break;
+                case libchess::constants::G8:
+                    if (kingSquare == libchess::constants::E8 || kingSquare == libchess::constants::F8) {
+                        score.first  += 15;
+                        score.second += 3;
+                    }
+                    break;
+                case libchess::constants::F8:
+                    if (kingSquare == libchess::constants::E8) {
+                        score.first  += 15;
+                        score.second += 3;
+                    }
+                    break;
+                case libchess::constants::A8:
+                    if (kingSquare == libchess::constants::B8 || kingSquare == libchess::constants::C8 || kingSquare == libchess::constants::D8) {
+                        score.first  += 15;
+                        score.second += 3;
+                    }
+                    break;
+                case libchess::constants::B8:
+                    if (kingSquare == libchess::constants::C8 || kingSquare == libchess::constants::D8) {
+                        score.first  += 15;
+                        score.second += 3;
+                    }
+                    break;
+                case libchess::constants::C8:
+                    if (kingSquare == libchess::constants::D8) {
+                        score.first  += 15;
+                        score.second += 3;
+                    }
+                    break;
+            }
+
+            evaluateRooks<false>(board, square);
+        }
+
+        rooks.forward_popbit();
+    }
+
+    // queens
+    while (queens) {
+        libchess::Square square = queens.forward_bitscan();
+        std::optional<libchess::Color> color = board.color_of(square);
+
+        if (!*color) {
+            evaluateQueens<true>(board, square);
+        }
+        else {
+            evaluateQueens<false>(board, square);
+        }
+
+        queens.forward_popbit();
+    }
+
+    return score;
 }
 
-void Anduril::evaluateBishops(thc::ChessRules &board, thc::Square square, bool white) {
-    // list of moves for the knight
-    thc::MOVELIST list;
-    list.count = 0;
-
-    // lookup table for the piece
-    const thc::lte *ptr = thc::bishop_lookup[static_cast<int>(square)];
-
-    // how many squares does it attack in the zone?
-    int attack = 0;
-
-    // generate the move list
-    board.LongMoves(&list, square, ptr);
+// evaluates knights for tropism and calculates mobility
+template<bool white>
+inline void Anduril::evaluateKnights(libchess::Position &board, libchess::Square square) {
+    // grab the attacked squares for the piece
+    libchess::Bitboard attackedSquares = libchess::lookups::knight_attacks(square);
+    libchess::Bitboard kingZoneAttacks;
 
     // white
-    if (white) {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneB.contains(list.moves[i].dst)) {
-                attack++;
-            }
-        }
+    if constexpr (white) {
+        // get the squares we can actually move to
+        attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 4 * (attackedSquares.popcount() - 4);
+        whiteMobility[1] += 4 * (attackedSquares.popcount() - 4);
+
+        // king zone attacks
+        wAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
+        // black
     else {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneW.contains(list.moves[i].dst)) {
-                attack++;
-            }
-        }
+        // get the squares we can actually move to
+        attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 4 * (attackedSquares.popcount() - 4);
+        blackMobility[1] += 4 * (attackedSquares.popcount() - 4);
+
+        // king zone attacks
+        bAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
-    if (attack) {
+    if (kingZoneAttacks) {
         attackCount[white]++;
-        attackWeight[white] += 2 * attack;
+        attackWeight[white] += 2 * kingZoneAttacks.popcount();
     }
 }
 
-void Anduril::evaluateRooks(thc::ChessRules &board, thc::Square square, bool white) {
-    // list of moves for the knight
-    thc::MOVELIST list;
-    list.count = 0;
-
-    // lookup table for the piece
-    const thc::lte *ptr = thc::rook_lookup[static_cast<int>(square)];
-
-    // how many squares does it attack in the zone?
-    int attack = 0;
-
-    // generate the move list
-    board.LongMoves(&list, square, ptr);
+// evaluates bishops for tropism and calculates mobility
+template<bool white>
+inline void Anduril::evaluateBishops(libchess::Position &board, libchess::Square square) {
+    // grab the attacked squares for the piece
+    libchess::Bitboard attackedSquares = libchess::lookups::bishop_attacks(square, board.occupancy_bb());
+    libchess::Bitboard kingZoneAttacks;
 
     // white
-    if (white) {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneB.contains(list.moves[i].dst)) {
-                attack++;
-            }
-        }
+    if constexpr (white) {
+        attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 3 * (attackedSquares.popcount() - 7);
+        whiteMobility[1] += 3 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
+        wAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
+        // black
     else {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneW.contains(list.moves[i].dst)) {
-                attack++;
-            }
-        }
+        attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 3 * (attackedSquares.popcount() - 7);
+        blackMobility[1] += 3 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
+        bAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
-    if (attack) {
+    if (kingZoneAttacks) {
         attackCount[white]++;
-        attackWeight[white] += 3 * attack;
+        attackWeight[white] += 2 * kingZoneAttacks.popcount();
     }
 }
 
-void Anduril::evaluateQueens(thc::ChessRules &board, thc::Square square, bool white) {
-    // list of moves for the knight
-    thc::MOVELIST list;
-    list.count = 0;
-
-    // lookup table for the piece
-    const thc::lte *ptr = thc::queen_lookup[static_cast<int>(square)];
-
-    // how many squares does it attack in the zone?
-    int attack = 0;
-
-    // generate the move list
-    board.LongMoves(&list, square, ptr);
+// evaluates rooks for tropism and calculates mobility
+template<bool white>
+inline void Anduril::evaluateRooks(libchess::Position &board, libchess::Square square) {
+    // grab the attacked squares for the piece
+    libchess::Bitboard attackedSquares = libchess::lookups::rook_attacks(square, board.occupancy_bb());
+    libchess::Bitboard kingZoneAttacks;
 
     // white
-    if (white) {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneB.contains(list.moves[i].dst)) {
-                attack++;
-            }
-        }
+    if constexpr (white) {
+        attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 2 * (attackedSquares.popcount() - 7);
+        whiteMobility[1] += 4 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
+        wAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
+        // black
     else {
-        for (int i = 0; i < list.count; i++) {
-            if (kingZoneW.contains(list.moves[i].dst)) {
-                attack++;
-            }
-        }
+        attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 2 * (attackedSquares.popcount() - 7);
+        blackMobility[1] += 4 * (attackedSquares.popcount() - 7);
+
+        // king zone attacks
+        bAttackMap |= attackedSquares;
+        bAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
-    if (attack) {
+    if (kingZoneAttacks) {
         attackCount[white]++;
-        attackWeight[white] += 4 * attack;
+        attackWeight[white] += 3 * kingZoneAttacks.popcount();
+    }
+}
+
+// evaluates queens for tropism and calculates mobility
+template<bool white>
+inline void Anduril::evaluateQueens(libchess::Position &board, libchess::Square square) {
+    // grab the attacked squares for the piece
+    libchess::Bitboard attackedSquares = libchess::lookups::queen_attacks(square, board.occupancy_bb());
+    libchess::Bitboard kingZoneAttacks;
+
+    // white
+    if constexpr (white) {
+        attackedSquares &= ~(board.color_bb(libchess::constants::WHITE));
+
+        // mobility
+        whiteMobility[0] += 1 * (attackedSquares.popcount() - 14);
+        whiteMobility[1] += 2 * (attackedSquares.popcount() - 14);
+
+        // king zone attacks
+        wAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneBBB;
+    }
+        // black
+    else {
+        attackedSquares &= ~(board.color_bb(libchess::constants::BLACK));
+
+        // mobility
+        blackMobility[0] += 1 * (attackedSquares.popcount() - 14);
+        blackMobility[1] += 2 * (attackedSquares.popcount() - 14);
+
+        // king zone attacks
+        bAttackMap |= attackedSquares;
+        kingZoneAttacks = attackedSquares & kingZoneWBB;
+    }
+
+    if (kingZoneAttacks) {
+        attackCount[white]++;
+        attackWeight[white] += 3 * kingZoneAttacks.popcount();
     }
 }
 
 // finds the raw material score for the position
-std::vector<int> Anduril::getMaterialScore(thc::ChessRules &board) {
-    std::vector<int> score = {0, 0};
-    // pawns
-    // white
-    for (auto square : whitePawns){
-        int i = static_cast<int>(square);
-        score[0] += pMG + pawnSquareTableMG[i];
-        score[1] += pEG + pawnSquareTableEG[i];
+std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
+    std::pair<int, int> score = {0, 0};
+
+    // we first need a bitboard with every piece on the board
+    libchess::Bitboard pieces = board.occupancy_bb();
+
+    // loop goes through all the pieces
+    while (pieces) {
+        // grab the next piece
+        libchess::Square square = pieces.forward_bitscan();
+        std::optional<libchess::Piece> currPiece = board.piece_on(square);
+
+        if (currPiece) {
+            switch (currPiece->type()) {
+                case libchess::constants::PAWN:
+                    if (!currPiece->color()) {
+                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
+                        score.first  += pMG + pawnSquareTableMG[tableCoords];
+                        score.second += pEG + pawnSquareTableEG[tableCoords];
+                    }
+                    else {
+                        score.first  -= pMG + pawnSquareTableMG[square];
+                        score.second -= pEG + pawnSquareTableEG[square];
+                    }
+                    break;
+                case libchess::constants::KNIGHT:
+                    if (!currPiece->color()) {
+                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
+                        score.first  += kMG + knightSquareTableMG[tableCoords];
+                        score.second += kEG + knightSquareTableEG[tableCoords];
+                    }
+                    else {
+                        score.first  -= kMG + knightSquareTableMG[square];
+                        score.second -= kEG + knightSquareTableEG[square];
+                    }
+                    break;
+                case libchess::constants::BISHOP:
+                    if (!currPiece->color()) {
+                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
+                        score.first  += bMG + bishopSquareTableMG[tableCoords];
+                        score.second += bEG + bishopSquareTableEG[tableCoords];
+                    }
+                    else {
+                        score.first  -= bMG + bishopSquareTableMG[square];
+                        score.second -= bEG + bishopSquareTableEG[square];
+                    }
+                    break;
+                case libchess::constants::ROOK:
+                    if (!currPiece->color()) {
+                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
+                        score.first  += rMG + rookSquareTableMG[tableCoords];
+                        score.second += rEG + rookSquareTableEG[tableCoords];
+                    }
+                    else {
+                       score.first  -= rMG + rookSquareTableMG[square];
+                       score.second -= rEG + rookSquareTableEG[square];
+                    }
+                    break;
+                case libchess::constants::QUEEN:
+                    if (!currPiece->color()) {
+                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
+                        score.first  += qMG + queenSquareTableMG[tableCoords];
+                        score.second += qEG  + queenSquareTableEG[tableCoords];
+                    }
+                    else {
+                        score.first  -= qMG + queenSquareTableMG[square];
+                        score.second -= qEG  + queenSquareTableEG[square];
+                    }
+                    break;
+                case libchess::constants::KING:
+                    if (!currPiece->color()) {
+                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
+                        score.first  += kingSquareTableMG[tableCoords];
+                        score.second += kingSquareTableEG[tableCoords];
+                    }
+                    else {
+                        score.first  -= kingSquareTableMG[square];
+                        score.second -= kingSquareTableEG[square];
+                    }
+                    break;
+
+
+            }
+        }
+
+        // get rid of the last piece on the board to prepare for scoring the next
+        pieces.forward_popbit();
     }
-    // black
-    for (auto square : blackPawns) {
-        int i = static_cast<int>(square);
-        // calculate the correct value to use for the piece square table
-        int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -pMG - pawnSquareTableMG[tableCoords];
-        score[1] += -pEG - pawnSquareTableEG[tableCoords];
-    }
-
-    // knights
-    // white
-    for (auto square : whiteKnights){
-        int i = static_cast<int>(square);
-        score[0] += kMG + knightSquareTableMG[i];
-        score[1] += kEG + knightSquareTableEG[i];
-
-        // evaluate the square for king tropism
-        evaluateKnights(board, square, true);
-
-        // knight pawn bonus
-        score[0] += knightPawnBonus[whitePawns.size()];
-        score[1] += knightPawnBonus[whitePawns.size()];
-
-        // outposts
-        if (square < thc::a3
-            && (board.squares[i + 7] == 'P' || board.squares[i + 9] == 'P')
-            && board.squares[i - 7] != 'p'
-            && board.squares[i - 9] != 'p') {
-            score[0] += 10;
-            score[1] += 10;
-        }
-
-        // trapped knights
-        if ((square == thc::h8 && (board.squares[13] == 'p' || board.squares[15] == 'p'))
-            || (square == thc::a8) && (board.squares[8] == 'p' || board.squares[10] == 'p')) {
-            score[0] -= 150;
-            score[1] -= 150;
-        }
-        else if (square == thc::h7
-                 && (board.squares[14] == 'p'
-                 && (board.squares[21] == 'p' || board.squares[23] == 'p'))) {
-            score[0] -= 150;
-            score[1] -= 150;
-        }
-        else if (square == thc::a7
-                 && (board.squares[9] == 'p'
-                 && (board.squares[16] == 'p' || board.squares[18] == 'p'))) {
-            score[0] -= 150;
-            score[1] -= 150;
-        }
-    }
-    // black
-    for (auto square : blackKnights) {
-        int i = static_cast<int>(square);
-        // calculate the correct value to use for the piece square table
-        int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -kMG - knightSquareTableMG[tableCoords];
-        score[1] += -kEG - knightSquareTableEG[tableCoords];
-
-        // evaluate the square for king tropism
-        evaluateKnights(board, square, false);
-
-        // knight pawn bonus
-        score[0] -= knightPawnBonus[blackPawns.size()];
-        score[1] -= knightPawnBonus[blackPawns.size()];
-
-        // outposts
-        if (square > thc::h6
-            && (board.squares[i - 7] == 'p' || board.squares[i - 9] == 'p')
-            && board.squares[i + 7] != 'P'
-            && board.squares[i + 9] != 'P') {
-            score[0] -= 10;
-            score[1] -= 10;
-        }
-
-        // trapped knights
-        if ((square == thc::h1 && (board.squares[53] == 'P' || board.squares[55] == 'P'))
-            || (square == thc::a1) && (board.squares[48] == 'P' || board.squares[50] == 'P')) {
-            score[0] += 150;
-            score[1] += 150;
-        }
-        else if (square == thc::h2
-                 && (board.squares[54] == 'P'
-                 && (board.squares[45] == 'P' || board.squares[47] == 'P'))) {
-            score[0] += 150;
-            score[1] += 150;
-        }
-        else if (square == thc::a2
-                 && (board.squares[49] == 'P'
-                 && (board.squares[40] == 'P' || board.squares[42] == 'P'))) {
-            score[0] += 150;
-            score[1] += 150;
-        }
-    }
-
-    // bishops
-    // white
-    for (auto square : whiteBishops){
-        int i = static_cast<int>(square);
-        score[0] += bMG + bishopSquareTableMG[i];
-        score[1] += bEG + bishopSquareTableEG[i];
-
-        // evaluate for king tropism
-        evaluateBishops(board, square, true);
-
-        // fianchetto
-        if ((square == thc::g2 && board.wking_square == thc::g1)
-            || (square == thc::b2 && board.wking_square == thc::b1)) {
-            score[0] += 20;
-            score[1] += 20;
-        }
-    }
-    // black
-    for (auto square : blackBishops) {
-        int i = static_cast<int>(square);
-        // calculate the correct value to use for the piece square table
-        int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -bMG - bishopSquareTableMG[tableCoords];
-        score[1] += -bEG - bishopSquareTableEG[tableCoords];
-
-        // evaluate for king tropism
-        evaluateBishops(board, square, false);
-
-        // fianchetto
-        if ((square == thc::g7 && board.wking_square == thc::g8)
-            || (square == thc::b7 && board.wking_square == thc::b8)) {
-            score[0] -= 20;
-            score[1] -= 20;
-        }
-    }
-
-    // rooks
-    // white
-    for (auto square : whiteRooks){
-        int i = static_cast<int>(square);
-        score[0] += rMG + rookSquareTableMG[i];
-        score[1] += rEG + rookSquareTableEG[i];
-
-        score[0] += rookPawnBonus[whitePawns.size()];
-        score[1] += rookPawnBonus[whitePawns.size()];
-
-        // evaluate for king tropism
-        evaluateRooks(board, square, true);
-
-        // trapped rooks
-        switch (square) {
-            case thc::h1:
-                if (board.wking_square == thc::e1 || board.wking_square == thc::f1 || board.wking_square == thc::g1) {
-                    score[0] -= 40;
-                    score[1] -= 40;
-                }
-                break;
-            case thc::g1:
-                if (board.wking_square == thc::e1 || board.wking_square == thc::f1) {
-                    score[0] -= 40;
-                    score[1] -= 40;
-                }
-                break;
-            case thc::f1:
-                if (board.wking_square == thc::e1) {
-                    score[0] -= 40;
-                    score[1] -= 40;
-                }
-                break;
-            case thc::a1:
-                if (board.wking_square == thc::b1 || board.wking_square == thc::c1 || board.wking_square == thc::d1) {
-                    score[0] -= 40;
-                    score[1] -= 40;
-                }
-                break;
-            case thc::b1:
-                if (board.wking_square == thc::c1 || board.wking_square == thc::d1) {
-                    score[0] -= 40;
-                    score[1] -= 40;
-                }
-                break;
-            case thc::c1:
-                if (board.bking_square == thc::d1) {
-                    score[0] -= 40;
-                    score[1] -= 40;
-                }
-                break;
-        }
-    }
-    // black
-    for (auto square : blackRooks) {
-        int i = static_cast<int>(square);
-        // calculate the correct value to use for the piece square table
-        int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -rMG - rookSquareTableMG[tableCoords];
-        score[1] += -rEG - rookSquareTableEG[tableCoords];
-
-        score[0] -= rookPawnBonus[blackPawns.size()];
-        score[1] -= rookPawnBonus[blackPawns.size()];
-
-        // evaluate for king tropism
-        evaluateRooks(board, square, false);
-
-        // trapped rooks
-        switch (square) {
-            case thc::h8:
-                if (board.bking_square == thc::e8 || board.bking_square == thc::f8 || board.bking_square == thc::g8) {
-                    score[0] += 40;
-                    score[1] += 40;
-                }
-                break;
-            case thc::g8:
-                if (board.bking_square == thc::e8 || board.bking_square == thc::f8) {
-                    score[0] += 40;
-                    score[1] += 40;
-                }
-                break;
-            case thc::f8:
-                if (board.bking_square == thc::e8) {
-                    score[0] += 40;
-                    score[1] += 40;
-                }
-                break;
-            case thc::a8:
-                if (board.bking_square == thc::b8 || board.bking_square == thc::c8 || board.bking_square == thc::d8) {
-                    score[0] += 40;
-                    score[1] += 40;
-                }
-                break;
-            case thc::b8:
-                if (board.bking_square == thc::c8 || board.bking_square == thc::d8) {
-                    score[0] += 40;
-                    score[1] += 40;
-                }
-                break;
-            case thc::c8:
-                if (board.bking_square == thc::d8) {
-                    score[0] += 40;
-                    score[1] += 40;
-                }
-                break;
-        }
-    }
-
-    // queens
-    // white
-    for (auto square : whiteQueens){
-        int i = static_cast<int>(square);
-        score[0] += qMG + queenSquareTableMG[i];
-        score[1] += qEG  + queenSquareTableEG[i];
-
-        // evaluate for king tropism
-        evaluateQueens(board, square, true);
-    }
-    // black
-    for (auto square : blackQueens) {
-        int i = static_cast<int>(square);
-        // calculate the correct value to use for the piece square table
-        int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-        score[0] += -qMG - queenSquareTableMG[tableCoords];
-        score[1] += -qEG  - queenSquareTableEG[tableCoords];
-
-        // evaluate for king tropism
-        evaluateQueens(board, square, false);
-    }
-
-    // kings
-    // white
-    int i = static_cast<int>(board.wking_square);
-    score[0] += 20000 + kingSquareTableMG[i];
-    score[1] += 20000 + kingSquareTableEG[i];
-    // black
-    i = static_cast<int>(board.bking_square);
-    // calculate the correct value to use for the piece square table
-    int tableCoords = ((7 - (i / 8)) * 8) + i % 8;
-    score[0] += -20000 - kingSquareTableMG[tableCoords];
-    score[1] += -20000 - kingSquareTableEG[tableCoords];
-
 
     return score;
 }
 
 // finds the pawn structure bonus for the position
-int Anduril::getPawnScore(thc::ChessRules &board) {
-    // these were totally stolen from the thc.cpp file directly
-    // Macro to convert chess notation to Square convention,
-//  eg SQ('c','5') -> c5
-//  (We didn't always have such a sensible Square convention. SQ() remains
-//  useful for cases like SQ(file,rank), but you may actually see examples
-//  like the hardwired SQ('c','5') which can safely be changed to simply
-//  c5).
-
+std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
     // first check for a transposition
-    uint64_t hash = Zobrist::hashPawns(board);
-    SimpleNode *node = pTable[hash];
+    uint64_t hash = board.pawn_hash();
+    PawnEntry *node = pTable[hash];
     if (node->key == hash) {
         return node->score;
     }
@@ -741,604 +736,391 @@ int Anduril::getPawnScore(thc::ChessRules &board) {
         node->key = hash;
     }
 
-    int score = 0;
+    std::pair<int, int> score = {0, 0};
 
-    // white pawns
-    for (auto square : whitePawns) {
-        bool isolated = true;
-        int i = static_cast<int>(square);
-        // isolated pawns and defended pawns
-        switch (FILE(square)) {
-            case 'a':
-                // isolated pawns
-                // north
-                for (int j = i + 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
+    // boards with white, black, and both color pawns
+    libchess::Bitboard whitePawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE);
+    libchess::Bitboard blackPawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK);
+    libchess::Bitboard pawns = board.piece_type_bb(libchess::constants::PAWN);
+
+    while (pawns) {
+        libchess::Square currPawnSquare = pawns.forward_bitscan();
+        libchess::File file = currPawnSquare.file();
+        if (!*board.color_of(currPawnSquare)) {
+            switch (file) {
+                case libchess::constants::FILE_A:
+                    // isolated pawn
+                    if (!(whitePawns & libchess::lookups::FILE_B_MASK)) {
+                        score.first  -= 1;
+                        score.second -= 5;
                     }
-                }
 
-                // south
-                for (int j = i + 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
+                    // passed pawn
+                    if (!((blackPawns & libchess::lookups::FILE_A_MASK) | (blackPawns & libchess::lookups::FILE_B_MASK))) {
+                        score.first  += passedBonusMG[currPawnSquare.rank()];
+                        score.second += passedBonusEG[currPawnSquare.rank()];
                     }
-                }
 
-                if (isolated) {
-                    score -= 10;
-                }
-
-                // defended pawns
-                if (board.squares[i - 7] == 'P'){
-                    score += 10;
-                }
-
-                break;
-
-            case 'h':
-                // isolated pawns
-                // north
-                for (int j = i - 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
+                    break;
+                case libchess::constants::FILE_H:
+                    // isolated pawn
+                    if (!(whitePawns & libchess::lookups::FILE_G_MASK)) {
+                        score.first  -= 1;
+                        score.second -= 5;
                     }
-                }
 
-                // south
-                for (int j = i - 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
+                    // passed pawn
+                    if (!((blackPawns & libchess::lookups::FILE_H_MASK) | (blackPawns & libchess::lookups::FILE_G_MASK))) {
+                        score.first  += passedBonusMG[currPawnSquare.rank()];
+                        score.second += passedBonusEG[currPawnSquare.rank()];
                     }
-                }
 
-                if (isolated) {
-                    score -= 10;
-                }
-
-                // defended pawns
-                if (board.squares[i - 9] == 'P'){
-                    score += 10;
-                }
-
-                break;
-            default:
-                // isolated pawns
-                // left
-                // north
-                for (int j = i - 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
+                    break;
+                default:
+                    // isolated pawn
+                    if (!((whitePawns & libchess::lookups::FILE_MASK[file - 1]) | (whitePawns & libchess::lookups::FILE_MASK[file + 1]))) {
+                        score.first  -= 1;
+                        score.second -= 5;
                     }
-                }
 
-                // south
-                for (int j = i - 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
+                    // passed pawn
+                    if (!((blackPawns & libchess::lookups::FILE_MASK[file]) | (blackPawns & libchess::lookups::FILE_MASK[file - 1]) | (blackPawns & libchess::lookups::FILE_MASK[file + 1]))) {
+                        score.first  += passedBonusMG[currPawnSquare.rank()];
+                        score.second += passedBonusEG[currPawnSquare.rank()];
                     }
-                }
 
-                // right
-                // north
-                for (int j = i + 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
-                    }
-                }
-
-                // south
-                for (int j = i + 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'P') {
-                        isolated = false;
-                        break;
-                    }
-                }
-
-                if (isolated) {
-                    score -= 10;
-                }
-
-                // defended pawns
-                if (board.squares[i - 7] == 'P'){
-                    score += 15;
-                }
-                if (board.squares[i - 9] == 'P'){
-                    score += 15;
-                }
-        }
-
-        // doubled pawns
-        // north
-        for (int j = i; j > 0; j -= 8) {
-            if (board.squares[j - 8] == 'P') {
-                score -= 20;
+                    break;
             }
+
+            // defended pawns
+            libchess::Bitboard defenders = board.attackers_to(currPawnSquare, libchess::constants::WHITE) & whitePawns;
+            if (defenders) {
+                score.first  += 6 * defenders.popcount();
+                // stolen from stockfish again, but I think this is an extremely smart idea to increase the bonus
+                // with rank in endgame, so I feel shameless stealing this one
+                score.second += (6 * (currPawnSquare.rank() - 2) / 4) * defenders.popcount();
+            }
+
         }
-        // south
-        for (int j = i; j < 63; j += 8) {
-            if (board.squares[j + 8] == 'P') {
-                score -= 20;
+        else {
+            switch (file) {
+                case libchess::constants::FILE_A:
+                    // isolated pawn
+                    if (!(blackPawns & libchess::lookups::FILE_B_MASK)) {
+                        score.first  += 1;
+                        score.second += 5;
+                    }
+
+                    // passed pawn
+                    if (!((whitePawns & libchess::lookups::FILE_A_MASK) | (whitePawns & libchess::lookups::FILE_B_MASK))) {
+                        score.first  -= passedBonusMG[7 - currPawnSquare.rank()];
+                        score.second -= passedBonusEG[7 - currPawnSquare.rank()];
+                    }
+
+                    break;
+                case libchess::constants::FILE_H:
+                    // isolated pawn
+                    if (!(blackPawns & libchess::lookups::FILE_G_MASK)) {
+                        score.first  += 1;
+                        score.second += 5;
+                    }
+
+                    // passed pawn
+                    if (!((whitePawns & libchess::lookups::FILE_H_MASK) | (whitePawns & libchess::lookups::FILE_G_MASK))) {
+                        score.first  -= passedBonusMG[7 - currPawnSquare.rank()];
+                        score.second -= passedBonusEG[7 - currPawnSquare.rank()];
+                    }
+
+                    break;
+                default:
+                    // isolated pawn
+                    if (!((blackPawns & libchess::lookups::FILE_MASK[file - 1]) | (blackPawns & libchess::lookups::FILE_MASK[file + 1]))) {
+                        score.first  += 1;
+                        score.second += 5;
+                    }
+
+                    // passed pawn
+                    if (!((whitePawns & libchess::lookups::FILE_MASK[file]) | (whitePawns & libchess::lookups::FILE_MASK[file - 1]) | (whitePawns & libchess::lookups::FILE_MASK[file + 1]))) {
+                        score.first  -= passedBonusMG[7 - currPawnSquare.rank()];
+                        score.second -= passedBonusEG[7 - currPawnSquare.rank()];
+                    }
+
+                    break;
+            }
+
+            // defended pawns
+            libchess::Bitboard defenders = board.attackers_to(currPawnSquare, libchess::constants::BLACK) & blackPawns;
+            if (defenders) {
+                score.first  -= 6 * defenders.popcount();
+                // stolen from stockfish again, but I think this is an extremely smart idea to increase the bonus
+                // with rank in endgame, so I feel shameless stealing this one
+                score.second -= (6 * (currPawnSquare.rank() - 2) / 4) * defenders.popcount();
             }
         }
 
-        // passed pawns
-        bool passed = true;
-        for (int j = i; j >= 0; j -= 8) {
-            if (board.squares[j] == 'p') {
-                passed = false;
-                break;
-            }
-            if (IFILE(square) != 0 && board.squares[j - 1] == 'p') {
-                passed = false;
-                break;
-            }
-            if (IFILE(square) != 7 && board.squares[j + 1] == 'p') {
-                passed = false;
-                break;
-            }
+        pawns.forward_popbit();
+    }
+
+    // doubled pawns
+    for (auto file : libchess::lookups::FILE_MASK) {
+        int pawnsOnFileWhite = (file & whitePawns).popcount();
+        int pawnsOnFileBlack = (file & blackPawns).popcount();
+        if (pawnsOnFileWhite > 1) {
+            score.first  -= 3 * (pawnsOnFileWhite - 1);
+            score.second -= 14 * (pawnsOnFileWhite - 1);
         }
-        if (passed){
-            score += 15;
+        if (pawnsOnFileBlack > 1) {
+            score.first  += 3 * (pawnsOnFileBlack - 1);
+            score.second += 14 * (pawnsOnFileBlack - 1);
         }
     }
 
-    // black pawns
-    for (auto square : blackPawns) {
-        bool isolated = true;
-        int i = static_cast<int>(square);
-
-        // isolated pawns and defended pawns
-        switch (FILE(square)) {
-            case 'a':
-                // north
-                for (int j = i + 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-                // south
-                for (int j = i + 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-
-                if (isolated) {
-                    score += 10;
-                }
-
-                // defended pawns
-                if (board.squares[i + 9] == 'p'){
-                    score += 10;
-                }
-
-                break;
-
-            case 'h':
-                // north
-                for (int j = i - 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-                // south
-                for (int j = i - 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-
-                if (isolated) {
-                    score += 10;
-                }
-
-                // defended pawns
-                if (board.squares[i + 7] == 'p'){
-                    score += 10;
-                }
-
-                break;
-
-            default:
-                // isolated pawns
-                // left
-                // north
-                for (int j = i - 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-                // south
-                for (int j = i - 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-
-                // right
-                // north
-                for (int j = i + 1; j >= 0; j -= 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-                // south
-                for (int j = i + 1; j <= 63; j += 8) {
-                    if (board.squares[j] == 'p') {
-                        isolated = false;
-                        break;
-                    }
-                }
-
-                if (isolated) {
-                    score += 10;
-                }
-
-                // defended pawns
-                if (board.squares[i + 7] == 'p'){
-                    score += 10;
-                }
-                if (board.squares[i + 9] == 'p'){
-                    score += 10;
-                }
-        }
-
-        // doubled pawns
-        // north
-        for (int j = i; j > 0; j -= 8) {
-            if (board.squares[j - 8] == 'p') {
-                score += 20;
-            }
-        }
-        // south
-        for (int j = i; j < 63; j += 8) {
-            if (board.squares[j + 8] == 'p') {
-                score += 20;
-            }
-        }
-
-        // passed pawns
-        bool passed = true;
-        for (int j = i; j <= 63; j += 8) {
-            if (board.squares[j] == 'P') {
-                passed = false;
-                break;
-            }
-            if (IFILE(square) != 0 && board.squares[j - 1] == 'P') {
-                passed = false;
-                break;
-            }
-            if (IFILE(square) != 7 && board.squares[j + 1] == 'P') {
-                passed = false;
-                break;
-            }
-        }
-        if (passed){
-            score -= 15;
-        }
-    }
-
-    // add the score to the transposition table
     node->score = score;
 
     return score;
+
 }
 
 // finds the king safety bonus for the position
-int Anduril::getKingSafety(thc::ChessRules &board, thc::Square whiteKing, thc::Square blackKing) {
+int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing) {
+    libchess::Bitboard whitePawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE);
+    libchess::Bitboard blackPawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK);
+
+    libchess::Bitboard wKBB = libchess::lookups::square(whiteKing);
+    libchess::Bitboard bKBB = libchess::lookups::square(blackKing);
+
+    libchess::Bitboard wCastleQueen = (libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK)
+                                      & (libchess::lookups::RANK_1_MASK | libchess::lookups::RANK_2_MASK);
+    libchess::Bitboard wCastleKing = (libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK)
+                                      & (libchess::lookups::RANK_1_MASK | libchess::lookups::RANK_2_MASK);
+
+    libchess::Bitboard bCastleQueen = (libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK |  libchess::lookups::FILE_C_MASK)
+                                      & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_8_MASK);
+    libchess::Bitboard bCastleKing = (libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK)
+                                     & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_8_MASK);
+
     int score = 0;
+
     // white shield
-    if (thc::get_rank(whiteKing) == '1' && whiteKing != thc::d1 && whiteKing != thc::e1) {
+    if (wKBB & wCastleKing || wKBB & wCastleQueen) {
         // queen side
-        if (whiteKing == thc::a1 || whiteKing == thc::b1 || whiteKing == thc::c1) {
-            if (board.squares[48] != 'P' && board.squares[40] != 'P') {
+        if (whiteKing == libchess::constants::A1 || whiteKing == libchess::constants::B1 || whiteKing == libchess::constants::C1) {
+            // 'A' file
+            if (!(libchess::lookups::square(libchess::constants::A2) & whitePawns)
+                && !(libchess::lookups::square(libchess::constants::A3) & whitePawns)) {
                 score -= 20;
-                bool open = true;
-                for (int i = 32; i > 0; i -= 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
                     score -= 20;
                 }
             }
-            if (board.squares[49] != 'P' && board.squares[41] != 'P') {
+            // 'B' file
+            if (!(libchess::lookups::square(libchess::constants::B2) & whitePawns)
+                && !(libchess::lookups::square(libchess::constants::B3) & whitePawns)) {
                 score -= 20;
-                bool open = true;
-                for (int i = 33; i > 0; i -= 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
                     score -= 20;
                 }
             }
-            if (board.squares[50] != 'P' && board.squares[42] != 'P') {
+            // 'C' file
+            if (!(libchess::lookups::square(libchess::constants::C2) & whitePawns)
+                && !(libchess::lookups::square(libchess::constants::C3) & whitePawns)) {
                 score -= 20;
-                bool open = true;
-                for (int i = 34; i > 0; i -= 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
                     score -= 20;
                 }
             }
         }
             // king side
         else {
-            if (board.squares[53] != 'P' && board.squares[45] != 'P') {
+            // 'F' file
+            if (!(libchess::lookups::square(libchess::constants::F2) & whitePawns)
+                && !(libchess::lookups::square(libchess::constants::F3) & whitePawns)) {
                 score -= 20;
-                bool open = true;
-                for (int i = 37; i > 0; i -= 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
                     score -= 20;
                 }
             }
-            if (board.squares[54] != 'P' && board.squares[46] != 'P') {
+            // 'G' file
+            if (!(libchess::lookups::square(libchess::constants::G2) & whitePawns)
+                && !(libchess::lookups::square(libchess::constants::G3) & whitePawns)) {
                 score -= 20;
-                bool open = true;
-                for (int i = 38; i > 0; i -= 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
                     score -= 20;
                 }
             }
-            if (board.squares[55] != 'P' && board.squares[47] != 'P') {
+            // 'H' file
+            if (!(libchess::lookups::square(libchess::constants::H2) & whitePawns)
+                && !(libchess::lookups::square(libchess::constants::H3) & whitePawns)) {
                 score -= 20;
-                bool open = true;
-                for (int i = 39; i > 0; i -= 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
                     score -= 20;
                 }
             }
         }
+
+        // pawn storms
+        // white
+        libchess::Bitboard stormZone = libchess::Bitboard();
+        // first make the storm zone files
+        libchess::Bitboard stormZoneFiles = libchess::Bitboard();
+        switch (whiteKing.file()) {
+            case libchess::constants::FILE_A:
+                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK;
+                break;
+            case libchess::constants::FILE_B:
+                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK;
+                break;
+            case libchess::constants::FILE_G:
+                stormZoneFiles |= libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
+                break;
+            case libchess::constants::FILE_H:
+                stormZoneFiles |= libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
+                break;
+            default:
+                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() - 2];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() - 1];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value()];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() + 1];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() + 2];
+                break;
+        }
+
+        // we now look for opposing pawns
+        switch (whiteKing.rank()) {
+            case libchess::constants::RANK_1:
+                stormZone = (stormZoneFiles & libchess::lookups::RANK_1_MASK) | (stormZoneFiles & libchess::lookups::RANK_2_MASK) | (stormZoneFiles & libchess::lookups::RANK_3_MASK);
+                if (stormZone & blackPawns) {
+                    score -= 5 * (stormZone & blackPawns).popcount();
+                }
+                break;
+            case libchess::constants::RANK_2:
+                stormZone = (stormZoneFiles & libchess::lookups::RANK_1_MASK) | (stormZoneFiles & libchess::lookups::RANK_2_MASK) | (stormZoneFiles & libchess::lookups::RANK_3_MASK) | (stormZoneFiles & libchess::lookups::RANK_4_MASK);
+                if (stormZone & blackPawns) {
+                    score -= 5 * (stormZone & blackPawns).popcount();
+                }
+                break;
+        }
     }
+
     // black shield
-    if (thc::get_rank(blackKing) == '8' && blackKing != thc::d8 && blackKing != thc::e8) {
+    if (bKBB & bCastleKing || bKBB & bCastleQueen) {
         // queen side
-        if (blackKing == thc::a8 || blackKing == thc::b8 || blackKing == thc::c8) {
-            if (board.squares[8] != 'p' && board.squares[16] != 'p') {
+        if (blackKing == libchess::constants::A8 || blackKing == libchess::constants::B8 || blackKing == libchess::constants::C8) {
+            // 'A' file
+            if (!(libchess::lookups::square(libchess::constants::A7) & blackPawns)
+                && !(libchess::lookups::square(libchess::constants::A6) & blackPawns)) {
                 score += 20;
-                bool open = true;
-                for (int i = 24; i < 63; i += 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
                     score += 20;
                 }
             }
-            if (board.squares[9] != 'p' && board.squares[17] != 'p') {
+            // 'B' file
+            if (!(libchess::lookups::square(libchess::constants::B7) & blackPawns)
+                && !(libchess::lookups::square(libchess::constants::B6) & blackPawns)) {
                 score += 20;
-                bool open = true;
-                for (int i = 25; i < 63; i += 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
                     score += 20;
                 }
             }
-            if (board.squares[10] != 'p' && board.squares[18] != 'p') {
+            // 'C' file
+            if (!(libchess::lookups::square(libchess::constants::C7) & blackPawns)
+                && !(libchess::lookups::square(libchess::constants::C6) & blackPawns)) {
                 score += 20;
-                bool open = true;
-                for (int i = 26; i < 63; i += 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
                     score += 20;
                 }
             }
         }
             // king side
         else {
-            if (board.squares[13] != 'p' && board.squares[21] != 'p') {
+            // 'F' file
+            if (!(libchess::lookups::square(libchess::constants::F7) & blackPawns)
+                && !(libchess::lookups::square(libchess::constants::F6) & blackPawns)) {
                 score += 20;
-                bool open = true;
-                for (int i = 29; i < 63; i += 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
                     score += 20;
                 }
             }
-            if (board.squares[14] != 'p' && board.squares[22] != 'p') {
+            // 'G' file
+            if (!(libchess::lookups::square(libchess::constants::G7) & blackPawns)
+                && !(libchess::lookups::square(libchess::constants::G6) & blackPawns)) {
                 score += 20;
-                bool open = true;
-                for (int i = 30; i < 63; i += 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
                     score += 20;
                 }
             }
-            if (board.squares[15] != 'p' && board.squares[23] != 'p') {
+            // 'H' file
+            if (!(libchess::lookups::square(libchess::constants::H7) & blackPawns)
+                && !(libchess::lookups::square(libchess::constants::H6) & blackPawns)) {
                 score += 20;
-                bool open = true;
-                for (int i = 31; i < 63; i += 8) {
-                    if (board.squares[i] == 'P' || board.squares[i] == 'p') {
-                        open = false;
-                        break;
-                    }
-                }
-                if (open) {
+                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
                     score += 20;
                 }
             }
         }
-    }
 
-    // pawn storms
-    // white
-    int startSquare = static_cast<int>(whiteKing) - 2;
-    int endSquare = static_cast<int>(whiteKing) + 2;
-    int startRankModifier = -2;
-    int endRankModifier = 2;
-    // grab the modifier for the startSquare if needed
-    switch (thc::get_file(whiteKing)) {
-        case 'a':
-            startSquare += 2;
-            break;
-        case 'b':
-            startSquare++;
-            break;
-        case 'g':
-            endSquare--;
-            break;
-        case 'h':
-            endSquare -= 2;
-            break;
-    }
-    // grab the modifier for the startRankModifier if needed
-    switch (thc::get_rank(whiteKing)) {
-        case '1':
-            endRankModifier -= 2;
-            break;
-        case '2':
-            endRankModifier--;
-            break;
-        case '7':
-            startRankModifier++;
-            break;
-        case '8':
-            startRankModifier += 2;
-            break;
-    }
+        // black
+        libchess::Bitboard stormZone = libchess::Bitboard();
+        // first make the storm zone files
+        libchess::Bitboard stormZoneFiles = libchess::Bitboard();
+        switch (blackKing.file()) {
+            case libchess::constants::FILE_A:
+                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK;
+                break;
+            case libchess::constants::FILE_B:
+                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK;
+                break;
+            case libchess::constants::FILE_G:
+                stormZoneFiles |= libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
+                break;
+            case libchess::constants::FILE_H:
+                stormZoneFiles |= libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
+                break;
+            default:
+                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() - 2];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() - 1];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value()];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() + 1];
+                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() + 2];
+                break;
+        }
 
-
-    // do the actual loop
-    // searches the kings location +2 in every direction
-    // or until an edge is hit (determined by start and end of square and rankModifier being set above)
-    for (int modifier = startRankModifier; modifier <= endRankModifier; modifier++) {
-        for (int square = startSquare; square <= endSquare; square++) {
-            if (board.squares[square + (modifier * 8)] == 'p') {
-                score -= 5;
-            }
+        // we now look for opposing pawns
+        switch (blackKing.rank()) {
+            case libchess::constants::RANK_7:
+                stormZone = (stormZoneFiles & libchess::lookups::RANK_8_MASK) |
+                            (stormZoneFiles & libchess::lookups::RANK_7_MASK) |
+                            (stormZoneFiles & libchess::lookups::RANK_6_MASK) |
+                            (stormZoneFiles & libchess::lookups::RANK_5_MASK);
+                if (stormZone & whitePawns) {
+                    score += 5 * (stormZone & whitePawns).popcount();
+                }
+                break;
+            case libchess::constants::RANK_8:
+                stormZone = (stormZoneFiles & libchess::lookups::RANK_8_MASK) |
+                            (stormZoneFiles & libchess::lookups::RANK_7_MASK) |
+                            (stormZoneFiles & libchess::lookups::RANK_6_MASK);
+                if (stormZone & whitePawns) {
+                    score += 5 * (stormZone & whitePawns).popcount();
+                }
+                break;
         }
     }
-
-    // black
-    startSquare = static_cast<int>(blackKing) - 2;
-    endSquare = static_cast<int>(blackKing) + 2;
-    startRankModifier = -2;
-    endRankModifier = 2;
-    // grab the modifier for the startSquare if needed
-    switch (thc::get_file(blackKing)) {
-        case 'a':
-            startSquare += 2;
-            break;
-        case 'b':
-            startSquare++;
-            break;
-        case 'g':
-            endSquare--;
-            break;
-        case 'h':
-            endSquare -= 2;
-            break;
-    }
-    // grab the modifier for the startRankModifier if needed
-    switch (thc::get_rank(blackKing)) {
-        case '1':
-            endRankModifier -= 2;
-            break;
-        case '2':
-            endRankModifier--;
-            break;
-        case '7':
-            startRankModifier++;
-            break;
-        case '8':
-            startRankModifier += 2;
-            break;
-    }
-
-
-    // do the actual loop
-    // searches the kings location +2 in every direction
-    // or until an edge is hit (determined by start and end of square and rankModifier being set above)
-    for (int modifier = startRankModifier; modifier <= endRankModifier; modifier++) {
-        for (int square = startSquare; square <= endSquare; square++) {
-            if (board.squares[square + (modifier * 8)] == 'P') {
-                score += 5;
-            }
-        }
-    }
-
-    // king tropism (black is index 0, white is index 1)
-    // white
-    if (attackCount[1] >= 2) {
-        score += SafetyTable[attackWeight[1]];
-    }
-    // black
-    if (attackCount[0] >= 2) {
-        score -= SafetyTable[attackWeight[0]];
-    }
-
 
     return score;
 }
 
-// gets the phase of the game for evaluation
-double Anduril::getPhase(thc::ChessRules &board) {
-    double pawn = 0.125, knight = 1, bishop = 1, rook = 2, queen = 4;
-    double totalPhase = pawn*8 + knight*4 + bishop*4 + rook*4 + queen*2;
+// gets the phase of the game for evalutation
+int Anduril::getPhase(libchess::Position &board) {
+    double pawn = Pph, knight = Kph, bishop = Bph, rook = Rph, queen = Qph;
+    double totalPhase = pawn*16 + knight*4 + bishop*4 + rook*4 + queen*2;
 
     double phase = totalPhase;
-    phase -= (blackPawns.size() + whitePawns.size()) * pawn;
-    phase -= (blackKnights.size() + whiteKnights.size()) * knight;
-    phase -= (blackBishops.size() + whiteBishops.size()) * bishop;
-    phase -= (blackRooks.size() + whiteRooks.size()) * rook;
-    phase -= (blackQueens.size() + whiteQueens.size()) * queen;
+    phase -= board.piece_type_bb(libchess::constants::PAWN).popcount() * pawn;
+    phase -= board.piece_type_bb(libchess::constants::KNIGHT).popcount() * knight;
+    phase -= board.piece_type_bb(libchess::constants::BISHOP).popcount() * bishop;
+    phase -= board.piece_type_bb(libchess::constants::ROOK).popcount() * rook;
+    phase -= board.piece_type_bb(libchess::constants::QUEEN).popcount() * queen;
 
-    return (phase * 256 + (totalPhase / 2)) / totalPhase;
+    return (int)((phase * 256 + (totalPhase / 2)) / totalPhase);
 }

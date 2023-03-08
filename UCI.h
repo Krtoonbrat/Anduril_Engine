@@ -3,7 +3,6 @@
 //
 #include "Anduril.h"
 #include "PolyglotBook.h"
-#include "thc.h"
 
 #ifndef ANDURIL_ENGINE_UCI_H
 #define ANDURIL_ENGINE_UCI_H
@@ -15,13 +14,13 @@ namespace UCI {
     void loop();
 
     // parses the go command from the GUI
-    void parseGo(char* line, thc::ChessRules &board, Anduril &AI, Book &openingBook);
+    void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook, bool &bookOpen);
 
     // parses position commands from the GUI
-    void parsePosition(char* line, thc::ChessRules &board, Anduril &AI);
+    void parsePosition(char* line, libchess::Position &board, Anduril &AI);
 
     // parses setoptions
-    void parseOption(char* line, Anduril &AI);
+    void parseOption(char* line, Anduril &AI, bool &bookOpen);
 
     // looks to see if there is an input waiting for us to read
     // http://home.arcor.de/dreamlike/chess/

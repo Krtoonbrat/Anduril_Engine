@@ -2,10 +2,10 @@
 // Created by 80hugkev on 7/7/2022.
 //
 
-#ifndef ANDURIL_ENGINE_LIMITS_H
-#define ANDURIL_ENGINE_LIMITS_H
+#ifndef ANDURIL_ENGINE_LIMIT_H
+#define ANDURIL_ENGINE_LIMIT_H
 
-struct limits {
+struct limit {
     // time left on the clock for white and black (milliseconds)
     int time = -1;
 
@@ -19,4 +19,4 @@ struct limits {
     bool timeSet = false;
 };
 
-#endif //ANDURIL_ENGINE_LIMITS_H
+#endif //ANDURIL_ENGINE_LIMIT_H

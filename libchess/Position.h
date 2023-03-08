@@ -1,0 +1,274 @@
+#ifndef LIBCHESS_POSITION_H
+#define LIBCHESS_POSITION_H
+
+#include <cctype>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <vector>
+
+#include "Bitboard.h"
+#include "CastlingRights.h"
+#include "Color.h"
+#include "Lookups.h"
+#include "Move.h"
+#include "Piece.h"
+#include "PieceType.h"
+#include "Square.h"
+#include "internal/Zobrist.h"
+
+namespace libchess {
+
+namespace constants {
+
+static std::string STARTPOS_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+}  // namespace constants
+
+class Position {
+   private:
+    Position() : side_to_move_(constants::WHITE), ply_(0) {
+    }
+
+   public:
+    explicit Position(const std::string& fen_str) : Position() {
+        *this = *Position::from_fen(fen_str);
+    }
+    using hash_type = std::uint64_t;
+
+    enum class GameState
+    {
+        IN_PROGRESS,
+        CHECKMATE,
+        STALEMATE,
+        THREEFOLD_REPETITION,
+        FIFTY_MOVES
+    };
+
+    // Getters
+    [[nodiscard]] Bitboard piece_type_bb(PieceType piece_type) const;
+    [[nodiscard]] Bitboard piece_type_bb(PieceType piece_type, Color color) const;
+    [[nodiscard]] Bitboard color_bb(Color color) const;
+    [[nodiscard]] Bitboard occupancy_bb() const;
+    [[nodiscard]] Color side_to_move() const;
+    [[nodiscard]] CastlingRights castling_rights() const;
+    [[nodiscard]] std::optional<Square> enpassant_square() const;
+    [[nodiscard]] std::optional<Move> previous_move() const;
+    [[nodiscard]] std::optional<PieceType> previously_captured_piece() const;
+    [[nodiscard]] std::optional<PieceType> piece_type_on(Square square) const;
+    [[nodiscard]] std::optional<Color> color_of(Square square) const;
+    [[nodiscard]] std::optional<Piece> piece_on(Square square) const;
+    [[nodiscard]] hash_type hash() const;
+    [[nodiscard]] hash_type hashAfter(Move move);
+    [[nodiscard]] hash_type pawn_hash() const;
+    [[nodiscard]] Square king_square(Color color) const;
+    [[nodiscard]] int halfmoves() const;
+    [[nodiscard]] int fullmoves() const;
+    [[nodiscard]] bool in_check() const;
+    [[nodiscard]] bool is_repeat(int times = 1) const;
+    [[nodiscard]] int repeat_count() const;
+    [[nodiscard]] const std::string& start_fen() const;
+    [[nodiscard]] GameState game_state() const;
+
+    // Move Integration
+    [[nodiscard]] Move::Type move_type_of(Move move) const;
+    [[nodiscard]] bool is_capture_move(Move move) const;
+    [[nodiscard]] bool is_promotion_move(Move move) const;
+    [[nodiscard]] bool is_legal_move(Move move) const;
+    [[nodiscard]] bool is_legal_generated_move(Move move) const;
+    void unmake_move();
+    void make_move(Move move);
+    void make_null_move();
+
+    // added by Krtoonbrat
+    // this is exactly the same as make_move() except I commented out calculating both hashes.  They aren't needed
+    // inside of see and are destroyed directly after anyway.  All it did was waste time.
+    void make_see_move(Move move);
+
+    // Attacks
+    [[nodiscard]] Bitboard checkers_to(Color c) const;
+    [[nodiscard]] Bitboard attackers_to(Square square) const;
+    [[nodiscard]] Bitboard attackers_to(Square square, Color c) const;
+    [[nodiscard]] Bitboard attackers_to(Square square, Bitboard occupancy) const;
+    [[nodiscard]] Bitboard attackers_to(Square square, Bitboard occupancy, Color c) const;
+    [[nodiscard]] Bitboard attacks_of_piece_on(Square square) const;
+    [[nodiscard]] Bitboard pinned_pieces_of(Color c) const;
+
+    // Move Generation
+    void generate_quiet_promotions(MoveList& move_list, Color stm) const;
+    void generate_capture_promotions(MoveList& move_list, Color stm) const;
+    void generate_promotions(MoveList& move_list, Color stm) const;
+    void generate_pawn_quiets(MoveList& move_list, Color stm) const;
+    void generate_pawn_captures(MoveList& move_list, Color stm) const;
+    void generate_pawn_moves(MoveList& move_list, Color stm) const;
+    void generate_non_pawn_quiets(PieceType pt, MoveList& move_list, Color stm) const;
+    void generate_non_pawn_captures(PieceType pt, MoveList& move_list, Color stm) const;
+    void generate_knight_moves(MoveList& move_list, Color stm) const;
+    void generate_bishop_moves(MoveList& move_list, Color stm) const;
+    void generate_rook_moves(MoveList& move_list, Color stm) const;
+    void generate_queen_moves(MoveList& move_list, Color stm) const;
+    void generate_king_moves(MoveList& move_list, Color stm) const;
+    void generate_castling(MoveList& move_list, Color stm) const;
+    void generate_checker_block_moves(MoveList& move_list, Color stm) const;
+    void generate_checker_capture_moves(MoveList& move_list, Color stm) const;
+    void generate_quiet_moves(MoveList& move_list, Color stm) const;
+    void generate_capture_moves(MoveList& move_list, Color stm) const;
+    [[nodiscard]] MoveList check_evasion_move_list(Color stm) const;
+    [[nodiscard]] MoveList pseudo_legal_move_list(Color stm) const;
+    [[nodiscard]] MoveList legal_move_list(Color stm) const;
+    [[nodiscard]] MoveList check_evasion_move_list() const;
+    [[nodiscard]] MoveList pseudo_legal_move_list() const;
+    [[nodiscard]] MoveList legal_move_list() const;
+
+    // Utilities
+    void display_raw(std::ostream& ostream = std::cout) const;
+    void display(std::ostream& ostream = std::cout) const;
+    [[nodiscard]] std::string fen() const;
+    [[nodiscard]] std::string uci_line() const;
+    void vflip();
+    [[nodiscard]] std::optional<Move> smallest_capture_move_to(Square square) const;
+    int see_to(Square square, std::array<int, 6> piece_values);
+    int see_for(Move move, std::array<int, 6> piece_values);
+    static std::optional<Position> from_fen(const std::string& fen);
+    static std::optional<Position> from_uci_position_line(const std::string& line);
+
+    // added by Krtoonbrat
+    // One of the largest performance hits in Anduril currently is allocating memory for the state vector when we
+    // make a move.  If we make sure the capacity of the vector is ply+100 (100 being Anduril's max depth) at root, the
+    // vector shouldn't have to dynamically allocate, and if it does it won't be often enough to be significant
+    void prep_search() {
+        history_.reserve(ply_ + 100);
+    }
+
+protected:
+    // clang-format off
+    constexpr static int castling_spoilers[64] = {
+        13, 15, 15, 15, 12, 15, 15, 14,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        15, 15, 15, 15, 15, 15, 15, 15,
+        7,  15, 15, 15, 3,  15, 15, 11
+    };
+    // clang-format on
+
+    struct State {
+        CastlingRights castling_rights_;
+        std::optional<Square> enpassant_square_;
+        std::optional<Move> previous_move_;
+        std::optional<PieceType> captured_pt_;
+        Move::Type move_type_ = Move::Type::NONE;
+        hash_type hash_ = 0;
+        hash_type pawn_hash_ = 0;
+        int halfmoves_ = 0;
+    };
+
+    [[nodiscard]] int ply() const {
+        return ply_;
+    }
+
+    [[nodiscard]] const std::vector<State>& history() const {
+        return history_;
+    }
+    State& state_mut_ref() {
+        return history_[ply()];
+    }
+    State& state_mut_ref(int ply) {
+        return history_[ply];
+    }
+    [[nodiscard]] const State& state() const {
+        return history_[ply()];
+    }
+    [[nodiscard]] const State& state(int ply) const {
+        return history_[ply];
+    }
+    [[nodiscard]] hash_type calculate_hash() const {
+        hash_type hash_value = 0;
+        for (Color c : constants::COLORS) {
+            for (PieceType pt : constants::PIECE_TYPES) {
+                Bitboard bb = piece_type_bb(pt, c);
+                while (bb) {
+                    hash_value ^= zobrist::piece_square_key(bb.forward_bitscan(), pt, c);
+                    bb.forward_popbit();
+                }
+            }
+        }
+        auto ep_sq = enpassant_square();
+        if (ep_sq) {
+            hash_value ^= zobrist::enpassant_key(*ep_sq);
+        }
+        CastlingRights rights = castling_rights();
+        if (rights.is_allowed(constants::WHITE_KINGSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::WHITE_KINGSIDE);
+        }
+        if (rights.is_allowed(constants::WHITE_QUEENSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::WHITE_QUEENSIDE);
+        }
+        if (rights.is_allowed(constants::BLACK_KINGSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::BLACK_KINGSIDE);
+        }
+        if (rights.is_allowed(constants::BLACK_QUEENSIDE)) {
+            hash_value ^= zobrist::castling_rights_key(rights);
+            rights.disallow(constants::BLACK_QUEENSIDE);
+        }
+        //hash_value ^= zobrist::castling_rights_key(castling_rights());
+        hash_value ^= zobrist::side_to_move_key(side_to_move());
+        return hash_value;
+    }
+    [[nodiscard]] hash_type calculate_pawn_hash() const {
+        hash_type hash_value = 0;
+        for (Color c : constants::COLORS) {
+            Bitboard bb = piece_type_bb(constants::PAWN, c);
+            while (bb) {
+                hash_value ^= zobrist::piece_square_key(bb.forward_bitscan(), constants::PAWN, c);
+                bb.forward_popbit();
+            }
+        }
+        return hash_value;
+    }
+
+    void put_piece(Square square, PieceType piece_type, Color color) {
+        Bitboard square_bb = Bitboard{square};
+        piece_type_bb_[piece_type.value()] |= square_bb;
+        color_bb_[color.value()] |= square_bb;
+    }
+    void remove_piece(Square square, PieceType piece_type, Color color) {
+        Bitboard square_bb = Bitboard{square};
+        piece_type_bb_[piece_type.value()] &= ~square_bb;
+        color_bb_[color.value()] &= ~square_bb;
+    }
+    void move_piece(Square from_square, Square to_square, PieceType piece_type, Color color) {
+        Bitboard from_to_sqs_bb = Bitboard{from_square} ^ Bitboard { to_square };
+        piece_type_bb_[piece_type.value()] ^= from_to_sqs_bb;
+        color_bb_[color.value()] ^= from_to_sqs_bb;
+    }
+    void reverse_side_to_move() {
+        side_to_move_ = !side_to_move_;
+    }
+
+   private:
+    Bitboard piece_type_bb_[6];
+    Bitboard color_bb_[2];
+    Color side_to_move_;
+    int fullmoves_;
+    int ply_;
+    std::vector<State> history_;
+
+    std::string start_fen_;
+};
+
+}  // namespace libchess
+
+#include "Position/Attacks.h"
+#include "Position/Getters.h"
+#include "Position/MoveGeneration.h"
+#include "Position/MoveIntegration.h"
+#include "Position/Utilities.h"
+
+#endif  // LIBCHESS_POSITION_H

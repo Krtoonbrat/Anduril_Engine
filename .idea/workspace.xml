@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
+  <component name="CMakeReloadState">
+    <option name="reloaded" value="true" />
+  </component>
+  <component name="CMakeRunConfigurationManager">
+    <generated>
+      <config projectName="Anduril_Engine" targetName="Anduril_Engine" />
+    </generated>
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+      <configuration PROFILE_NAME="Release" ENABLED="true" CONFIG_NAME="Release" />
+      <configuration PROFILE_NAME="RelWithDebInfo" ENABLED="true" CONFIG_NAME="RelWithDebInfo" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TranspositionTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="clangTidyViaClangd" value="false" />
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Release" />
+  <component name="Git.Settings">
+    <option name="PREVIOUS_COMMIT_AUTHORS">
+      <list>
+        <option value="Kevin Hughes &lt;hughesk1827@gmail.com&gt;" />
+      </list>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/Anduril.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/CMakeLists.txt" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/PolyglotBook.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/TranspositionTable.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/UCI.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/evaluation.cpp" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/main.cpp" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2022" />
+    <option name="minorVersion" value="1.2" />
+  </component>
+  <component name="ProjectId" id="2AD4CCqFxfw1Ovqe03rtbUcQtea" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Hughe/Documents/Anduril_Engine&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;MakefileSettings&quot;,
+    &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RunManager">
+    <configuration name="Anduril_Engine" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Anduril_Engine" TARGET_NAME="Anduril_Engine" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Anduril_Engine" RUN_TARGET_NAME="Anduril_Engine">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="" />
+      <created>1654530695716</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1654530695716</updated>
+      <workItem from="1654530700448" duration="761000" />
+      <workItem from="1654531523761" duration="151000" />
+      <workItem from="1654532351041" duration="11767000" />
+      <workItem from="1654575417717" duration="3135000" />
+      <workItem from="1654607141760" duration="20242000" />
+      <workItem from="1654638507348" duration="9435000" />
+      <workItem from="1654693347457" duration="83422000" />
+      <workItem from="1654896933982" duration="488000" />
+      <workItem from="1655126699896" duration="4341000" />
+      <workItem from="1655133293460" duration="3101000" />
+      <workItem from="1655216174837" duration="59951000" />
+      <workItem from="1655385040343" duration="55455000" />
+      <workItem from="1655730362430" duration="77593000" />
+      <workItem from="1655989645118" duration="110000" />
+      <workItem from="1655989799238" duration="27961000" />
+      <workItem from="1656099688803" duration="1951000" />
+      <workItem from="1656335177862" duration="2476000" />
+      <workItem from="1656344512064" duration="3261000" />
+      <workItem from="1656427283712" duration="10561000" />
+      <workItem from="1656449299423" duration="42000" />
+      <workItem from="1656449619405" duration="348000" />
+      <workItem from="1656509231226" duration="31000" />
+      <workItem from="1656512842113" duration="98000" />
+      <workItem from="1656533062138" duration="88000" />
+      <workItem from="1657125553734" duration="1388000" />
+      <workItem from="1657138765340" duration="26162000" />
+      <workItem from="1657234676927" duration="2000" />
+      <workItem from="1657238453374" duration="5000" />
+      <workItem from="1657286077975" duration="23810000" />
+      <workItem from="1657547505029" duration="5630000" />
+      <workItem from="1657556574576" duration="333000" />
+      <workItem from="1657557046107" duration="2596000" />
+      <workItem from="1657569526432" duration="155000" />
+      <workItem from="1657632243233" duration="4513000" />
+      <workItem from="1657638285731" duration="263000" />
+      <workItem from="1657651905234" duration="707000" />
+      <workItem from="1657660365853" duration="704000" />
+      <workItem from="1657725758754" duration="863000" />
+      <workItem from="1657835057080" duration="443000" />
+      <workItem from="1657835539989" duration="238000" />
+      <workItem from="1657892006459" duration="659000" />
+      <workItem from="1657901592737" duration="1301000" />
+      <workItem from="1658165580274" duration="2258000" />
+      <workItem from="1658497745402" duration="41000" />
+      <workItem from="1658508293198" duration="1098000" />
+      <workItem from="1658510615711" duration="39000" />
+      <workItem from="1658763086149" duration="667000" />
+      <workItem from="1658778505058" duration="233000" />
+      <workItem from="1658779913523" duration="166000" />
+      <workItem from="1659113984741" duration="43000" />
+      <workItem from="1660860628576" duration="244000" />
+      <workItem from="1660918293213" duration="19000" />
+      <workItem from="1663347511002" duration="797000" />
+      <workItem from="1663348480533" duration="9758000" />
+      <workItem from="1663370707715" duration="130000" />
+      <workItem from="1663371188279" duration="662000" />
+      <workItem from="1664303980268" duration="1769000" />
+      <workItem from="1664471011832" duration="15411000" />
+      <workItem from="1664519546260" duration="145000" />
+      <workItem from="1665438031872" duration="1508000" />
+      <workItem from="1665594369806" duration="9665000" />
+      <workItem from="1665630353454" duration="3464000" />
+      <workItem from="1665784585222" duration="7124000" />
+      <workItem from="1665861401559" duration="4323000" />
+      <workItem from="1665976605822" duration="1378000" />
+      <workItem from="1666030664732" duration="3865000" />
+      <workItem from="1666114932347" duration="3851000" />
+      <workItem from="1666121659113" duration="11905000" />
+      <workItem from="1666205275521" duration="1884000" />
+      <workItem from="1666289694842" duration="891000" />
+      <workItem from="1666373085190" duration="10805000" />
+      <workItem from="1666404343070" duration="3229000" />
+      <workItem from="1666494117054" duration="231000" />
+      <workItem from="1666654439918" duration="377000" />
+      <workItem from="1666669437614" duration="50000" />
+      <workItem from="1666669614737" duration="20000" />
+      <workItem from="1666725319470" duration="6313000" />
+      <workItem from="1666736618099" duration="7894000" />
+      <workItem from="1666850996837" duration="4554000" />
+      <workItem from="1666913166121" duration="1032000" />
+      <workItem from="1667325781997" duration="72000" />
+      <workItem from="1667326365651" duration="1732000" />
+      <workItem from="1667329615699" duration="707000" />
+      <workItem from="1667413346630" duration="327000" />
+      <workItem from="1667501286221" duration="2921000" />
+      <workItem from="1667582909101" duration="141000" />
+      <workItem from="1667935588738" duration="260000" />
+      <workItem from="1667935959286" duration="5624000" />
+      <workItem from="1667947876214" duration="10470000" />
+      <workItem from="1668032297150" duration="247000" />
+      <workItem from="1668191636252" duration="445000" />
+      <workItem from="1668195971871" duration="1180000" />
+      <workItem from="1668545523841" duration="814000" />
+      <workItem from="1668547465669" duration="4927000" />
+      <workItem from="1668624115783" duration="661000" />
+      <workItem from="1668802405234" duration="311000" />
+      <workItem from="1669050009186" duration="5856000" />
+      <workItem from="1669056085823" duration="51000" />
+      <workItem from="1669066465774" duration="294000" />
+      <workItem from="1669230459290" duration="271000" />
+      <workItem from="1669598690832" duration="804000" />
+      <workItem from="1669600246522" duration="134000" />
+      <workItem from="1669615824378" duration="369000" />
+      <workItem from="1669648648148" duration="118000" />
+      <workItem from="1670274610023" duration="60000" />
+      <workItem from="1670357086559" duration="1430000" />
+      <workItem from="1670434793212" duration="5663000" />
+      <workItem from="1670442472982" duration="884000" />
+      <workItem from="1670445303049" duration="285000" />
+      <workItem from="1670446738607" duration="189000" />
+      <workItem from="1670447959980" duration="310000" />
+      <workItem from="1670448703871" duration="209000" />
+      <workItem from="1670625063302" duration="5523000" />
+      <workItem from="1670865836232" duration="2309000" />
+      <workItem from="1670868821169" duration="5154000" />
+      <workItem from="1670962473767" duration="3582000" />
+      <workItem from="1670971260607" duration="216000" />
+      <workItem from="1671049888299" duration="3759000" />
+      <workItem from="1671139328481" duration="2471000" />
+      <workItem from="1671347731114" duration="2683000" />
+      <workItem from="1671488802431" duration="664000" />
+      <workItem from="1671500882245" duration="1554000" />
+      <workItem from="1671504848535" duration="855000" />
+      <workItem from="1671672491196" duration="365000" />
+      <workItem from="1671673276291" duration="175000" />
+      <workItem from="1672980817336" duration="1000" />
+    </task>
+    <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
+      <created>1654532716259</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1654532716259</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Added evaluation for rooks on open and semi open files">
+      <created>1654542284125</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1654542284125</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Changed piece values for bishops and knights.  Changed some values for the King Square Table">
+      <created>1654578404693</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1654578404693</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Added trapped knights, trapped rooks, and fianchettos to the evaluation">
+      <created>1654630814173</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1654630814173</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Added trapped knights, trapped rooks, and fianchettos to the evaluation">
+      <created>1654631716957</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1654631716958</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Added polyglot opening book and various bug fixes">
+      <created>1654786676220</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1654786676220</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Created transposition table class to replace the simple STL hash map">
+      <created>1654808566770</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1654808566770</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Switched pawn transpositions to custom table class">
+      <created>1654874496969</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1654874496969</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Moved all the evaluation functions to their own file for better organization">
+      <created>1654888838749</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1654888838749</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Added probcut to the search">
+      <created>1655130222458</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1655130222458</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Added futility pruning to the search and delta pruning to quiescence">
+      <created>1655231920562</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1655231920562</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Added penalty for undefended minor pieces">
+      <created>1655231945698</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1655231945698</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures">
+      <created>1655244926808</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1655244926808</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures">
+      <created>1655244945363</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1655244945363</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures">
+      <created>1655245201899</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1655245201899</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures">
+      <created>1655245300111</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1655245300111</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Aspiration window is now active at depth &gt; 4 instead of depth &gt;= 2">
+      <created>1655247970902</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1655247970902</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Bug fixes and changes to some magic numbers">
+      <created>1655343863913</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1655343863913</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Changed how trapped rooks are evaluated">
+      <created>1655425957717</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1655425957717</updated>
+    </task>
+    <task id="LOCAL-00020" summary="General refactoring">
+      <created>1655472936113</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1655472936114</updated>
+    </task>
+    <task id="LOCAL-00021" summary="General refactoring">
+      <created>1655474597529</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1655474597529</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Added king tropism to the evaluation, general refactoring">
+      <created>1655734979560</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1655734979560</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Added history heuristic, checks for threefold repetition, and fixed bug with making and unmaking null moves">
+      <created>1655747034094</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1655747034094</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Increased quiescense depth and changed the way queens are evaluated in the opening">
+      <created>1655767188024</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1655767188024</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Position Stack now updates with every move made and keeps the previous board positions when searching a new position">
+      <created>1655819738891</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1655819738891</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Removed depth limit to quiescence.  Also changed CMake to generate stand-alone executables">
+      <created>1655839194516</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1655839194516</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Adjusted rules for standing pat in the quiescence search">
+      <created>1655912187475</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1655912187475</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Added in the HashMap for transposing simpler features.  HashMap is now used for pawn eval transposition and eval transposition">
+      <created>1656097719879</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1656097719879</updated>
+    </task>
+    <task id="LOCAL-00029" summary="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR">
+      <created>1656097785184</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1656097785184</updated>
+    </task>
+    <task id="LOCAL-00030" summary="Added libchess files.  Many adjustments/additions to engine as well.">
+      <created>1663348282484</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1663348282484</updated>
+    </task>
+    <task id="LOCAL-00031" summary="Lots and lots of changes and fixes.  Some notables: Changed Transposition Table behavior, Mate distance pruning, mobility score added, PVS at root, history and counter move heuristic, changes to move ordering, reverse futility pruning, improved LMR.">
+      <created>1666739667848</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1666739667848</updated>
+    </task>
+    <task id="LOCAL-00032" summary="Minor modification to searching moves in quiescence.  Lowered razoring threshold.  Initial reduction is now 3 instead of 2 and added a reduction for if the transposition move is a capture">
+      <created>1667413541098</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1667413541098</updated>
+    </task>
+    <task id="LOCAL-00033" summary="Numerous bug fixes and optimizations.">
+      <created>1669616153655</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1669616153655</updated>
+    </task>
+    <task id="LOCAL-00034" summary="Numerous bug fixes and optimizations.">
+      <created>1669648712483</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1669648712483</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement.">
+      <created>1671501185196</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1671501185196</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ID_ORDER">
+      <list>
+        <option value="Default.Root" />
+        <option value="Default.Author" />
+        <option value="Default.Date" />
+        <option value="Default.Subject" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/libchess" />
+      <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
+    </ignored-roots>
+    <MESSAGE value="Created transposition table class to replace the simple STL hash map" />
+    <MESSAGE value="Switched pawn transpositions to custom table class" />
+    <MESSAGE value="Moved all the evaluation functions to their own file for better organization" />
+    <MESSAGE value="Added probcut to the search" />
+    <MESSAGE value="Added futility pruning to the search and delta pruning to quiescence" />
+    <MESSAGE value="Added penalty for undefended minor pieces" />
+    <MESSAGE value="Revert &quot;Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures&quot;&#10;&#10;This reverts commit 2ddc3c4632ef13ae8a5810d39c8b611e4260a52e." />
+    <MESSAGE value="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures" />
+    <MESSAGE value="Aspiration window is now active at depth &gt; 4 instead of depth &gt;= 2" />
+    <MESSAGE value="Bug fixes and changes to some magic numbers" />
+    <MESSAGE value="Changed how trapped rooks are evaluated" />
+    <MESSAGE value="General refactoring" />
+    <MESSAGE value="Added king tropism to the evaluation, general refactoring" />
+    <MESSAGE value="Added history heuristic, checks for threefold repetition, and fixed bug with making and unmaking null moves" />
+    <MESSAGE value="Increased quiescense depth and changed the way queens are evaluated in the opening" />
+    <MESSAGE value="Position Stack now updates with every move made and keeps the previous board positions when searching a new position" />
+    <MESSAGE value="Removed depth limit to quiescence.  Also changed CMake to generate stand-alone executables" />
+    <MESSAGE value="Adjusted rules for standing pat in the quiescence search" />
+    <MESSAGE value="Added in the HashMap for transposing simpler features.  HashMap is now used for pawn eval transposition and eval transposition" />
+    <MESSAGE value="Added &quot;adaptive null move pruning&quot; in an extremely simple way.  Same addition added to LMR" />
+    <MESSAGE value="Added libchess files.  Many adjustments/additions to engine as well." />
+    <MESSAGE value="Lots and lots of changes and fixes.  Some notables: Changed Transposition Table behavior, Mate distance pruning, mobility score added, PVS at root, history and counter move heuristic, changes to move ordering, reverse futility pruning, improved LMR." />
+    <MESSAGE value="Minor modification to searching moves in quiescence.  Lowered razoring threshold.  Initial reduction is now 3 instead of 2 and added a reduction for if the transposition move is a capture" />
+    <MESSAGE value="Numerous bug fixes and optimizations." />
+    <MESSAGE value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
+    <option name="LAST_COMMIT_MESSAGE" value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
+  </component>
+  <component name="XDebuggerManager">
+    <watches-manager>
+      <configuration name="CMakeRunConfiguration">
+        <watch expression="move.to_str()" language="ObjectiveC" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
