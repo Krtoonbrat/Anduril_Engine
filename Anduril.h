@@ -46,11 +46,6 @@ public:
     // generates a static evaluation of the board
     int evaluateBoard(libchess::Position &board);
 
-    // calls negamax and keeps track of the best move
-    // this is the debug version, it only uses console control and has zero UCI function
-    // basically depreciated
-    void goDebug(libchess::Position &board, int depth);
-
     // getter and setter for moves explored
     inline int getMovesExplored() const { return movesExplored; }
 
@@ -165,6 +160,9 @@ private:
     // the ply of the root node
     int rootPly = 0;
 
+    // the depth at the root of our current ID search
+    int rDepth = 0;
+
     // current ply
     int ply = 0;
 
@@ -188,9 +186,9 @@ private:
 
     // insert a move to the killer list
     inline void insertKiller(libchess::Move move, int depth) {
-        if (std::count(killers[depth].begin(), killers[depth].end(), move) == 0) {
-            killers[depth][0] = killers[depth][1];
-            killers[depth][1] = move;
+        if (killers[depth][0] != move) {
+            killers[depth][1] = killers[depth][0];
+            killers[depth][0] = move;
         }
     }
 
@@ -230,13 +228,14 @@ private:
     int MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst);
 
     // killer moves
-    std::vector<std::vector<libchess::Move>> killers;
+    // oversize array just to be sure we dont seg fault
+    libchess::Move killers[200][2];
 
     // counter moves
     libchess::Move counterMoves[64][64];
 
     // history table
-    int moveHistory[2][64][64] = {0};
+    std::array<std::array<std::array<int, 64>, 64>, 2> moveHistory = {0};
 
     // futility margins
     int margin[5] = {0, 100, 200, 400, 600};

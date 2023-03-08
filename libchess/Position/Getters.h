@@ -183,6 +183,26 @@ inline bool Position::is_legal_move(Move move) const {
         }
     }
 
+    // this fixes a bug within Anduril where a "capture" move would be played, but there was no piece to take.
+    // This would result in a random piece being magically created on the board when the move was taken back
+    Move::Type type = move.type();
+    Square s = c == constants::WHITE ? Square{to_sq - 8} : Square(to_sq + 8);
+    switch (type) {
+        case Move::Type::CAPTURE:
+        case Move::Type::CAPTURE_PROMOTION:
+            if (!piece_on(move.to_square())) {
+                return false;
+            }
+            break;
+        case Move::Type::ENPASSANT:
+            if (!piece_on(s)) {
+                return false;
+            }
+            break;
+        default:
+            break;
+    }
+
     bool is_pseudo_legal = false;
     if (pt == constants::KING) {
         MoveList castling_move_list;
