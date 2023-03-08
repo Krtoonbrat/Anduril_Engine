@@ -87,10 +87,10 @@ class Move {
     }
 
     constexpr bool operator==(const Move rhs) const {
-        return value_sans_type() == rhs.value_sans_type();
+        return value() == rhs.value();
     }
     constexpr bool operator!=(const Move rhs) const {
-        return value_sans_type() != rhs.value_sans_type();
+        return value() != rhs.value();
     }
 
     constexpr Square from_square() const {
@@ -118,9 +118,18 @@ class Move {
         return value_;
     }
 
+    // added by Krtoonbrat
+    // each move gets a score for sorting in the move list
+    int score = 0;
+
    private:
     value_type value_;
 };
+
+// added by Krtoonbrat
+inline bool operator<(const Move& f, const Move& s) {
+    return f.score < s.score;
+}
 
 // modified by Krtoonbrat
 // I changed the container from a vector to an array.  This was done to get rid of the allocation that is necessary

@@ -46,11 +46,6 @@ public:
     // generates a static evaluation of the board
     int evaluateBoard(libchess::Position &board);
 
-    // calls negamax and keeps track of the best move
-    // this is the debug version, it only uses console control and has zero UCI function
-    // basically depreciated
-    void goDebug(libchess::Position &board, int depth);
-
     // getter and setter for moves explored
     inline int getMovesExplored() const { return movesExplored; }
 
@@ -62,15 +57,6 @@ public:
     // increment and decrement the ply
     inline void incPly() { ply++; }
     inline void decPly() { ply--; }
-
-    // generates a move list of pseudo-legal moves we want to search
-    std::vector<std::tuple<int, libchess::Move>> getMoveList(libchess::Position &board, Node *node);
-
-    // generates a move list of legal moves we want to search
-    std::vector<std::tuple<int, libchess::Move>> getMoveList(libchess::Position &board);
-
-    // generates a move list with only captures
-    std::vector<std::tuple<int, libchess::Move>> getQMoveList(libchess::Position &board, Node *node);
 
     // finds and returns the principal variation
     std::vector<libchess::Move> getPV(libchess::Position &board, int depth, libchess::Move bestMove);
@@ -165,6 +151,9 @@ private:
     // the ply of the root node
     int rootPly = 0;
 
+    // the depth at the root of our current ID search
+    int rDepth = 0;
+
     // current ply
     int ply = 0;
 
@@ -183,14 +172,11 @@ private:
     // can we reduce the depth of our search for this move?
     bool isLateReduction(libchess::Position &board, libchess::Move &move);
 
-    // returns the next move to search
-    libchess::Move pickNextMove(std::vector<std::tuple<int, libchess::Move>> &moveListWithScores, int currentIndex);
-
     // insert a move to the killer list
     inline void insertKiller(libchess::Move move, int depth) {
-        if (std::count(killers[depth].begin(), killers[depth].end(), move) == 0) {
-            killers[depth][0] = killers[depth][1];
-            killers[depth][1] = move;
+        if (killers[depth][0] != move) {
+            killers[depth][1] = killers[depth][0];
+            killers[depth][0] = move;
         }
     }
 
@@ -226,17 +212,15 @@ private:
     // calculates all mobility scores and tropism
     std::pair<int, int> positionalMobilityTropism(libchess::Position &board);
 
-    // gives a score to each capture
-    int MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst);
-
     // killer moves
-    std::vector<std::vector<libchess::Move>> killers;
+    // oversize array just to be sure we dont seg fault
+    libchess::Move killers[200][2];
 
     // counter moves
     libchess::Move counterMoves[64][64];
 
     // history table
-    int moveHistory[2][64][64] = {0};
+    std::array<std::array<std::array<int, 64>, 64>, 2> moveHistory = {0};
 
     // futility margins
     int margin[5] = {0, 100, 200, 400, 600};

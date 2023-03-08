@@ -19,7 +19,6 @@
 #include <string>
 
 #include "Anduril.h"
-#include "ConsoleGame.h"
 #include "libchess/Position.h"
 #include "UCI.h"
 
@@ -453,9 +452,9 @@ void Anduril::go(libchess::Position &board) {
 
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
-    killers = std::vector<std::vector<libchess::Move>>(218); // 218 is the "max moves" defined in thc.h
-    for (auto & killer : killers) {
-        killer = std::vector<libchess::Move>(2);
+    for (auto i : killers) {
+        i[0] = libchess::Move(0);
+        i[1] = libchess::Move(0);
     }
 
     rootPly = ply;
@@ -469,10 +468,7 @@ void Anduril::go(libchess::Position &board) {
     bool research = false;
     std::vector<int> misses;
 
-    // get the move list
-    rootMoves = getMoveList(board);
-
-    int deep = 1;
+    rDepth = 1;
     bool finalDepth = false;
     bool incomplete = false;
     auto end = std::chrono::steady_clock::now();
@@ -488,7 +484,7 @@ void Anduril::go(libchess::Position &board) {
     while (!finalDepth) {
         UCI::ReadInput(*this);
 
-        if (deep == limits.depth){
+        if (rDepth == limits.depth){
             finalDepth = true;
         }
 
@@ -500,7 +496,7 @@ void Anduril::go(libchess::Position &board) {
         incomplete = false;
 
         // search for the best score
-        bestScore = negamax<Root>(board, deep, alpha, beta, false);
+        bestScore = negamax<Root>(board, rDepth, alpha, beta, false);
 
         // if we didn't find a node before, try again now that we have searched
         if (!found) {
@@ -515,13 +511,13 @@ void Anduril::go(libchess::Position &board) {
         }
 
         // set the aspiration window
-        if (deep >= 5) {
+        if (rDepth >= 5) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
-                //std::cout << "Low miss at: " << deep << std::endl;
+                //std::cout << "Low miss at: " << rDepth << std::endl;
                 if (!limits.timeSet) { finalDepth = false; }
-                misses.push_back(deep);
+                misses.push_back(rDepth);
                 aspMissesL++;
                 alpha = bestScore - 40 * (std::pow(2, aspMissesL));
                 beta = bestScore + 40 * (std::pow(2, aspMissesH));
@@ -531,8 +527,8 @@ void Anduril::go(libchess::Position &board) {
                 // fail high
             else if (bestScore >= beta) {
                 if (!limits.timeSet) { finalDepth = false; }
-                //std::cout << "High miss at: " << deep << std::endl;
-                misses.push_back(deep);
+                //std::cout << "High miss at: " << rDepth << std::endl;
+                misses.push_back(rDepth);
                 aspMissesH++;
                 alpha = bestScore - 40 * (std::pow(2, aspMissesL));
                 beta = bestScore + 40 * (std::pow(2, aspMissesH));
@@ -543,13 +539,13 @@ void Anduril::go(libchess::Position &board) {
             else {
                 alpha = bestScore - 40 * (std::pow(2, aspMissesL));
                 beta = bestScore + 40 * (std::pow(2, aspMissesH));
-                deep++;
+                rDepth++;
                 research = false;
             }
         }
             // for depths less than 5
         else {
-            deep++;
+            rDepth++;
             research = false;
         }
 
@@ -565,7 +561,7 @@ void Anduril::go(libchess::Position &board) {
         end = std::chrono::steady_clock::now();
         timeElapsed = end - startTime;
 
-        std::vector<libchess::Move> PV = getPV(board, deep, prevBestMove);
+        std::vector<libchess::Move> PV = getPV(board, rDepth, prevBestMove);
         std::string pv = "";
         for (auto m: PV) {
             pv += " " + m.to_str();
@@ -575,8 +571,8 @@ void Anduril::go(libchess::Position &board) {
             if (prevBestScore >= 31000) {
                 int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                 std::cout << "info "
-                             << "score mate " << distance
-                             << " depth "     << deep - 1
+                          << "score mate " << distance
+                          << " depth " << rDepth - 1
                              << " seldepth "  << selDepth
                              << " nodes "     << movesExplored
                              << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -586,8 +582,8 @@ void Anduril::go(libchess::Position &board) {
             else if (prevBestScore <= -31000) {
                 int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                 std::cout << "info "
-                             << "score mate " << distance
-                             << " depth "     << deep - 1
+                          << "score mate " << distance
+                          << " depth " << rDepth - 1
                              << " seldepth "  << selDepth
                              << " nodes "     << movesExplored
                              << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -596,8 +592,8 @@ void Anduril::go(libchess::Position &board) {
             }
             else {
                 std::cout << "info "
-                             << "score cp "   << prevBestScore
-                             << " depth "     << deep - 1
+                          << "score cp " << prevBestScore
+                          << " depth " << rDepth - 1
                              << " seldepth "  << selDepth
                              << " nodes "     << movesExplored
                              << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -606,14 +602,17 @@ void Anduril::go(libchess::Position &board) {
             }
         }
 
+        int maxHist = 0;
         // age the history table
         for (auto & i : moveHistory) {
             for (int j = 0; j < 64; j++) {
                 for (int k = 0; k < 64; k++) {
+                    maxHist = std::max(maxHist, i[j][k]);
                     i[j][k] /= 10;
                 }
             }
         }
+        //std::cout << "info string Max value in History table: " << maxHist << std::endl;
 
         // add the current depth to the branching factor
         // if we searched to depth 1, then we need to do another search
@@ -625,19 +624,25 @@ void Anduril::go(libchess::Position &board) {
             // a window miss, so we first check if the last entry to misses is our current depth
         else if (!research) {
             branchingFactor = (double) depthNodes / n1;
-            avgBranchingFactor = ((avgBranchingFactor * (deep - 2)) + branchingFactor) / (deep - 1);
+            avgBranchingFactor = ((avgBranchingFactor * (rDepth - 2)) + branchingFactor) / (rDepth - 1);
             n1 = depthNodes;
             depthNodes = 0;
-            //std::cout << "Branching factor: " << avgBranchingFactor << std::endl;
+            std::cout << "info string Branching factor: " << avgBranchingFactor << std::endl;
         }
 
 
         // for debugging
         if (boardFEN != board.fen()) {
-            std::cout << "Board does not match original at depth: " << deep << std::endl;
+            std::cout << "info string Board does not match original at depth: " << rDepth << std::endl;
+            std::cout << "info string Bad fen: " << board.fen() << std::endl;
             board.from_fen(boardFEN);
         }
 
+        /*
+        std::cout << "Total Quiescence Moves Searched: " << quiesceExplored << std::endl;
+        std::cout << "Moves transposed: " << movesTransposed << std::endl;
+        std::cout << "Cut Nodes: " << cutNodes << std::endl;
+         */
 
         // reset the variables to prepare for the next loop
         if (!finalDepth) {

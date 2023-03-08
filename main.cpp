@@ -1,8 +1,3 @@
-#include <chrono>
-#include <iostream>
-
-#include "Anduril.h"
-#include "ConsoleGame.h"
 #include "libchess/Position.h"
 #include "UCI.h"
 
@@ -55,99 +50,15 @@ int main() {
 
     libchess::lookups::FULL_RAY = libchess::lookups::init::full_ray();
 
-    // flag for switching to debug or UCI
-    bool useUCI = true;
-
-    if (useUCI) {
-        // for profiling
-        /*
-        Anduril AI;
-        AI.limits.depth = 15;
-        libchess::Position board("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
-        AI.startTime = std::chrono::steady_clock::now();
-        AI.go(board);
-        */
-        UCI::loop();
-    }
-
-    else {
-        libchess::Position board(libchess::constants::STARTPOS_FEN);
-        Anduril AI;
-        Book openingBook = Book(R"(..\book\Performance.bin)");
-        libchess::Position::GameState state;
-
-        // this exists so that I can test problematic board positions if and when they arise
-        //board.Forsyth("7r/2kr2pp/2p2p2/p4N2/1bnBP3/2P2P2/P4KPP/3R3R b - - 0 24");
-
-        //board.Forsyth("8/4Q2k/6pp/8/1P6/4PKPP/4rP2/5q2 b - - 9 60");
-        board.from_fen("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
-
-        Game::displayBoard(board);
-        std::cout << "Board FEN: " << board.fen() << std::endl;
-
-        // main game loop
-        while (board.game_state() == libchess::Position::GameState::IN_PROGRESS) {
-            std::cout << (!board.side_to_move() ? "White to move" : "Black to move") << std::endl;
-
-            if (openingBook.getBookOpen()) {
-                libchess::Move bestMove = openingBook.getBookMove(board);
-                if (bestMove.value() != 0) {
-                    std::cout << "Moving " << bestMove.to_str() << " from book" << std::endl;
-                    board.make_move(bestMove);
-                } else {
-                    std::cout << "End of opening book, starting search" << std::endl;
-                    openingBook.flipBookOpen();
-                }
-            } else {
-                AI.goDebug(board, 10);
-            }
-
-
-
-            /*
-            if (!board.side_to_move()) {
-                Game::turn(board, AI);
-            }
-            else {
-                if (openingBook.getBookOpen()) {
-                    libchess::Move bestMove = openingBook.getBookMove(board);
-                    if (bestMove.value() != 0) {
-                        std::cout << "Moving " << bestMove.to_str() << " from book" << std::endl;
-                        board.make_move(bestMove);
-                    }
-                    else {
-                        std::cout << "End of opening book, starting search" << std::endl;
-                        openingBook.flipBookOpen();
-                    }
-                }
-                else {
-                    AI.goDebug(board, 10);
-                }
-            }
-             */
-             
-
-
-            Game::displayBoard(board);
-            std::cout << "Board FEN: " << board.fen() << std::endl;
-
-        }
-
-        if (!board.side_to_move() && board.game_state() == libchess::Position::GameState::CHECKMATE) {
-            std::cout << "Checkmate.  Black Wins." << std::endl;
-        }
-        else if (board.side_to_move() && board.game_state() == libchess::Position::GameState::CHECKMATE) {
-            std::cout << "Checkmate.  White Wins." << std::endl;
-        }
-        else {
-            std::cout << "Stalemate.  It's a draw." << std::endl;
-        }
-
-    }
-
-
-
-
+    // for profiling
+    /*
+    Anduril AI;
+    AI.limits.depth = 15;
+    libchess::Position board("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
+    AI.startTime = std::chrono::steady_clock::now();
+    AI.go(board);
+    */
+    UCI::loop();
 
     return 0;
 }

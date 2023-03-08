@@ -8,7 +8,7 @@
 #include <iostream>
 
 #include "Anduril.h"
-#include "ConsoleGame.h"
+#include "MovePicker.h"
 #include "UCI.h"
 
 // prefetches an address in memory to CPU cache that doesn't block execution
@@ -27,245 +27,6 @@ void prefetch(void* addr) {
 #  else
     __builtin_prefetch(addr);
 #  endif
-}
-
-// Most Valuable Victim, Least Valuable Attacker
-int Anduril::MVVLVA(libchess::Position &board, libchess::Square src, libchess::Square dst) {
-    return std::abs(pieceValues[board.piece_on(dst)->to_char()]) - std::abs(pieceValues[board.piece_on(src)->to_char()]);
-}
-
-// generates a move list in the order we want to search them
-std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Position &board, Node *node) {
-    // this is the list of moves with their assigned scores
-    std::vector<std::tuple<int, libchess::Move>> movesWithScores;
-
-    // get a list of possible moves
-    libchess::MoveList moves = board.pseudo_legal_move_list();
-
-    // find pieces threatened by pieces of lesser value
-    libchess::Bitboard pawnThreat, minorThreat, rookThreat, threatenedPieces;
-    int threatValue = 0;
-
-    if (!board.side_to_move()) {
-        pawnThreat = attackByPiece<PAWN, false>(board);
-        minorThreat = attackByPiece<KNIGHT, false>(board) | attackByPiece<BISHOP, false>(board) | pawnThreat;
-        rookThreat = attackByPiece<ROOK, false>(board) | minorThreat;
-    }
-    else {
-        pawnThreat = attackByPiece<PAWN, true>(board);
-        minorThreat = attackByPiece<KNIGHT, true>(board) | attackByPiece<BISHOP, true>(board) | pawnThreat;
-        rookThreat = attackByPiece<ROOK, true>(board) | minorThreat;
-    }
-
-    threatenedPieces =  (board.piece_type_bb(libchess::constants::QUEEN, board.side_to_move()) & rookThreat)
-                      | (board.piece_type_bb(libchess::constants::ROOK, board.side_to_move()) & minorThreat)
-                      | ((board.piece_type_bb(libchess::constants::KNIGHT, board.side_to_move()) | board.piece_type_bb(libchess::constants::BISHOP, board.side_to_move())) & pawnThreat);
-
-    // loop through the board, give each move a score, and add it to the list
-    for (auto i = moves.begin(); i < moves.end(); i++) {
-        // first check if the move is a hash move
-        if (node != nullptr && *i == node->bestMove) {
-            movesWithScores.emplace_back(100000, *i);
-            continue;
-        }
-
-        // is the piece threatened?
-        threatValue = 0;
-        if (threatenedPieces & libchess::lookups::square(i->from_square())) {
-            switch (*board.piece_type_on(i->from_square())) {
-                case libchess::constants::QUEEN:
-                    threatValue = !(libchess::lookups::square(i->to_square()) & rookThreat) ? 10 : 0;
-                    break;
-                case libchess::constants::ROOK:
-                    threatValue = !(libchess::lookups::square(i->to_square()) & minorThreat) ? 5 : 0;
-                    break;
-                case libchess::constants::BISHOP:
-                case libchess::constants::KNIGHT:
-                    threatValue = !(libchess::lookups::square(i->to_square()) & pawnThreat) ? 3 : 0;
-            }
-        }
-
-        // next check if the move is a capture
-        if (board.is_capture_move(*i)) {
-            movesWithScores.emplace_back(board.see_for(*i, seeValues) + threatValue + 50000, *i);
-            continue;
-        }
-
-        // we want to search castling before the equal captures
-        // this seemed to fix a weird issue with the engine preferring to just move the king
-        // manually instead of castling
-        if (i->type() == libchess::Move::Type::CASTLING) {
-            movesWithScores.emplace_back(50050, *i);
-            continue;
-        }
-
-        // next check for killer moves
-        // the value of -1 makes sure the killers are searched directly after equal captures
-        if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), *i) != 0) {
-            movesWithScores.emplace_back(49999, *i);
-            continue;
-        }
-
-        // next check for counter moves.  Value of -2 makes sure they are placed directly after killers
-        if (counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] == *i) {
-            movesWithScores.emplace_back(49998, *i);
-        }
-
-        // the move isn't special, mark it to be searched with every other non-capture
-        // the value of -1000 was chosen because it makes sure the moves are searched after killers and losing captures
-        movesWithScores.emplace_back(-1000 + threatValue +
-                                    moveHistory[board.side_to_move()][i->from_square()][i->to_square()], *i);
-    }
-
-    return movesWithScores;
-}
-
-// generates a move list of legal moves we want to search
-// this one checks for legality when generating moves.  This is because at root the extra time to check is negligent (that's my guess at least)
-// also uses see instead of MVVLVA because we only have to generate these moves once and the extra accuracy could help the search and the extra time
-// is small enough to justify (again because its only run once per search)
-std::vector<std::tuple<int, libchess::Move>> Anduril::getMoveList(libchess::Position &board) {
-    // this is the list of moves with their assigned scores
-    std::vector<std::tuple<int, libchess::Move>> movesWithScores;
-
-    // get a list of possible moves
-    libchess::MoveList moves = board.legal_move_list();
-
-    // find pieces threatened by pieces of lesser value
-    libchess::Bitboard pawnThreat, minorThreat, rookThreat, threatenedPieces;
-    int threatValue = 0;
-
-    if (!board.side_to_move()) {
-        pawnThreat = attackByPiece<PAWN, false>(board);
-        minorThreat = attackByPiece<KNIGHT, false>(board) | attackByPiece<BISHOP, false>(board) | pawnThreat;
-        rookThreat = attackByPiece<ROOK, false>(board) | minorThreat;
-    }
-    else {
-        pawnThreat = attackByPiece<PAWN, true>(board);
-        minorThreat = attackByPiece<KNIGHT, true>(board) | attackByPiece<BISHOP, true>(board) | pawnThreat;
-        rookThreat = attackByPiece<ROOK, true>(board) | minorThreat;
-    }
-
-    threatenedPieces =  (board.piece_type_bb(libchess::constants::QUEEN, board.side_to_move()) & rookThreat)
-                        | (board.piece_type_bb(libchess::constants::ROOK, board.side_to_move()) & minorThreat)
-                        | ((board.piece_type_bb(libchess::constants::KNIGHT, board.side_to_move()) | board.piece_type_bb(libchess::constants::BISHOP, board.side_to_move())) & pawnThreat);
-
-
-    // loop through the board, give each move a score, and add it to the list
-    for (auto i = moves.begin(); i < moves.end(); i++) {
-        // is the piece threatened?
-        threatValue = 0;
-        if (threatenedPieces & libchess::lookups::square(i->from_square())) {
-            switch (*board.piece_type_on(i->from_square())) {
-                case libchess::constants::QUEEN:
-                    threatValue = !(libchess::lookups::square(i->to_square()) & rookThreat) ? 10 : 0;
-                    break;
-                case libchess::constants::ROOK:
-                    threatValue = !(libchess::lookups::square(i->to_square()) & minorThreat) ? 5 : 0;
-                    break;
-                case libchess::constants::BISHOP:
-                case libchess::constants::KNIGHT:
-                    threatValue = !(libchess::lookups::square(i->to_square()) & pawnThreat) ? 3 : 0;
-            }
-        }
-
-        // check if the move is a capture
-        if (board.is_capture_move(*i)) {
-            movesWithScores.emplace_back(board.see_for(*i, seeValues) + threatValue + 50000, *i);
-            continue;
-        }
-
-        // we want to search castling before the equal captures
-        if (i->type() == libchess::Move::Type::CASTLING) {
-            movesWithScores.emplace_back(50050, *i);
-            continue;
-        }
-
-        // next check for killer moves
-        // the value of -1 makes sure the killers are searched directly after equal captures
-        if (std::count(killers[ply - rootPly].begin(), killers[ply - rootPly].end(), *i) != 0) {
-            movesWithScores.emplace_back(49999, *i);
-            continue;
-        }
-
-        // next check for counter moves.  Value of -2 makes sure they are placed directly after killers
-        if (counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] == *i) {
-            movesWithScores.emplace_back(49998, *i);
-        }
-
-        // the move isn't special, mark it to be searched with every other non-capture
-        // the value of -1000 was chosen because it makes sure the moves are searched after killers and losing captures
-        movesWithScores.emplace_back(-1000 + threatValue +
-                                     moveHistory[board.side_to_move()][i->from_square()][i->to_square()], *i);
-    }
-
-    return movesWithScores;
-}
-
-std::vector<std::tuple<int, libchess::Move>> Anduril::getQMoveList(libchess::Position &board, Node *node) {
-    // if we are in check, we need to generate evasions.  These are better sorted with the regular function
-    if (board.in_check()) {
-        return getMoveList(board, node);
-    }
-
-    // this is the list of moves with their assigned scores
-    std::vector<std::tuple<int, libchess::Move>> movesWithScores;
-
-    // get a list of possible moves
-    libchess::MoveList moves;
-    board.generate_capture_moves(moves, board.side_to_move());
-
-    // find pieces threatened by pieces of lesser value
-    libchess::Bitboard pawnThreat, minorThreat, rookThreat, threatenedPieces;
-    int threatValue = 0;
-
-    if (!board.side_to_move()) {
-        pawnThreat = attackByPiece<PAWN, false>(board);
-        minorThreat = attackByPiece<KNIGHT, false>(board) | attackByPiece<BISHOP, false>(board) | pawnThreat;
-        rookThreat = attackByPiece<ROOK, false>(board) | minorThreat;
-    }
-    else {
-        pawnThreat = attackByPiece<PAWN, true>(board);
-        minorThreat = attackByPiece<KNIGHT, true>(board) | attackByPiece<BISHOP, true>(board) | pawnThreat;
-        rookThreat = attackByPiece<ROOK, true>(board) | minorThreat;
-    }
-
-    threatenedPieces =  (board.piece_type_bb(libchess::constants::QUEEN, board.side_to_move()) & rookThreat)
-                        | (board.piece_type_bb(libchess::constants::ROOK, board.side_to_move()) & minorThreat)
-                        | ((board.piece_type_bb(libchess::constants::KNIGHT, board.side_to_move()) | board.piece_type_bb(libchess::constants::BISHOP, board.side_to_move())) & pawnThreat);
-
-
-    for (auto i = moves.begin(); i < moves.end(); i++) {
-        // first check if the move is a capture
-        if (board.is_capture_move(*i)) {
-            // next check if it's the hash move
-            if (node != nullptr && *i == node->bestMove) {
-                movesWithScores.emplace_back(100000, *i);
-                continue;
-            }
-
-            // is the piece threatened?
-            threatValue = 0;
-            if (threatenedPieces & libchess::lookups::square(i->from_square())) {
-                switch (*board.piece_type_on(i->from_square())) {
-                    case libchess::constants::QUEEN:
-                        threatValue = !(libchess::lookups::square(i->to_square()) & rookThreat) ? 10 : 0;
-                        break;
-                    case libchess::constants::ROOK:
-                        threatValue = !(libchess::lookups::square(i->to_square()) & minorThreat) ? 5 : 0;
-                        break;
-                    case libchess::constants::BISHOP:
-                    case libchess::constants::KNIGHT:
-                        threatValue = !(libchess::lookups::square(i->to_square()) & pawnThreat) ? 3 : 0;
-                }
-            }
-
-            // if it isn't a hash move, add it with its MVVLVA score
-            movesWithScores.emplace_back(board.see_for(*i, seeValues) + threatValue + 50000, *i);
-        }
-    }
-
-    return movesWithScores;
 }
 
 // the quiescence search
@@ -304,6 +65,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     uint64_t hash = board.hash();
     bool found = false;
     Node *node = table.probe(hash, found);
+    libchess::Move nMove = found ? node->bestMove : libchess::Move(0);
 	if (!PvNode
 		&& found
 		&& node->nodeDepth >= -1
@@ -346,35 +108,9 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         if (PvNode && standPat > alpha) {
             alpha = standPat;
         }
-
-        // generate a move list
-        if (found) {
-            moveList = getQMoveList(board, node);
-        }
-        else {
-            moveList = getQMoveList(board, nullptr);
-        }
-
-        // if there are no moves, we can just return our stand pat
-        if (moveList.empty()){
-            return standPat;
-        }
     }
-        // if we are in check, we need to generate all the possible evasions and search them
-    else {
-        // generate a move list
-        if (found) {
-            moveList = getMoveList(board, node);
-        }
-        else {
-            moveList = getMoveList(board, nullptr);
-        }
 
-        // if there are no moves, we can just return our stand pat
-        if (moveList.empty()){
-            return standPat;
-        }
-    }
+    MovePicker picker(board, nMove, &moveHistory);
 
     // arbitrarily low score to make sure its replaced
     int score = -32001;
@@ -384,8 +120,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     libchess::Move bestMove;
 
     // loop through the moves and score them
-    for (int i = 0; i < moveList.size(); i++) {
-        move = pickNextMove(moveList, i);
+    while ((move = picker.nextMove()).value() != 0) {
 
         // search only legal moves
         if (!board.is_legal_move(move)) {
@@ -393,7 +128,11 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         }
 
         // just in case we are searching evasions
-        if (board.is_capture_move(move)) {
+        if (!check) {
+            if (!board.is_capture_move(move)) {
+                continue;
+            }
+
             // don't search moves with negative see
             if (board.see_for(move, seeValues) < 0) {
                 continue;
@@ -491,8 +230,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     bool alphaChange = false;
 
     // extend the search by one if we are in check
-    // depth condition makes sure the search doesn't explode in endgames where constant check is common
-    if (check && depth <= 8) {
+    // we make sure we aren't too far from the root depth to avoid search explosion
+    if (check && (ply - rootPly) < rDepth) {
         depth++;
     }
 
@@ -609,19 +348,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // but the flag needs to be reset for the next node
     nullAllowed = true;
 
-
-    // generate a move list
-    std::vector<std::tuple<int, libchess::Move>> moveList;
-    if constexpr(rootNode) {
-        moveList = rootMoves;
-    }
-    else if (found) {
-        moveList = getMoveList(board, node);
-    }
-    else {
-        moveList = getMoveList(board, nullptr);
-    }
-
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
     // the position would most likely cut at a full depth search as well
@@ -634,18 +360,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nScore != -32001
         && nScore < probCutBeta)) {
 
+        // get a move picker
+        MovePicker picker(board, nMove, probCutBeta - staticEval);
+
         // we loop through all the moves to try and find one that
         // causes a beta cut on a reduced search
-        for (int i = 0; i < moveList.size(); i++) {
-            move = pickNextMove(moveList, i);
+        while ((move = picker.nextMove()).value() != 0) {
 
             // search only legal moves
             if (!board.is_legal_move(move)) {
-                continue;
-            }
-
-            // only search captures that can improve the position
-            if (!board.is_capture_move(move) || board.see_for(move, seeValues) < probCutBeta - staticEval) {
                 continue;
             }
 
@@ -692,12 +415,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         futile = true;
     }
 
+    // get a move picker
+    MovePicker picker(board, nMove, killers[ply - rootPly], counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()], &moveHistory);
+
     // indicates that a PvNode will probably fail low if the node was searched, and we found a fail low already
     bool likelyFailLow = PvNode && nMove.value() != 0 && nType == 3;
 
+    int i = 0;
     // loop through the possible moves and score each
-    for (int i = 0; i < moveList.size(); i++) {
-        move = pickNextMove(moveList, i);
+    while ((move = picker.nextMove()).value() != 0) {
 
         // search only legal moves
         if (!board.is_legal_move(move)) {
@@ -762,9 +488,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
 
             // new depth we will search with
-            // we need to search at least one more move, we will also allow an "extension" of up to one ply by passing
-            // in depth unchanged if the reduction returns as 0 or less
-            int newDepth = std::clamp(depth - reduction, 1, depth);
+            // we need to search at least one more move, we will also allow an "extension" of up to two ply
+            int newDepth = std::clamp(depth - reduction, 1, depth + 1);
 
             board.make_move(move);
             incPly();
@@ -794,14 +519,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             board.unmake_move();
         }
 
+        i++;
+
         // if the search was stopped for whatever reason, return immediately
         if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
-        }
-
-        // if we are at root, update the move score in the rootMoves list
-        if constexpr (rootNode) {
-            rootMoves[i] = std::tuple<int, libchess::Move>(score, move);
         }
 
         if (score > bestScore) {
@@ -815,7 +537,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 else {
                     cutNodes++;
                     if (move.type() == libchess::Move::Type::CAPTURE) {
-                        insertKiller(move, depth);
+                        insertKiller(move, ply - rootPly);
                         counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] = move;
                         moveHistory[board.side_to_move()][move.from_square()][move.to_square()] += depth * depth;
                     }
@@ -832,230 +554,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
 // template definition so that we can call from UCI.cpp
 template int Anduril::negamax<Anduril::Root>(libchess::Position &board, int depth, int alpha, int beta, bool cutNode);
-
-// calls negamax and keeps track of the best move
-// this is the debug version, it only uses console control and has zero UCI function
-void Anduril::goDebug(libchess::Position &board, int depth) {
-    libchess::Move bestMove(0);
-
-    // start the clock
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // this is for debugging
-    std::string boardFENs = board.fen();
-    char *boardFEN = &boardFENs[0];
-
-    int alpha = -999999999;
-    int beta = 999999999;
-    int bestScore = -999999999;
-
-    // set the killer vector to have the correct number of slots
-    // and the root node's ply
-    // the vector is padded a little at the end in case of the search being extended
-    killers = std::vector<std::vector<libchess::Move>>(218); // 218 is the "max moves" defined in thc.h
-    for (auto & killer : killers) {
-        killer = std::vector<libchess::Move>(2);
-    }
-
-    rootPly = ply;
-
-    // these variables are for debugging
-    int aspMissesL = 0, aspMissesH = 0;
-    int n1 = 0;
-    double branchingFactor = 0;
-    double avgBranchingFactor = 0;
-    bool research = false;
-    std::vector<int> misses;
-    // this makes sure the score is reported correctly
-    // if the AI is controlling black, we need to
-    // multiply the score by -1 to report it correctly to the player
-    int flipped = 1;
-
-    // we need to values for alpha because we need to change alpha based on
-    // our results, but we also need a copy of the original alpha for the
-    // aspiration window
-    int alphaTheSecond = alpha;
-
-    // get the move list
-    std::vector<std::tuple<int, libchess::Move>> moveListWithScores = getMoveList(board);
-
-    // this starts our move to search at the first move in the list
-    libchess::Move move = std::get<1>(moveListWithScores[0]);
-
-    if (board.side_to_move()){
-        flipped = -1;
-    }
-
-    int score = -999999999;
-    int deep = 1;
-    bool finalDepth = false;
-    // iterative deepening loop
-    while (!finalDepth) {
-        if (deep == depth){
-            finalDepth = true;
-        }
-
-        alphaTheSecond = alpha;
-
-        for (int i = 0; i < moveListWithScores.size(); i++) {
-            // find the next best move to search
-            // skips this step if we are on the first depth because all scores will be zero
-            if (deep != 1) {
-                move = pickNextMove(moveListWithScores, i);
-            }
-            else {
-                move = std::get<1>(moveListWithScores[i]);
-            }
-
-            // search only legal moves
-            if (!board.is_legal_move(move)) {
-                continue;
-            }
-
-            board.make_move(move);
-            deep--;
-            movesExplored++;
-            depthNodes++;
-            incPly();
-            score = -negamax<PV>(board, deep, -beta, -alphaTheSecond, false);
-            decPly();
-            deep++;
-            board.unmake_move();
-
-            if (score > bestScore) {
-                bestScore = score;
-                alphaTheSecond = score;
-                bestMove = move;
-            }
-
-            // see if we need to reset the aspiration window
-            if ((bestScore <= alpha || bestScore >= beta) && !(bestScore >= 99000 || bestScore <= -99000)) {
-                break;
-            }
-
-            // update the score within the tuple
-            std::get<0>(moveListWithScores[i]) = score;
-
-        }
-
-        // check if we found mate
-        if (bestScore >= 99000 || bestScore <= -99000) {
-            break;
-        }
-
-        // set the aspiration window
-        // we only actually use the aspiration window at depths greater than 4.
-        // this is because we don't have a decent picture of the position yet
-        // and the search falls outside the window often causing instability
-        if (deep > 5) {
-            // search was outside the window, need to redo the search
-            // fail low
-            if (bestScore <= alpha) {
-                finalDepth = false;
-                misses.push_back(deep);
-                aspMissesL++;
-                alpha = bestScore - 50 * (std::pow(3, aspMissesL));
-                beta = bestScore + 50 * (std::pow(3, aspMissesH));
-                research = true;
-            }
-            // fail high
-            else if (bestScore >= beta) {
-                finalDepth = false;
-                misses.push_back(deep);
-                aspMissesH++;
-                alpha = bestScore - 50 * (std::pow(3, aspMissesL));
-                beta = bestScore + 50 * (std::pow(3, aspMissesH));
-                research = true;
-            }
-            // the search didn't fall outside the window, we can move to the next depth
-            else {
-                alpha = bestScore - 50 * (std::pow(3, aspMissesL));
-                beta = bestScore + 50 * (std::pow(3, aspMissesH));
-                deep++;
-                research = false;
-            }
-        }
-        // for depths less than 5
-        else {
-            deep++;
-            research = false;
-        }
-
-        // add the current depth to the branching factor
-        // if we searched to depth 1, then we need to do another search
-        // to get a branching factor
-        if (n1 == 0){
-            n1 = movesExplored;
-        }
-        // we can't calculate a branching factor if we researched because of
-        // a window miss, so we first check if the last entry to misses is our current depth
-        else if (!research) {
-            branchingFactor = (double) depthNodes / n1;
-            avgBranchingFactor = ((avgBranchingFactor * (deep - 2)) + branchingFactor) / (deep - 1);
-            n1 = depthNodes;
-            depthNodes = 0;
-        }
-
-
-        // for debugging
-        if (boardFEN != board.fen()) {
-            std::cout << "Board does not match original at depth: " << deep << std::endl;
-            board.from_fen(boardFEN);
-        }
-
-
-        // reset the variables to prepare for the next loop
-        if (!finalDepth) {
-            bestScore = -999999999;
-            alphaTheSecond = -999999999;
-            score = -999999999;
-        }
-    }
-
-    // stop the clock
-    auto end = std::chrono::high_resolution_clock::now();
-
-    std::vector<libchess::Move> PV = getPV(board, depth, bestMove);
-
-    // output information about the search to the console
-    // mostly info for debug, but still interesting to look at
-    // for a player
-    std::cout << "Total moves explored: " << movesExplored << std::endl;
-    std::cout << "Total Quiescence Moves Searched: " << quiesceExplored << std::endl;
-    std::cout << "Branching factor: " << avgBranchingFactor << std::endl;
-    std::cout << "Moves transposed: " << movesTransposed << std::endl;
-    std::cout << "Cut Nodes: " << cutNodes << std::endl;
-    std::cout << "Aspiration Window Misses: " << aspMissesL + aspMissesH << ", at depth(s): ";
-    std::string missesStr = "[";
-    for (int i = 0; i < misses.size(); i++) {
-        missesStr += std::to_string(misses[i]);
-        if (i != misses.size() - 1) {
-            missesStr += ", ";
-        }
-    }
-    missesStr += "]";
-    std::cout << missesStr + "\n" << "PV: ";
-    std::string PVout = "[";
-    for (int i = 0; i < PV.size(); i++) {
-        PVout += PV[i].to_str();
-        if (i != PV.size() - 1) {
-            PVout += ", ";
-        }
-    }
-    PVout += "]";
-    std::cout << PVout + "\n";
-    std::cout << "Moving: " << bestMove.to_str() << " with a score of " << (bestScore/ 100.0) * flipped << std::endl;
-    std::chrono::duration<double, std::milli> timeElapsed = end - start;
-    std::cout << "Time spent searching: " << timeElapsed.count() / 1000 << " seconds" << std::endl;
-    std::cout << "Nodes per second: " << getMovesExplored() / (timeElapsed.count()/1000) << std::endl;
-    setMovesExplored(0);
-    cutNodes = 0;
-    movesTransposed = 0;
-    quiesceExplored = 0;
-    incPly();
-
-    board.make_move(bestMove);
-}
 
 int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
     int material = 0;
@@ -1102,17 +600,6 @@ bool Anduril::isLateReduction(libchess::Position &board, libchess::Move &move) {
 
     // if we passed everything else, we can reduce
     return true;
-}
-
-// returns the next move to search
-libchess::Move Anduril::pickNextMove(std::vector<std::tuple<int, libchess::Move>> &moveListWithScores, int currentIndex) {
-    for (int j = currentIndex + 1; j < moveListWithScores.size(); j++) {
-        if (std::get<0>(moveListWithScores[currentIndex]) < std::get<0>(moveListWithScores[j])) {
-            moveListWithScores[currentIndex].swap(moveListWithScores[j]);
-        }
-    }
-
-    return std::get<1>(moveListWithScores[currentIndex]);
 }
 
 // finds and returns the principal variation

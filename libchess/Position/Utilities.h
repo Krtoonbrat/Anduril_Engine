@@ -148,6 +148,10 @@ inline std::optional<Move> Position::smallest_capture_move_to(Square square) con
         Bitboard attackers_bb =
             lookups::non_pawn_piece_type_attacks(*piece_types_iter, square, occupancy_bb()) &
             piece_type_bb(*piece_types_iter, side_to_move());
+        // don't take with the king if it puts us in check, cuz then the algorithm will take the king
+        if (*piece_types_iter == constants::KING && attackers_to(square, !side_to_move())) {
+            return std::nullopt;
+        }
         if (attackers_bb) {
             return Move{attackers_bb.forward_bitscan(), square, Move::Type::CAPTURE};
         }
