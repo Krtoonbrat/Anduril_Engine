@@ -6,6 +6,7 @@
 #define ANDURIL_ENGINE_MOVEPICKER_H
 
 #include "libchess/Position.h"
+#include "Anduril.h"
 
 class MovePicker {
     enum Stages {
@@ -32,9 +33,9 @@ public:
     MovePicker(const MovePicker&) = delete;
     MovePicker& operator=(const MovePicker&) = delete;
 
-    MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move& cm, std::array<std::array<std::array<int, 64>, 64>, 2>* his);
-    MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his);
-    MovePicker(libchess::Position &b, libchess::Move &ttm, int t);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move& cm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see);
 
     libchess::Move nextMove();
 
@@ -63,21 +64,7 @@ private:
 
 
     // these values allow me to use see inside the move picker class.  I should find a better solution.
-    int kMG = 337;
-    int kEG = 281;
-
-    int pMG = 88;
-    int pEG = 138;
-
-    int bMG = 365;
-    int bEG = 297;
-
-    int rMG = 477;
-    int rEG = 512;
-
-    int qMG = 1025;
-    int qEG = 936;
-    std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
+    std::array<int, 6> *seeValues;
 };
 
 #endif //ANDURIL_ENGINE_MOVEPICKER_H

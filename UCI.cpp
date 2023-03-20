@@ -576,7 +576,7 @@ void Anduril::go(libchess::Position &board) {
                              << " seldepth "  << selDepth
                              << " nodes "     << movesExplored
                              << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                             << " time "      << timeElapsed.count()
+                             << " time "      << (int)timeElapsed.count()
                              << " pv"         << pv << std::endl;
             }
             else if (prevBestScore <= -31000) {
@@ -587,7 +587,7 @@ void Anduril::go(libchess::Position &board) {
                              << " seldepth "  << selDepth
                              << " nodes "     << movesExplored
                              << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                             << " time "      << timeElapsed.count()
+                             << " time "      << (int)timeElapsed.count()
                              << " pv"         << pv << std::endl;
             }
             else {
@@ -597,7 +597,7 @@ void Anduril::go(libchess::Position &board) {
                              << " seldepth "  << selDepth
                              << " nodes "     << movesExplored
                              << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                             << " time "      << timeElapsed.count()
+                             << " time "      << (int)timeElapsed.count()
                              << " pv"         << pv << std::endl;
             }
         }
@@ -627,7 +627,7 @@ void Anduril::go(libchess::Position &board) {
             avgBranchingFactor = ((avgBranchingFactor * (rDepth - 2)) + branchingFactor) / (rDepth - 1);
             n1 = depthNodes;
             depthNodes = 0;
-            std::cout << "info string Branching factor: " << avgBranchingFactor << std::endl;
+            //std::cout << "info string Branching factor: " << avgBranchingFactor << std::endl;
         }
 
 

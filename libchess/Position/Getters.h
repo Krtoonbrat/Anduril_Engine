@@ -200,6 +200,10 @@ inline bool Position::is_legal_move(Move move) const {
             }
             break;
         default:
+            // a capture being marked as anything other than capture types causes issues too
+            if (piece_on(move.to_square())) {
+                return false;
+            }
             break;
     }
 

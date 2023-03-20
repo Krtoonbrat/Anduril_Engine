@@ -22,22 +22,22 @@ void partial_insertion_sort(libchess::Move* begin, libchess::Move* end, int limi
 
 // constructor for main search
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move& cm,
-                       std::array<std::array<std::array<int, 64>, 64>, 2>* his)
-                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his) {
+                       std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see)
+                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), seeValues(see) {
     stage = (board.in_check() ? EVASION_TT : MAIN_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
 // constructor for qsearch
-MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his)
-                      : board(b), transposition(ttm), moveHistory(his) {
+MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see)
+                      : board(b), transposition(ttm), moveHistory(his), seeValues(see) {
     stage = (board.in_check() ? EVASION_TT : QSEARCH_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
 // constructor for probcut
-MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, int t) : board(b), transposition(ttm), threshold(t) {
+MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see) : board(b), transposition(ttm), threshold(t), seeValues(see) {
     stage = PROBCUT_TT + !(transposition.value() != 0 && board.is_capture_move(ttm)
                                                       && board.is_legal_move(ttm)
-                                                      && board.see_for(ttm, seeValues) >= t);
+                                                      && board.see_for(ttm, *seeValues) >= t);
 }
 
 // gets the attacks by a team of a certain piece
@@ -116,7 +116,7 @@ void MovePicker::score() {
 
     for (auto& m : *this) {
         if constexpr (type == CAPTURES) {
-            m.score = board.see_for(m, seeValues);
+            m.score = board.see_for(m, *seeValues);
         }
         else if constexpr(type == QUIETS) {
             m.score = (threatenedPieces & libchess::lookups::square(m.from_square()) ?

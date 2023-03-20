@@ -46,16 +46,9 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         return 0;
     }
 
-    // check for a game over
-    switch (board.game_state()) {
-        case libchess::Position::GameState::CHECKMATE:
-            return -32000 + (ply - rootPly);
-        case libchess::Position::GameState::STALEMATE:
-        case libchess::Position::GameState::THREEFOLD_REPETITION:
-        case libchess::Position::GameState::FIFTY_MOVES:
-            return 0;
-        case libchess::Position::GameState::IN_PROGRESS:
-            break;
+    // check for a draw
+    if (board.halfmoves() >= 100 || board.is_repeat(2)) {
+        return 0;
     }
 
     // represents the best score we have found so far
@@ -110,7 +103,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         }
     }
 
-    MovePicker picker(board, nMove, &moveHistory);
+    MovePicker picker(board, nMove, &moveHistory, &seeValues);
 
     // arbitrarily low score to make sure its replaced
     int score = -32001;
@@ -119,6 +112,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     libchess::Move move;
     libchess::Move bestMove;
 
+    int moveCounter = 0;
     // loop through the moves and score them
     while ((move = picker.nextMove()).value() != 0) {
 
@@ -126,6 +120,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         if (!board.is_legal_move(move)) {
             continue;
         }
+
+        moveCounter++;
 
         // just in case we are searching evasions
         if (!check) {
@@ -177,6 +173,11 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         }
     }
 
+    // check for mate
+    if (check && moveCounter == 0) {
+        return -32000 + (ply - rootPly);
+    }
+
     node->save(hash, bestScore, bestScore >= beta ? 2 : 3, -1, bestMove, age, standPat);
     return bestScore;
 
@@ -211,16 +212,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
     }
 
-    // check for a game over
-    switch (board.game_state()) {
-        case libchess::Position::GameState::CHECKMATE:
-            return -32000 + (ply - rootPly);
-        case libchess::Position::GameState::STALEMATE:
-        case libchess::Position::GameState::THREEFOLD_REPETITION:
-        case libchess::Position::GameState::FIFTY_MOVES:
-            return 0;
-        case libchess::Position::GameState::IN_PROGRESS:
-            break;
+    // check for a draw
+    if (board.halfmoves() >= 100 || board.is_repeat(2)) {
+        return 0;
     }
 
     // are we in check?
@@ -361,7 +355,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nScore < probCutBeta)) {
 
         // get a move picker
-        MovePicker picker(board, nMove, probCutBeta - staticEval);
+        MovePicker picker(board, nMove, probCutBeta - staticEval, &seeValues);
 
         // we loop through all the moves to try and find one that
         // causes a beta cut on a reduced search
@@ -416,12 +410,12 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     // get a move picker
-    MovePicker picker(board, nMove, killers[ply - rootPly], counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()], &moveHistory);
+    MovePicker picker(board, nMove, killers[ply - rootPly], counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()], &moveHistory, &seeValues);
 
     // indicates that a PvNode will probably fail low if the node was searched, and we found a fail low already
     bool likelyFailLow = PvNode && nMove.value() != 0 && nType == 3;
 
-    int i = 0;
+    int moveCounter = 0;
     // loop through the possible moves and score each
     while ((move = picker.nextMove()).value() != 0) {
 
@@ -435,9 +429,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             auto now = std::chrono::steady_clock::now();
             std::chrono::duration<double, std::milli> elapsed = now - startTime;
             if (elapsed.count() > 3000 && depth > 5) {
-                std::cout << "info currmove " << move.to_str() << " currmovenumber " << i + 1 << std::endl;
+                std::cout << "info currmove " << move.to_str() << " currmovenumber " << moveCounter + 1 << std::endl;
             }
         }
+
+        moveCounter++;
 
         // futility pruning
         if (futile
@@ -459,7 +455,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // search with zero window
         // first check if we can reduce
-        if (depth > 1 && i > 2 && isLateReduction(board, move)) {
+        if (depth > 1 && moveCounter > 2 && isLateReduction(board, move)) {
             // find our reduction
             int reduction = 4;
             // decrease if position is not likely to fail low
@@ -483,7 +479,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
 
             // increase reduction for later moves
-            if (i > 6 && depth >= 3) {
+            if (moveCounter > 6 && depth >= 3) {
                 reduction += depth / 3;
             }
 
@@ -502,7 +498,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             decPly();
             board.unmake_move();
         }
-        else if (!PvNode || i > 0) {
+        else if (!PvNode || moveCounter > 1) {
             board.make_move(move);
             incPly();
             score = -negamax<NonPV>(board, depth - 1, -(alpha + 1), -alpha, !cutNode);
@@ -511,15 +507,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
 
         // full PV search for the first move and for moves that fail in the zero window
-        if (PvNode && (i == 0 || (score > alpha && (rootNode || score < beta)))) {
+        if (PvNode && (moveCounter == 1 || (score > alpha && (rootNode || score < beta)))) {
             board.make_move(move);
             incPly();
             score = -negamax<PV>(board, depth - 1, -beta, -alpha, false);
             decPly();
             board.unmake_move();
         }
-
-        i++;
 
         // if the search was stopped for whatever reason, return immediately
         if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
@@ -545,6 +539,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 }
             }
         }
+    }
+
+    if (moveCounter == 0) {
+        bestScore = check ? -32000 + (ply - rootPly) : 0;
     }
 
     node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove, age, staticEval);
