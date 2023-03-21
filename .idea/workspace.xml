@@ -22,11 +22,14 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement.">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Changed how checkmate is detected.  Bug fixes.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TranspositionTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/evaluation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libchess/Position.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libchess/Position/MoveIntegration.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position/MoveIntegration.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libchess/Position/Utilities.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position/Utilities.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,13 +82,13 @@
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
     &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
     &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Hughe/Documents/Anduril_Engine&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Hughe/OneDrive/Desktop/arena_3.5.1/Engines/stockfish_15.1_win_x64_bmi2/src&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;MakefileSettings&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;CPPToolchains&quot;,
     &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -231,6 +234,24 @@
       <workItem from="1671672491196" duration="365000" />
       <workItem from="1671673276291" duration="175000" />
       <workItem from="1672980817336" duration="1000" />
+      <workItem from="1678243626802" duration="175000" />
+      <workItem from="1678244086802" duration="1852000" />
+      <workItem from="1678246018566" duration="198000" />
+      <workItem from="1678246298761" duration="44000" />
+      <workItem from="1678246797383" duration="38000" />
+      <workItem from="1678246989627" duration="10000" />
+      <workItem from="1678247461861" duration="4322000" />
+      <workItem from="1678309364999" duration="188000" />
+      <workItem from="1678310451365" duration="1349000" />
+      <workItem from="1678316826214" duration="7700000" />
+      <workItem from="1679352141946" duration="5536000" />
+      <workItem from="1679358124986" duration="5488000" />
+      <workItem from="1679364799369" duration="106000" />
+      <workItem from="1679365076431" duration="37000" />
+      <workItem from="1679365142238" duration="777000" />
+      <workItem from="1679416191383" duration="1926000" />
+      <workItem from="1679430156711" duration="1260000" />
+      <workItem from="1679440204972" duration="605000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -477,7 +498,14 @@
       <option name="project" value="LOCAL" />
       <updated>1671501185196</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="Changed how checkmate is detected.  Bug fixes.">
+      <created>1679352305198</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1679352305198</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -509,7 +537,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Created transposition table class to replace the simple STL hash map" />
     <MESSAGE value="Switched pawn transpositions to custom table class" />
     <MESSAGE value="Moved all the evaluation functions to their own file for better organization" />
     <MESSAGE value="Added probcut to the search" />
@@ -534,7 +561,8 @@
     <MESSAGE value="Minor modification to searching moves in quiescence.  Lowered razoring threshold.  Initial reduction is now 3 instead of 2 and added a reduction for if the transposition move is a capture" />
     <MESSAGE value="Numerous bug fixes and optimizations." />
     <MESSAGE value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
-    <option name="LAST_COMMIT_MESSAGE" value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
+    <MESSAGE value="Changed how checkmate is detected.  Bug fixes." />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed how checkmate is detected.  Bug fixes." />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

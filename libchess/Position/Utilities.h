@@ -183,7 +183,7 @@ inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
     // removed the need to copy the entire position and operate on the new position.  This improved performance as
     // there is now no need to allocate memory, which was a huge time waster.
     //Position pos = *this;
-    this->make_see_move(*smallest_capture_move);
+    this->make_move(*smallest_capture_move);
     int seeVal = piece_val - this->see_to(square, piece_values);
     this->unmake_move();
 
@@ -208,7 +208,7 @@ inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
     // removed the need to copy the entire position and operate on the new position.  This improved performance as
     // there is now no need to allocate memory, which was a huge time waster.
     //Position pos = *this;
-    this->make_see_move(move);
+    this->make_move(move);
     int seeVal = piece_val - this->see_to(move.to_square(), piece_values);
     this->unmake_move();
 
@@ -236,6 +236,15 @@ inline std::optional<Position> Position::from_fen(const std::string& fen) {
             auto piece = Piece::from(c);
             if (piece) {
                 pos.put_piece(current_square, piece->type(), piece->color());
+                if (!piece->color()) {
+                    int tableCoords = ((7 - (current_square / 8)) * 8) + current_square % 8;
+                    curr_state.scoreMG += pieceValuesMG[piece->type().value()] + pieceSquareTableMG[piece->type().value()][tableCoords];
+                    curr_state.scoreEG += pieceValuesEG[piece->type().value()] + pieceSquareTableEG[piece->type().value()][tableCoords];
+                }
+                else {
+                    curr_state.scoreMG -= pieceValuesMG[piece->type().value()] + pieceSquareTableMG[piece->type().value()][current_square];
+                    curr_state.scoreEG -= pieceValuesEG[piece->type().value()] + pieceSquareTableEG[piece->type().value()][current_square];
+                }
             }
             ++current_square;
         }

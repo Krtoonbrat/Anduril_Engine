@@ -44,9 +44,9 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     int scoreEG = 0;
 
     // get the material score for the board
-    std::pair<int, int> matScore = getMaterialScore(board);
-    scoreMG += matScore.first;
-    scoreEG += matScore.second;
+    //std::pair<int, int> matScore = getMaterialScore(board);
+    scoreMG += board.getPSQTMG();
+    scoreEG += board.getPSQTEG();
 
     // get the pawn score for the board
     std::pair<int, int> p = getPawnScore(board);

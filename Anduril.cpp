@@ -168,7 +168,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
                     cutNodes++;
                     break;
                 }
-
             }
         }
     }
@@ -442,7 +441,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             // there is one check we need to do before pruning that requires the move to
             // be made.  I put it separately so that we don't make the move and unmake it
             // every single iteration
-            board.make_see_move(move);
+            board.make_move(move);
             if (!board.in_check()) {
                 board.unmake_move();
                 continue;
@@ -589,7 +588,7 @@ bool Anduril::isLateReduction(libchess::Position &board, libchess::Move &move) {
     if (board.in_check()) {
         return false;
     }
-    board.make_see_move(move);
+    board.make_move(move);
     if (board.in_check()) {
         board.unmake_move();
         return false;
