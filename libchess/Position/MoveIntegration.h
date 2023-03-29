@@ -60,6 +60,27 @@ inline bool Position::is_promotion_move(Move move) const {
     }
 }
 
+inline bool Position::gives_check(Move move) const {
+    if (side_to_move() == constants::WHITE) {
+        if (piece_type_on(move.from_square()) == constants::PAWN) {
+            return piece_type_bb(constants::KING, constants::BLACK) & lookups::pawn_attacks(move.to_square(), constants::WHITE);
+        }
+        else {
+            return piece_type_bb(constants::KING, constants::BLACK) & lookups::non_pawn_piece_type_attacks(
+                    *piece_type_on(move.from_square()), move.to_square(), occupancy_bb());
+        }
+    }
+    else {
+        if (piece_type_on(move.from_square()) == constants::PAWN) {
+            return piece_type_bb(constants::KING, constants::WHITE) & lookups::pawn_attacks(move.to_square(), constants::BLACK);
+        }
+        else {
+            return piece_type_bb(constants::KING, constants::WHITE) & lookups::non_pawn_piece_type_attacks(
+                    *piece_type_on(move.from_square()), move.to_square(), occupancy_bb());
+        }
+    }
+}
+
 inline void Position::unmake_move() {
     auto move = state().previous_move_;
     if (side_to_move() == constants::WHITE) {
@@ -68,7 +89,6 @@ inline void Position::unmake_move() {
     Move::Type move_type = state().move_type_;
     auto captured_pt = state().captured_pt_;
     --ply_;
-    history_.pop_back();
     reverse_side_to_move();
     if (!move) {
         return;
@@ -242,7 +262,6 @@ inline void Position::make_move(Move move) {
         ++fullmoves_;
     }
     ++ply_;
-    history_.push_back(State{});
     State& prev_state = state_mut_ref(ply_ - 1);
     State& next_state = state_mut_ref();
     next_state.halfmoves_ = prev_state.halfmoves_ + 1;
@@ -551,7 +570,6 @@ inline void Position::make_null_move() {
         ++fullmoves_;
     }
     ++ply_;
-    history_.push_back(State{});
     State& prev = state_mut_ref(ply_ - 1);
     State& next = state_mut_ref();
     reverse_side_to_move();

@@ -218,7 +218,6 @@ inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
 
 inline std::optional<Position> Position::from_fen(const std::string& fen) {
     Position pos;
-    pos.history_.push_back(State{});
     State& curr_state = pos.state_mut_ref();
 
     std::istringstream fen_stream{fen};

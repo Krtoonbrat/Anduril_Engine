@@ -3,6 +3,7 @@
 //
 
 #include "MovePicker.h"
+#include "UCI.h"
 
 // shamelessly stolen from stockfish again
 // partial_insertion_sort() sorts moves in descending order up to and including
@@ -109,6 +110,7 @@ void MovePicker::score() {
             rookThreat = attackByPiece<ROOK, true>(board) | minorThreat;
         }
 
+        // pieces threatened by material of lesser value
         threatenedPieces =  (board.piece_type_bb(libchess::constants::QUEEN, board.side_to_move()) & rookThreat)
                             | (board.piece_type_bb(libchess::constants::ROOK, board.side_to_move()) & minorThreat)
                             | ((board.piece_type_bb(libchess::constants::KNIGHT, board.side_to_move()) | board.piece_type_bb(libchess::constants::BISHOP, board.side_to_move())) & pawnThreat);
@@ -120,12 +122,12 @@ void MovePicker::score() {
         }
         else if constexpr(type == QUIETS) {
             m.score = (threatenedPieces & libchess::lookups::square(m.from_square()) ?
-                       (*board.piece_type_on(m.from_square()) == libchess::constants::QUEEN && !(libchess::lookups::square(m.to_square()) & rookThreat ) ? 10000
-                      : *board.piece_type_on(m.from_square()) == libchess::constants::ROOK  && !(libchess::lookups::square(m.to_square()) & minorThreat) ? 5000
-                      :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? 2500
+                       (*board.piece_type_on(m.from_square()) == libchess::constants::QUEEN && !(libchess::lookups::square(m.to_square()) & rookThreat ) ? UCI::queenOrderVal
+                      : *board.piece_type_on(m.from_square()) == libchess::constants::ROOK  && !(libchess::lookups::square(m.to_square()) & minorThreat) ? UCI::rookOrderVal
+                      :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? UCI::minorOrderVal
                       :                                                                                                                                    0)
                       :                                                                                                                                    0)
-                      + moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
+                      + std::min(moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square()), UCI::maxHistoryVal);
         }
         else { // evasions
             m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());

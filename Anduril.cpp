@@ -222,12 +222,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // did alpha change?
     bool alphaChange = false;
 
-    // extend the search by one if we are in check
-    // we make sure we aren't too far from the root depth to avoid search explosion
-    if (check && (ply - rootPly) < rDepth) {
-        depth++;
-    }
-
     // if we are at max depth, start a quiescence search
     if (depth <= 0){
         return quiescence<PvNode ? PV : NonPV>(board, alpha, beta);
@@ -243,6 +237,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // represents our next move to search
     libchess::Move move;
     libchess::Move bestMove = move;
+    libchess::Move excludedMove = board.getExcluded();
 
     // represents the best score we have found so far
     int bestScore = -32001;
@@ -261,6 +256,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
 	if (!PvNode
 		&& found
+        && excludedMove.value() == 0
 		&& nDepth > depth - (nType == 1)
         && (nType == 1 || (nScore >= beta ? nType == 2 : nType == 3))) {
         movesTransposed++;
@@ -319,6 +315,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && !check
         && staticEval >= beta
         && depth >= 3
+        && excludedMove.value() == 0
         && nonPawnMaterial(!board.side_to_move(), board) > 1300) {
 
         nullAllowed = false;
@@ -361,7 +358,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         while ((move = picker.nextMove()).value() != 0) {
 
             // search only legal moves
-            if (!board.is_legal_move(move)) {
+            if (!board.is_legal_move(move) || move == excludedMove) {
                 continue;
             }
 
@@ -414,9 +411,17 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // indicates that a PvNode will probably fail low if the node was searched, and we found a fail low already
     bool likelyFailLow = PvNode && nMove.value() != 0 && nType == 3;
 
+    // indicates that the transposition move has been singularly extended
+    bool singularQuietLMR = false;
+
     int moveCounter = 0;
+    int extension = 0;
     // loop through the possible moves and score each
     while ((move = picker.nextMove()).value() != 0) {
+
+        if (move == excludedMove) {
+            continue;
+        }
 
         // search only legal moves
         if (!board.is_legal_move(move)) {
@@ -427,7 +432,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if constexpr (rootNode) {
             auto now = std::chrono::steady_clock::now();
             std::chrono::duration<double, std::milli> elapsed = now - startTime;
-            if (elapsed.count() > 3000 && depth > 5) {
+            if (elapsed.count() > 2000 && depth > 5) {
                 std::cout << "info currmove " << move.to_str() << " currmovenumber " << moveCounter + 1 << std::endl;
             }
         }
@@ -449,12 +454,79 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             board.unmake_move();
         }
 
+        // the actual depth we will search this move to
+        int actualDepth = depth;
+        extension = 0;
+
+        // search extensions
+        if (ply - rootPly < rDepth * 2) {
+            // Singular extension search
+            // based on the stockfish implementation
+            if (!rootNode
+                && depth >= 4 - (rDepth > 21) + 2 * (PvNode && nType == 1)
+                && move == nMove
+                && excludedMove.value() == 0
+                && abs(nScore) < 31000
+                && (nType == 1 || nType == 2)
+                && nDepth >= depth - 3) {
+                int singleBeta = nScore - (3 + 2 * (nType == 1 && !PvNode)) * depth / 2;
+                int singleDepth = (depth - 1) / 2;
+                singularAttempts++;
+
+                board.setExcluded(move);
+                score = negamax<NonPV>(board, singleDepth, singleBeta - 1, singleBeta, cutNode);
+                board.setExcluded(libchess::Move(0));
+
+                if (score < singleBeta) {
+                    extension = 1;
+                    singularQuietLMR = !board.gives_check(nMove);
+                    singularExtensions++;
+                }
+
+                // Stockfish calls this Mult-Cut pruning
+                // basically, if we searched without the excluded move and still failed high, then there are two different
+                // moves that fail high, making this a Cut-node, not singular.  We can prune the whole subtree by returning a soft bound
+                else if (singleBeta >= beta) {
+                    return singleBeta;
+                }
+
+                // if our node score is greater than beta, we can further reduce the search
+                else if (nScore >= beta) {
+                    extension = -2 - !PvNode;
+                }
+
+                // if our node score is less than the score without that move searched, we can reduce this move by 1
+                else if (nScore <= score) {
+                    extension = -1;
+                }
+
+                // if our node score is less than alpha, it will likely fail low, and we can reduce
+                else if (nScore <= alpha) {
+                    extension = -1;
+                }
+            }
+
+            // check extension
+            if (board.gives_check(move) && depth > 12) {
+                extension = 1;
+            }
+
+        }
+
+        // add extensions to depth
+        actualDepth += extension;
+
         // prefetch before we make a move
         prefetch(table.firstEntry(board.hashAfter(move)));
 
         // search with zero window
         // first check if we can reduce
-        if (depth > 1 && moveCounter > 2 && isLateReduction(board, move)) {
+        if (depth >= 2
+            && moveCounter > 2
+            && !board.is_capture_move(move)
+            && !board.is_promotion_move(move)
+            && !check
+            && !board.gives_check(move)) {
             // find our reduction
             int reduction = 4;
             // decrease if position is not likely to fail low
@@ -482,9 +554,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 reduction += depth / 3;
             }
 
+            // decrease reduction if the transposition move has been singularly extended
+            if (singularQuietLMR) {
+                reduction--;
+            }
+
             // new depth we will search with
             // we need to search at least one more move, we will also allow an "extension" of up to two ply
-            int newDepth = std::clamp(depth - reduction, 1, depth + 1);
+            int newDepth = std::clamp(actualDepth - reduction, 1, depth + 1);
 
             board.make_move(move);
             incPly();
@@ -492,7 +569,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             // full depth search when LMR fails high
             if (score > alpha && newDepth < depth - 1) {
-                score = -negamax<NonPV>(board, depth - 1, -(alpha + 1), -alpha, !cutNode);
+                score = -negamax<NonPV>(board, actualDepth - 1, -(alpha + 1), -alpha, !cutNode);
             }
             decPly();
             board.unmake_move();
@@ -500,7 +577,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         else if (!PvNode || moveCounter > 1) {
             board.make_move(move);
             incPly();
-            score = -negamax<NonPV>(board, depth - 1, -(alpha + 1), -alpha, !cutNode);
+            score = -negamax<NonPV>(board, actualDepth - 1, -(alpha + 1), -alpha, !cutNode);
             decPly();
             board.unmake_move();
         }
@@ -509,7 +586,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if (PvNode && (moveCounter == 1 || (score > alpha && (rootNode || score < beta)))) {
             board.make_move(move);
             incPly();
-            score = -negamax<PV>(board, depth - 1, -beta, -alpha, false);
+            score = -negamax<PV>(board, actualDepth - 1, -beta, -alpha, false);
             decPly();
             board.unmake_move();
         }
@@ -532,7 +609,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                     if (move.type() == libchess::Move::Type::CAPTURE) {
                         insertKiller(move, ply - rootPly);
                         counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] = move;
-                        moveHistory[board.side_to_move()][move.from_square()][move.to_square()] += depth * depth;
+                        moveHistory[board.side_to_move()][move.from_square()][move.to_square()] += depth;
                     }
                     break;
                 }
@@ -544,7 +621,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         bestScore = check ? -32000 + (ply - rootPly) : 0;
     }
 
-    node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove, age, staticEval);
+    if (excludedMove.value() == 0) {
+        node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove, age, staticEval);
+    }
     return bestScore;
 
 }
@@ -570,33 +649,6 @@ int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
 
         return material;
     }
-}
-
-// can we reduce the depth of our search for this move?
-bool Anduril::isLateReduction(libchess::Position &board, libchess::Move &move) {
-    // don't reduce if the move is a capture
-    if (board.is_capture_move(move)) {
-        return false;
-    }
-
-    // don't reduce if the move is a promotion
-    if (board.is_promotion_move(move)) {
-        return false;
-    }
-
-    // don't reduce if the side to move is in check, or on moves that give check
-    if (board.in_check()) {
-        return false;
-    }
-    board.make_move(move);
-    if (board.in_check()) {
-        board.unmake_move();
-        return false;
-    }
-    board.unmake_move();
-
-    // if we passed everything else, we can reduce
-    return true;
 }
 
 // finds and returns the principal variation

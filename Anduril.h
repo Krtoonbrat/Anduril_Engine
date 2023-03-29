@@ -163,14 +163,11 @@ private:
     // selective depth
     int selDepth = 0;
 
-    // list of moves at root position
-    std::vector<std::tuple<int, libchess::Move>> rootMoves;
+    int singularAttempts = 0;
+    int singularExtensions = 0;
 
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
-
-    // can we reduce the depth of our search for this move?
-    bool isLateReduction(libchess::Position &board, libchess::Move &move);
 
     // insert a move to the killer list
     inline void insertKiller(libchess::Move move, int depth) {
@@ -260,20 +257,6 @@ private:
                                      & (libchess::lookups::RANK_2_MASK | libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_4_MASK);
     libchess::Bitboard centerBlack = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
                                      & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_6_MASK | libchess::lookups::RANK_5_MASK);
-
-    // the piece values
-    std::unordered_map<char, int> pieceValues = {{'P', pMG},
-                                                 {'N', kMG},
-                                                 {'B', bMG},
-                                                 {'R', rMG},
-                                                 {'Q', qMG},
-                                                 {'K', 0},
-                                                 {'p', -pMG},
-                                                 {'n', -kMG},
-                                                 {'b', -bMG},
-                                                 {'r', -rMG},
-                                                 {'q', -qMG},
-                                                 {'k', 0}};
 
     // this will be used to make sure the same color doesn't do a null move twice in a row
     bool nullAllowed = true;

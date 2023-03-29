@@ -224,6 +224,9 @@ class Position {
     void make_move(Move move);
     void make_null_move();
 
+    // added by Krtoonbrat
+    [[nodiscard]] bool gives_check(Move move) const;
+
     // Attacks
     [[nodiscard]] Bitboard checkers_to(Color c) const;
     [[nodiscard]] Bitboard attackers_to(Square square) const;
@@ -276,11 +279,13 @@ class Position {
     // make a move.  If we make sure the capacity of the vector is ply+100 (100 being Anduril's max depth) at root, the
     // vector shouldn't have to dynamically allocate, and if it does it won't be often enough to be significant
     void prep_search() {
-        history_.reserve(ply_ + 100);
+        return;
     }
 
     int getPSQTMG() { return state().scoreMG; }
     int getPSQTEG() { return state().scoreEG; }
+    Move getExcluded() { return state().excludedMove; }
+    void setExcluded(Move move) { state_mut_ref().excludedMove = move; }
 
 protected:
     // clang-format off
@@ -307,13 +312,14 @@ protected:
         int halfmoves_ = 0;
         int scoreMG = 0;
         int scoreEG = 0;
+        Move excludedMove = Move(0);
     };
 
     [[nodiscard]] int ply() const {
         return ply_;
     }
 
-    [[nodiscard]] const std::vector<State>& history() const {
+    [[nodiscard]] const std::array<State, 1000>& history() const {
         return history_;
     }
     State& state_mut_ref() {
@@ -401,7 +407,7 @@ protected:
     Color side_to_move_;
     int fullmoves_;
     int ply_;
-    std::vector<State> history_;
+    std::array<State, 1000> history_;
 
     std::string start_fen_;
 };

@@ -27,6 +27,11 @@ namespace UCI {
     int InputWaiting();
 
     void ReadInput(Anduril &AI);
+
+    static int queenOrderVal = 10000;
+    static int rookOrderVal =  5000;
+    static int minorOrderVal = 2500;
+    static int maxHistoryVal = 1000000;
 }
 
 #endif //ANDURIL_ENGINE_UCI_H

@@ -13,7 +13,20 @@ struct Cluster {
 };
 
 // this was the stockfish way to find the index for a cluster.  If it works for them, it works for me
-inline uint64_t mul_hi64(uint64_t a, uint64_t b);
+// this function returns the high 64 bits of a 128 bit product of two values we pass in.
+inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
+#if defined(__GNUC__) && defined(IS_64BIT)
+    __extension__ typedef unsigned __int128 uint128;
+    return ((uint128)a * (uint128)b) >> 64;
+#else
+    uint64_t aL = (uint32_t)a, aH = a >> 32;
+    uint64_t bL = (uint32_t)b, bH = b >> 32;
+    uint64_t c1 = (aL * bL) >> 32;
+    uint64_t c2 = aH * bL + c1;
+    uint64_t c3 = aL * bH + (uint32_t)c2;
+    return aH * bH + (c2 >> 32) + (c3 >> 32);
+#endif
+}
 
 class TranspositionTable {
 public:
@@ -26,21 +39,6 @@ public:
     void clear();
 
     Node* probe(uint64_t key, bool &foundNode);
-
-    // this was the stockfish way to find the index for a cluster.  If it works for them, it works for me
-    inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
-#if defined(__GNUC__) && defined(IS_64BIT)
-        __extension__ typedef unsigned __int128 uint128;
-    return ((uint128)a * (uint128)b) >> 64;
-#else
-        uint64_t aL = (uint32_t)a, aH = a >> 32;
-        uint64_t bL = (uint32_t)b, bH = b >> 32;
-        uint64_t c1 = (aL * bL) >> 32;
-        uint64_t c2 = aH * bL + c1;
-        uint64_t c3 = aL * bH + (uint32_t)c2;
-        return aH * bH + (c2 >> 32) + (c3 >> 32);
-#endif
-    }
 
     Node* firstEntry(uint64_t key) {
         return &tPtr[mul_hi64(key, clusterCount)].entry[0];
