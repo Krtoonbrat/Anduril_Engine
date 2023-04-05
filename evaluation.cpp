@@ -37,8 +37,8 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     kingZoneWBB |= libchess::lookups::king_attacks(board.king_square(libchess::constants::WHITE));
     kingZoneBBB |= libchess::lookups::king_attacks(board.king_square(libchess::constants::BLACK));
 
-    kingZoneWBB |= kingZoneWBB << 16;
-    kingZoneBBB |= kingZoneBBB >> 16;
+    kingZoneWBB |= kingZoneWBB << 8;
+    kingZoneBBB |= kingZoneBBB >> 8;
 
     int scoreMG = 0;
     int scoreEG = 0;
@@ -67,7 +67,7 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     // white
     if (attackCount[1] >= 2) {
         scoreMG += SafetyTable[attackWeight[1]];
-        scoreEG -= SafetyTable[attackWeight[1]];
+        scoreEG += SafetyTable[attackWeight[1]];
     }
     // black
     if (attackCount[0] >= 2) {
@@ -177,12 +177,10 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         // white
         libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap;
         scoreMG += 5 * wCenterAttacks.popcount();
-        scoreEG += 5 * wCenterAttacks.popcount();
 
         // black
         libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap;
-        scoreMG += 5 * bCenterAttacks.popcount();
-        scoreEG += 5 * bCenterAttacks.popcount();
+        scoreMG -= 5 * bCenterAttacks.popcount();
     }
 
     // get the phase for tapered eval
@@ -582,7 +580,6 @@ inline void Anduril::evaluateRooks(libchess::Position &board, libchess::Square s
         blackMobility[1] += 4 * (attackedSquares.popcount() - 7);
 
         // king zone attacks
-        bAttackMap |= attackedSquares;
         bAttackMap |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }

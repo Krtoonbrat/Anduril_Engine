@@ -134,19 +134,19 @@ public:
 
 private:
     // total number of moves Anduril searched
-    int movesExplored = 0;
+    uint64_t movesExplored = 0;
 
     // total amount of cut nodes
-    int cutNodes = 0;
+    uint64_t cutNodes = 0;
 
     // amount of moves we hashed from the transpo table
-    int movesTransposed = 0;
+    uint64_t movesTransposed = 0;
 
     // amount of moves we searched in quiescence
-    int quiesceExplored = 0;
+    uint64_t quiesceExplored = 0;
 
     // amount of nodes searched at the current depth
-    int depthNodes = 0;
+    uint64_t depthNodes = 0;
 
     // the ply of the root node
     int rootPly = 0;
@@ -163,8 +163,8 @@ private:
     // selective depth
     int selDepth = 0;
 
-    int singularAttempts = 0;
-    int singularExtensions = 0;
+    uint64_t singularAttempts = 0;
+    uint64_t singularExtensions = 0;
 
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
