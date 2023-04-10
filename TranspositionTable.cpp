@@ -64,7 +64,7 @@ Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
 
     // no nodes matched, determine which gets replaced
     Node *replace = entry;
-    if (entry[0].age > entry[1].age || entry[0].nodeDepth > entry[1].nodeDepth) {
+    if (replace->age > entry[1].age || (replace->age == entry[1].age && replace->nodeDepth > entry[1].nodeDepth)) {
         replace = &entry[1];
     }
 

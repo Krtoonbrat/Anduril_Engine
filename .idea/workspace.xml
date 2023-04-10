@@ -22,14 +22,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Changed how checkmate is detected.  Bug fixes.">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/evaluation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libchess/Position.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libchess/Position/MoveIntegration.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position/MoveIntegration.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libchess/Position/Utilities.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position/Utilities.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Node.h" beforeDir="false" afterPath="$PROJECT_DIR$/Node.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TranspositionTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -57,6 +53,9 @@
     <setting file="file://$PROJECT_DIR$/UCI.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/evaluation.cpp" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/main.cpp" root0="FORCE_HIGHLIGHTING" />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="kff2vbuq" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -88,7 +87,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;CPPToolchains&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
     &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -251,7 +250,82 @@
       <workItem from="1679365142238" duration="777000" />
       <workItem from="1679416191383" duration="1926000" />
       <workItem from="1679430156711" duration="1260000" />
-      <workItem from="1679440204972" duration="605000" />
+      <workItem from="1679440204972" duration="1267000" />
+      <workItem from="1679441677170" duration="730000" />
+      <workItem from="1679444810434" duration="36000" />
+      <workItem from="1679496894946" duration="747000" />
+      <workItem from="1679498172108" duration="43000" />
+      <workItem from="1679499428171" duration="402000" />
+      <workItem from="1679503600994" duration="154000" />
+      <workItem from="1679504648431" duration="671000" />
+      <workItem from="1679510719244" duration="876000" />
+      <workItem from="1679511721868" duration="37000" />
+      <workItem from="1679514542791" duration="30000" />
+      <workItem from="1679514988374" duration="22000" />
+      <workItem from="1679515186659" duration="793000" />
+      <workItem from="1679516389630" duration="30000" />
+      <workItem from="1679516772423" duration="47000" />
+      <workItem from="1679517318704" duration="2384000" />
+      <workItem from="1679522399304" duration="480000" />
+      <workItem from="1679522921136" duration="93000" />
+      <workItem from="1679527044234" duration="119000" />
+      <workItem from="1679527446165" duration="99000" />
+      <workItem from="1679527882286" duration="541000" />
+      <workItem from="1679529056650" duration="52000" />
+      <workItem from="1679532472224" duration="60000" />
+      <workItem from="1679676674878" duration="4693000" />
+      <workItem from="1679682486047" duration="240000" />
+      <workItem from="1679684478830" duration="1033000" />
+      <workItem from="1679687595208" duration="28000" />
+      <workItem from="1679687632374" duration="2000" />
+      <workItem from="1679687729269" duration="29000" />
+      <workItem from="1679704907061" duration="57000" />
+      <workItem from="1679705082743" duration="22000" />
+      <workItem from="1679865224629" duration="363000" />
+      <workItem from="1679865742478" duration="45000" />
+      <workItem from="1679865870095" duration="277000" />
+      <workItem from="1679933137431" duration="192000" />
+      <workItem from="1679933496676" duration="132000" />
+      <workItem from="1679933681141" duration="459000" />
+      <workItem from="1679934380486" duration="210000" />
+      <workItem from="1679934684340" duration="978000" />
+      <workItem from="1679938334565" duration="1366000" />
+      <workItem from="1679940553082" duration="126000" />
+      <workItem from="1679958413303" duration="2072000" />
+      <workItem from="1679962085072" duration="4389000" />
+      <workItem from="1679966591626" duration="44000" />
+      <workItem from="1680019811414" duration="595000" />
+      <workItem from="1680021777178" duration="83000" />
+      <workItem from="1680025860228" duration="46000" />
+      <workItem from="1680038627687" duration="166000" />
+      <workItem from="1680109757436" duration="6794000" />
+      <workItem from="1680192903794" duration="1502000" />
+      <workItem from="1680200105310" duration="417000" />
+      <workItem from="1680479116757" duration="95000" />
+      <workItem from="1680537738726" duration="676000" />
+      <workItem from="1680549767590" duration="909000" />
+      <workItem from="1680552151160" duration="127000" />
+      <workItem from="1680552769182" duration="116000" />
+      <workItem from="1680553538114" duration="123000" />
+      <workItem from="1680555446244" duration="146000" />
+      <workItem from="1680575421927" duration="6000" />
+      <workItem from="1680575531459" duration="249000" />
+      <workItem from="1680575950393" duration="176000" />
+      <workItem from="1680576699082" duration="26000" />
+      <workItem from="1680576827600" duration="129000" />
+      <workItem from="1680636251062" duration="940000" />
+      <workItem from="1680637322717" duration="274000" />
+      <workItem from="1680637776809" duration="100000" />
+      <workItem from="1680637956964" duration="46000" />
+      <workItem from="1680638075931" duration="28000" />
+      <workItem from="1680640068688" duration="82000" />
+      <workItem from="1680664468965" duration="3464000" />
+      <workItem from="1680708476793" duration="588000" />
+      <workItem from="1680710064412" duration="2872000" />
+      <workItem from="1680715208517" duration="143000" />
+      <workItem from="1680766078132" duration="2000" />
+      <workItem from="1681146746323" duration="2548000" />
+      <workItem from="1681150136887" duration="360000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -505,7 +579,35 @@
       <option name="project" value="LOCAL" />
       <updated>1679352305198</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="Piece Square Tables are now incrementally updated.">
+      <created>1679440835530</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1679440835530</updated>
+    </task>
+    <task id="LOCAL-00038" summary="Added search extensions.  Currently, we do singular extensions and check extensions">
+      <created>1680109949549</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1680109949549</updated>
+    </task>
+    <task id="LOCAL-00039" summary="A few bug fixes:&#10;-Reduced size of King Ring&#10;-King tropism calculation now correctly adds white's safety to the endgame score instead of subtracting&#10;-Removed adding space advantage to endgame&#10;-Black space advantage now correctly subtracts instead of adding&#10;-Removed accidental redundant or of attacked squares for black in evaluateRooks&#10;-Changed type of some of the tracking variables.  If the analysis was left running long enough, the movesExplored variable would end up overflowing.  That shouldn’t be a problem now">
+      <created>1680708814592</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1680708814593</updated>
+    </task>
+    <task id="LOCAL-00040" summary="Changed search order at root.&#10;Previously, we were searching the transposition move first, and then each move afterward was search according to the various rules outlined in the move picker.  Now, after the first search each move is searched in the order of the score we determined from the last search.  This *should* make the search more accurate because we wont try the more aggressive pruning techniques on better moves that could have been ordered last by accident.">
+      <created>1681147034928</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1681147034928</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -537,10 +639,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Switched pawn transpositions to custom table class" />
-    <MESSAGE value="Moved all the evaluation functions to their own file for better organization" />
-    <MESSAGE value="Added probcut to the search" />
-    <MESSAGE value="Added futility pruning to the search and delta pruning to quiescence" />
     <MESSAGE value="Added penalty for undefended minor pieces" />
     <MESSAGE value="Revert &quot;Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures&quot;&#10;&#10;This reverts commit 2ddc3c4632ef13ae8a5810d39c8b611e4260a52e." />
     <MESSAGE value="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures" />
@@ -562,7 +660,11 @@
     <MESSAGE value="Numerous bug fixes and optimizations." />
     <MESSAGE value="Optimizations.  SEE is now much faster, so its being used inside all move list functions as its performance hit now is less than the efficiency improvement." />
     <MESSAGE value="Changed how checkmate is detected.  Bug fixes." />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed how checkmate is detected.  Bug fixes." />
+    <MESSAGE value="Piece Square Tables are now incrementally updated." />
+    <MESSAGE value="Added search extensions.  Currently, we do singular extensions and check extensions" />
+    <MESSAGE value="A few bug fixes:&#10;-Reduced size of King Ring&#10;-King tropism calculation now correctly adds white's safety to the endgame score instead of subtracting&#10;-Removed adding space advantage to endgame&#10;-Black space advantage now correctly subtracts instead of adding&#10;-Removed accidental redundant or of attacked squares for black in evaluateRooks&#10;-Changed type of some of the tracking variables.  If the analysis was left running long enough, the movesExplored variable would end up overflowing.  That shouldn’t be a problem now" />
+    <MESSAGE value="Changed search order at root.&#10;Previously, we were searching the transposition move first, and then each move afterward was search according to the various rules outlined in the move picker.  Now, after the first search each move is searched in the order of the score we determined from the last search.  This *should* make the search more accurate because we wont try the more aggressive pruning techniques on better moves that could have been ordered last by accident." />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed search order at root.&#10;Previously, we were searching the transposition move first, and then each move afterward was search according to the various rules outlined in the move picker.  Now, after the first search each move is searched in the order of the score we determined from the last search.  This *should* make the search more accurate because we wont try the more aggressive pruning techniques on better moves that could have been ordered last by accident." />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

@@ -7,8 +7,7 @@
 
 #include "libchess/Position.h"
 
-class Node {
-public:
+struct Node {
     Node() : nodeScore(-32001), nodeType(-1), bestMove(), nodeDepth(-99), key(0), nodeEval(-32001), age(0) {}
 
     // saves the information passed in to the node
