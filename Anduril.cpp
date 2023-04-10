@@ -408,6 +408,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // get a move picker
     MovePicker picker(board, nMove, killers[ply - rootPly], counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()], &moveHistory, &seeValues);
 
+    // at root, we are going to ignore the picker object.  The amount of time spent allocating and selecting moves should be negligible because this only happens for one position per search
+    // here we set the pointer for the current root move to the beginning of the move list, and sort the list
+    if constexpr (rootNode) {
+        partial_insertion_sort(rootMoves.begin(), rootMoves.end(), std::numeric_limits<int>::min());
+        currRootMove = rootMoves.begin();
+    }
+
     // indicates that a PvNode will probably fail low if the node was searched, and we found a fail low already
     bool likelyFailLow = PvNode && nMove.value() != 0 && nType == 3;
 
@@ -418,6 +425,18 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     int extension = 0;
     // loop through the possible moves and score each
     while ((move = picker.nextMove()).value() != 0) {
+
+        // at root, we do this check just in case the move picker has some illegal moves in it
+        if constexpr (rootNode) {
+            if (currRootMove == rootMoves.end()) {
+                break;
+            }
+        }
+
+        // at root, replace the move with the current root move
+        if constexpr (rootNode) {
+            move = *currRootMove;
+        }
 
         if (move == excludedMove) {
             continue;
@@ -594,6 +613,12 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         // if the search was stopped for whatever reason, return immediately
         if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
+        }
+
+        // update the move score if at root
+        if constexpr (rootNode) {
+            currRootMove->score = score;
+            currRootMove++;
         }
 
         if (score > bestScore) {

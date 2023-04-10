@@ -5,22 +5,6 @@
 #include "MovePicker.h"
 #include "UCI.h"
 
-// shamelessly stolen from stockfish again
-// partial_insertion_sort() sorts moves in descending order up to and including
-// a given limit. The order of moves smaller than the limit is left unspecified.
-void partial_insertion_sort(libchess::Move* begin, libchess::Move* end, int limit) {
-
-    for (libchess::Move *sortedEnd = begin, *p = begin + 1; p < end; ++p)
-        if (p->score >= limit)
-        {
-            libchess::Move tmp = *p, *q;
-            *p = *++sortedEnd;
-            for (q = sortedEnd; q != begin && *(q - 1) < tmp; --q)
-                *q = *(q - 1);
-            *q = tmp;
-        }
-}
-
 // constructor for main search
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move& cm,
                        std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see)

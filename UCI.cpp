@@ -504,6 +504,9 @@ void Anduril::go(libchess::Position &board) {
     bool found = false;
     Node *node = table.probe(hash, found);
 
+    // get the move list for root position
+    rootMoves = board.legal_move_list();
+
     // iterative deepening loop
     while (!finalDepth) {
         UCI::ReadInput(*this);

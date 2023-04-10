@@ -166,6 +166,10 @@ private:
     uint64_t singularAttempts = 0;
     uint64_t singularExtensions = 0;
 
+    // list of moves at root position
+    libchess::MoveList rootMoves;
+    libchess::Move *currRootMove;
+
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
 
