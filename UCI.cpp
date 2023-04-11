@@ -531,7 +531,7 @@ void Anduril::go(libchess::Position &board) {
         }
 
         // was the search stopped?
-        // stop the search it time is up
+        // stop the search if time is up
         if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             incomplete = true;
             finalDepth = true;
@@ -576,7 +576,7 @@ void Anduril::go(libchess::Position &board) {
         }
 
         if (!incomplete && found) {
-            prevBestMove = node->bestMove;
+            prevBestMove = libchess::Move(node->bestMove);
             prevBestScore = bestScore;
             //std::cout << "Total low misses: " << aspMissesL << std::endl;
             //std::cout << "Total high misses: " << aspMissesH << std::endl;

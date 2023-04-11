@@ -5,9 +5,9 @@
 #include "TranspositionTable.h"
 
 // saves the information passed to the node, possibly overwrting the old position
-void Node::save(uint64_t k, int s, int t, int d, libchess::Move m, int a, int ev) {
+void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int a, int ev) {
     // keep the move the same for the same position
-    if (m.value() != 0 || (uint16_t)k != key) {
+    if (m != 0 || (uint16_t)k != key) {
         bestMove = m;
     }
 

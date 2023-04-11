@@ -58,7 +58,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     uint64_t hash = board.hash();
     bool found = false;
     Node *node = table.probe(hash, found);
-    libchess::Move nMove = found ? node->bestMove : libchess::Move(0);
+    libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
 	if (!PvNode
 		&& found
 		&& node->nodeDepth >= -1
@@ -94,7 +94,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         // adjust alpha and beta based on the stand pat
         if (standPat >= beta) {
 			if (!found) {
-                node->save(hash, standPat, 2, -1, libchess::Move(0), age, standPat);
+                node->save(hash, standPat, 2, -1, 0, age, standPat);
 			}
             return standPat;
         }
@@ -177,7 +177,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, bestScore, bestScore >= beta ? 2 : 3, -1, bestMove, age, standPat);
+    node->save(hash, bestScore, bestScore >= beta ? 2 : 3, -1, bestMove.value(), age, standPat);
     return bestScore;
 
 }
@@ -252,7 +252,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     int nDepth = found ? node->nodeDepth : -99;
     int nType = found ? node->nodeType : -1;
     int nScore = found ? node->nodeScore : -32001;
-    libchess::Move nMove = found ? node->bestMove : libchess::Move(0);
+    libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
 
 	if (!PvNode
 		&& found
@@ -286,7 +286,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
     else {
         staticEval = evaluateBoard(board);
-        node->save(hash, -32001, -1, -99, libchess::Move(0), 0, staticEval);
+        node->save(hash, -32001, -1, -99, 0, 0, staticEval);
     }
 
     // razoring
@@ -383,7 +383,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 if (!(found
                     && nDepth >= depth - 3
                     && nScore != -32001)) {
-                    node->save(hash, score, 2, depth - 3, move, age, staticEval);
+                    node->save(hash, score, 2, depth - 3, move.value(), age, staticEval);
 
                 }
                 cutNodes++;
@@ -647,7 +647,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     if (excludedMove.value() == 0) {
-        node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove, age, staticEval);
+        node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), age, staticEval);
     }
     return bestScore;
 
@@ -691,15 +691,16 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
     // adds the best move we found to the PV, then pushes it to the board
     hash = board.hash();
     node = table.probe(hash, found);
-    while (found && node->bestMove.value() != 0) {
-        if (board.is_capture_move(node->bestMove) && board.piece_type_on(node->bestMove.to_square()) == std::nullopt) {
+    while (found && node->bestMove != 0) {
+        libchess::Move tmp(node->bestMove);
+        if (board.is_capture_move(tmp) && board.piece_type_on(tmp.to_square()) == std::nullopt) {
             break;
         }
         // this will make sure we don't segfault
         // I don't know the problem but this fixed it and the search does not appear to be affected
-        if (board.is_legal_move(node->bestMove)) {
-            PV.push_back(node->bestMove);
-            board.make_move(node->bestMove);
+        if (board.is_legal_move(tmp)) {
+            PV.push_back(tmp);
+            board.make_move(tmp);
         }
         else {
             break;
