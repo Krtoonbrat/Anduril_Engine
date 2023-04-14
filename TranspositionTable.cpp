@@ -11,7 +11,7 @@ void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int a, int ev) {
         bestMove = m;
     }
 
-    // overwrite less valuable entries (cheapest check first)
+    // overwrite less valuable entries
     if (t == 1
         || (uint16_t)k != key
         || (int8_t)d > nodeDepth) {

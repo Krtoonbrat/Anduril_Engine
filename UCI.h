@@ -22,16 +22,13 @@ namespace UCI {
     // parses setoptions
     void parseOption(char* line, Anduril &AI, bool &bookOpen);
 
-    // looks to see if there is an input waiting for us to read
-    // http://home.arcor.de/dreamlike/chess/
-    int InputWaiting();
+    // parks thread waiting for a search
+    void waitForSearch(Anduril &AI, libchess::Position &board);
 
-    void ReadInput(Anduril &AI);
-
-    static int queenOrderVal = 10000;
-    static int rookOrderVal =  5000;
-    static int minorOrderVal = 2500;
-    static int maxHistoryVal = 1000000;
+    static int queenOrderVal = 50000;
+    static int rookOrderVal =  25000;
+    static int minorOrderVal = 10000;
+    static int maxHistoryVal = 15000;
 }
 
 #endif //ANDURIL_ENGINE_UCI_H

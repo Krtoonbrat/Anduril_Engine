@@ -17,6 +17,7 @@
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <mutex>
 
 #include "Anduril.h"
 #include "libchess/Position.h"
@@ -46,6 +47,8 @@ namespace UCI {
         Anduril AI;
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = true;
+
+        std::thread searchThread(&waitForSearch, std::ref(AI), std::ref(board));
 
         while (true) {
             // clear the line and flush stdout in case of buffer issues
@@ -80,8 +83,15 @@ namespace UCI {
             else if (!strncmp(line, "go", 2)) {
                 parseGo(line, board, AI, openingBook, bookOpen);
             }
+            else if (!strncmp(line, "stop", 4)) {
+                AI.stopped = true;
+            }
             else if (!strncmp(line, "quit", 4)) {
+                AI.stopped = !AI.stopped;
                 AI.quit = true;
+                AI.searching = true;
+                AI.cv.notify_one();
+                searchThread.join();
                 break;
             }
             else if (!strncmp(line, "uci", 3)) {
@@ -116,10 +126,10 @@ namespace UCI {
                 std::cout << "option name Rph type spin default 2000 min 0 max 10000" << std::endl;
                 std::cout << "option name Qph type spin default 4000 min 0 max 10000" << std::endl;
 
-                std::cout << "option name QOV type spin default 10000 min 0 max 100000" << std::endl;
-                std::cout << "option name ROV type spin default 5000 min 0 max 100000" << std::endl;
-                std::cout << "option name MOV type spin default 2500 min 0 max 100000" << std::endl;
-                std::cout << "option name MHV type spin default 1000000 min 0 max 1000000" << std::endl;
+                std::cout << "option name QOV type spin default 50000 min 0 max 100000" << std::endl;
+                std::cout << "option name ROV type spin default 25000 min 0 max 100000" << std::endl;
+                std::cout << "option name MOV type spin default 15000 min 0 max 100000" << std::endl;
+                std::cout << "option name MHV type spin default 15000 min 0 max 1000000" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -251,8 +261,7 @@ namespace UCI {
         AI.limits.timeSet = false;
         char *ptr = NULL;
 
-        // the opening book stays open unless we are doing an infinite search
-        // jk no opening book rn cuz of CLOP
+        // this makes sure that the opening book is set to the correct state
         if (!bookOpen) {
             openingBook.closeBook();
         }
@@ -327,11 +336,39 @@ namespace UCI {
             else {
                 //std::cout << "End of opening book, starting search" << std::endl;
                 openingBook.flipBookOpen();
-                AI.go(board);
+                AI.stopped = false;
+                AI.searching = true;
+                AI.cv.notify_one();
+                //AI.go(board);
             }
         }
         else {
+            AI.stopped = false;
+            AI.searching = true;
+            AI.cv.notify_one();
+            //AI.go(board);
+        }
+    }
+
+    void waitForSearch(Anduril &AI, libchess::Position &board) {
+        while (true) {
+            std::unique_lock<std::mutex> lock(AI.mutex);
+            AI.stopped = true;
+            AI.searching = false;
+            AI.cv.wait(lock, [&AI] { return AI.searching.load(); });
+
+            if (AI.quit) {
+                return;
+            }
+
+            lock.unlock();
             AI.go(board);
+
+            // we have to check for a quit on both ends in case the quit command comes during a search
+            // if that happens, stopped will be set to true, and we would wait at the top, but we actually want to exit
+            if (AI.quit) {
+                return;
+            }
         }
     }
 
@@ -393,74 +430,14 @@ namespace UCI {
          */
     }
 
-    // http://home.arcor.de/dreamlike/chess/
-    int InputWaiting()
-    {
-#ifndef WIN32
-        fd_set readfds;
-  struct timeval tv;
-  FD_ZERO (&readfds);
-  FD_SET (fileno(stdin), &readfds);
-  tv.tv_sec=0; tv.tv_usec=0;
-  select(16, &readfds, 0, 0, &tv);
-
-  return (FD_ISSET(fileno(stdin), &readfds));
-#else
-        static int init = 0, pipe;
-        static HANDLE inh;
-        DWORD dw;
-
-        if (!init) {
-            init = 1;
-            inh = GetStdHandle(STD_INPUT_HANDLE);
-            pipe = !GetConsoleMode(inh, &dw);
-            if (!pipe) {
-                SetConsoleMode(inh, dw & ~(ENABLE_MOUSE_INPUT|ENABLE_WINDOW_INPUT));
-                FlushConsoleInputBuffer(inh);
-            }
-        }
-        if (pipe) {
-            if (!PeekNamedPipe(inh, NULL, 0, NULL, &dw, NULL)) return 1;
-            return dw;
-        } else {
-            GetNumberOfConsoleInputEvents(inh, &dw);
-            return dw <= 1 ? 0 : dw;
-        }
-#endif
-    }
-
-    void ReadInput(Anduril &AI) {
-        int             bytes;
-        char            input[256] = "", *endc;
-
-        if (InputWaiting()) {
-            AI.stopped = true;
-            do {
-                bytes=read(fileno(stdin),input,256);
-            } while (bytes<0);
-            endc = strchr(input,'\n');
-            if (endc) *endc=0;
-
-            if (strlen(input) > 0) {
-                if (!strncmp(input, "quit", 4))    {
-                    AI.quit = true;
-                }
-            }
-            return;
-        }
-    }
-
 }  // namespace UCI
 
 // calls negamax and keeps track of the best move
 // this version will also interact with UCI
-void Anduril::go(libchess::Position &board) {
+void Anduril::go(libchess::Position board) {
     //std::cout << board.fen() << std::endl;
     libchess::Move bestMove(0);
     libchess::Move prevBestMove = bestMove;
-
-    // prep the board for search
-    board.prep_search();
 
     // this is for debugging
     std::string boardFENs = board.fen();
@@ -489,6 +466,7 @@ void Anduril::go(libchess::Position &board) {
     std::vector<int> misses;
 
     rDepth = 1;
+    int completedDepth = 0;
     singularAttempts = 0;
     singularExtensions = 0;
     bool finalDepth = false;
@@ -509,7 +487,6 @@ void Anduril::go(libchess::Position &board) {
 
     // iterative deepening loop
     while (!finalDepth) {
-        UCI::ReadInput(*this);
 
         if (rDepth == limits.depth){
             finalDepth = true;
@@ -543,7 +520,7 @@ void Anduril::go(libchess::Position &board) {
             // fail low
             if (bestScore <= alpha) {
                 //std::cout << "Low miss at: " << rDepth << std::endl;
-                if (!limits.timeSet) { finalDepth = false; }
+                if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
                 misses.push_back(rDepth);
                 aspMissesL++;
                 alpha = bestScore - 40 * (std::pow(2, aspMissesL));
@@ -553,7 +530,7 @@ void Anduril::go(libchess::Position &board) {
             }
                 // fail high
             else if (bestScore >= beta) {
-                if (!limits.timeSet) { finalDepth = false; }
+                if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
                 //std::cout << "High miss at: " << rDepth << std::endl;
                 misses.push_back(rDepth);
                 aspMissesH++;
@@ -566,12 +543,18 @@ void Anduril::go(libchess::Position &board) {
             else {
                 alpha = bestScore - 40 * (std::pow(2, aspMissesL));
                 beta = bestScore + 40 * (std::pow(2, aspMissesH));
+                if (!incomplete) {
+                    completedDepth = rDepth;
+                }
                 rDepth++;
                 upper = lower = false;
             }
         }
             // for depths less than 5
         else {
+            if (!incomplete) {
+                completedDepth = rDepth;
+            }
             rDepth++;
         }
 
@@ -597,32 +580,32 @@ void Anduril::go(libchess::Position &board) {
                 int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                 std::cout << "info "
                           << "score mate " << distance
-                          << " depth "     << rDepth - 1
+                          << " depth "     << completedDepth
                           << " seldepth "  << selDepth
                           << " nodes "     << movesExplored
-                          << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (int)timeElapsed.count()
+                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " time "      << (uint64_t)timeElapsed.count()
                           << " pv"         << pv << std::endl;
             }
             else if (prevBestScore <= -31000) {
                 int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                 std::cout << "info "
                           << "score mate " << distance
-                          << " depth "     << rDepth - 1
+                          << " depth "     << completedDepth
                           << " seldepth "  << selDepth
                           << " nodes "     << movesExplored
-                          << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (int)timeElapsed.count()
+                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " time "      << (uint64_t)timeElapsed.count()
                           << " pv"         << pv << std::endl;
             }
             else {
                 std::cout << "info "
                           << "score cp "   << prevBestScore
-                          << " depth "     << rDepth - 1
+                          << " depth "     << completedDepth
                           << " seldepth "  << selDepth
                           << " nodes "     << movesExplored
-                          << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (int)timeElapsed.count()
+                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " time "      << (uint64_t)timeElapsed.count()
                           << " pv"         << pv << std::endl;
             }
         }
@@ -636,8 +619,8 @@ void Anduril::go(libchess::Position &board) {
                           << " seldepth "  << selDepth
                           << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                           << " nodes "     << movesExplored
-                          << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (int)timeElapsed.count()
+                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " time "      << (uint64_t)timeElapsed.count()
                           << " pv"         << pv << std::endl;
             }
             else if (prevBestScore <= -31000) {
@@ -648,19 +631,19 @@ void Anduril::go(libchess::Position &board) {
                           << " seldepth "  << selDepth
                           << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                           << " nodes "     << movesExplored
-                          << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (int)timeElapsed.count()
+                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " time "      << (uint64_t)timeElapsed.count()
                           << " pv"         << pv << std::endl;
             }
             else {
                 std::cout << "info "
                           << "score cp "   << prevBestScore
-                          << " depth "     << rDepth
+                          << " depth "     << rDepth - 1
                           << " seldepth "  << selDepth
                           << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                           << " nodes "     << movesExplored
-                          << " nps "       << (int) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (int)timeElapsed.count()
+                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " time "      << (uint64_t)timeElapsed.count()
                           << " pv"         << pv << std::endl;
             }
         }
@@ -719,7 +702,6 @@ void Anduril::go(libchess::Position &board) {
     cutNodes = 0;
     movesTransposed = 0;
     quiesceExplored = 0;
-    stopped = false;
 
     // tell the GUI what move we want to make
     std::cout << "bestmove " << prevBestMove.to_str() << std::endl;

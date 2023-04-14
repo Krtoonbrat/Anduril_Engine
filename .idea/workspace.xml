@@ -14,18 +14,25 @@
       <config projectName="Anduril_Engine" targetName="Anduril_Engine" />
     </generated>
   </component>
-  <component name="CMakeSettings">
+  <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
+      <configuration PROFILE_NAME="Release WSL" ENABLED="true" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" />
       <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
       <configuration PROFILE_NAME="Release" ENABLED="true" CONFIG_NAME="Release" />
       <configuration PROFILE_NAME="RelWithDebInfo" ENABLED="true" CONFIG_NAME="RelWithDebInfo" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Node.h" beforeDir="false" afterPath="$PROJECT_DIR$/Node.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TranspositionTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TranspositionTable.h" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UCI.h" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libchess/Position.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -87,7 +94,7 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;CMakeSettings&quot;,
     &quot;structure.view.defaults.are.configured&quot;: &quot;true&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
@@ -325,7 +332,32 @@
       <workItem from="1680715208517" duration="143000" />
       <workItem from="1680766078132" duration="2000" />
       <workItem from="1681146746323" duration="2548000" />
-      <workItem from="1681150136887" duration="360000" />
+      <workItem from="1681150136887" duration="1352000" />
+      <workItem from="1681153087856" duration="416000" />
+      <workItem from="1681183666083" duration="986000" />
+      <workItem from="1681186241027" duration="76000" />
+      <workItem from="1681187741395" duration="1660000" />
+      <workItem from="1681246503982" duration="269000" />
+      <workItem from="1681258871412" duration="7156000" />
+      <workItem from="1681266302835" duration="72000" />
+      <workItem from="1681266439993" duration="220000" />
+      <workItem from="1681266744176" duration="62000" />
+      <workItem from="1681266865363" duration="93000" />
+      <workItem from="1681267005032" duration="60000" />
+      <workItem from="1681267098144" duration="1569000" />
+      <workItem from="1681269232978" duration="37000" />
+      <workItem from="1681269333308" duration="166000" />
+      <workItem from="1681269772280" duration="730000" />
+      <workItem from="1681270652377" duration="14000" />
+      <workItem from="1681272941045" duration="832000" />
+      <workItem from="1681275744841" duration="7000" />
+      <workItem from="1681312096744" duration="957000" />
+      <workItem from="1681313076638" duration="3811000" />
+      <workItem from="1681318955227" duration="508000" />
+      <workItem from="1681344408269" duration="82000" />
+      <workItem from="1681344535023" duration="193000" />
+      <workItem from="1681484110065" duration="1672000" />
+      <workItem from="1681490499626" duration="1067000" />
     </task>
     <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
       <created>1654532716259</created>
@@ -607,7 +639,21 @@
       <option name="project" value="LOCAL" />
       <updated>1681147034928</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="Minor adjustments to transposition table and node.&#10;-transposition table: check for the age being equal before deciding to replace based on depth.  We don't want to change which node we are replacing if the first node in the cluster is older than the second.  We only change based on depth if the ages are equal.&#10;-node: changed from a class to struct.  This doesn't do much, but because it's a POD it probably should be a struct.">
+      <created>1681150889729</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1681150889729</updated>
+    </task>
+    <task id="LOCAL-00042" summary="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table.">
+      <created>1681184438713</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1681184438713</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -639,8 +685,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Added penalty for undefended minor pieces" />
-    <MESSAGE value="Revert &quot;Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures&quot;&#10;&#10;This reverts commit 2ddc3c4632ef13ae8a5810d39c8b611e4260a52e." />
     <MESSAGE value="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures" />
     <MESSAGE value="Aspiration window is now active at depth &gt; 4 instead of depth &gt;= 2" />
     <MESSAGE value="Bug fixes and changes to some magic numbers" />
@@ -664,7 +708,9 @@
     <MESSAGE value="Added search extensions.  Currently, we do singular extensions and check extensions" />
     <MESSAGE value="A few bug fixes:&#10;-Reduced size of King Ring&#10;-King tropism calculation now correctly adds white's safety to the endgame score instead of subtracting&#10;-Removed adding space advantage to endgame&#10;-Black space advantage now correctly subtracts instead of adding&#10;-Removed accidental redundant or of attacked squares for black in evaluateRooks&#10;-Changed type of some of the tracking variables.  If the analysis was left running long enough, the movesExplored variable would end up overflowing.  That shouldn’t be a problem now" />
     <MESSAGE value="Changed search order at root.&#10;Previously, we were searching the transposition move first, and then each move afterward was search according to the various rules outlined in the move picker.  Now, after the first search each move is searched in the order of the score we determined from the last search.  This *should* make the search more accurate because we wont try the more aggressive pruning techniques on better moves that could have been ordered last by accident." />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed search order at root.&#10;Previously, we were searching the transposition move first, and then each move afterward was search according to the various rules outlined in the move picker.  Now, after the first search each move is searched in the order of the score we determined from the last search.  This *should* make the search more accurate because we wont try the more aggressive pruning techniques on better moves that could have been ordered last by accident." />
+    <MESSAGE value="Minor adjustments to transposition table and node.&#10;-transposition table: check for the age being equal before deciding to replace based on depth.  We don't want to change which node we are replacing if the first node in the cluster is older than the second.  We only change based on depth if the ages are equal.&#10;-node: changed from a class to struct.  This doesn't do much, but because it's a POD it probably should be a struct." />
+    <MESSAGE value="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table." />
+    <option name="LAST_COMMIT_MESSAGE" value="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table." />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>

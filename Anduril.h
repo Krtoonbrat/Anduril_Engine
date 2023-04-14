@@ -6,9 +6,11 @@
 #define ANDURIL_ENGINE_ANDURIL_H
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <unordered_map>
 #include <unordered_set>
+#include <condition_variable>
 
 #include "limit.h"
 #include "libchess/Position.h"
@@ -32,7 +34,7 @@ public:
 
     // calls negamax and keeps track of the best move
     // this version will also interact with UCI
-    void go(libchess::Position &board);
+    void go(libchess::Position board);
 
     // the negamax function.  Does the heavy lifting for the search
     template <NodeType nodeType>
@@ -96,10 +98,19 @@ public:
     std::chrono::time_point<std::chrono::steady_clock> stopTime;
 
     // did the GUI tell us to quit?
-    bool quit = false;
+    std::atomic<bool> quit = false;
 
     // did the GUI tell us to stop the search?
-    bool stopped = false;
+    std::atomic<bool> stopped = true;
+
+    // should we be searching?
+    std::atomic<bool> searching = false;
+
+    // mutex for starting and stopping the search
+    std::mutex mutex;
+
+    // condition for parking the search
+    std::condition_variable cv;
 
     // values for CLOP to tune
     int kMG = 337;
@@ -134,19 +145,19 @@ public:
 
 private:
     // total number of moves Anduril searched
-    uint64_t movesExplored = 0;
+    std::atomic<uint64_t> movesExplored = 0;
 
     // total amount of cut nodes
-    uint64_t cutNodes = 0;
+    std::atomic<uint64_t> cutNodes = 0;
 
     // amount of moves we hashed from the transpo table
-    uint64_t movesTransposed = 0;
+    std::atomic<uint64_t> movesTransposed = 0;
 
     // amount of moves we searched in quiescence
-    uint64_t quiesceExplored = 0;
+    std::atomic<uint64_t> quiesceExplored = 0;
 
     // amount of nodes searched at the current depth
-    uint64_t depthNodes = 0;
+    std::atomic<uint64_t> depthNodes = 0;
 
     // the ply of the root node
     int rootPly = 0;

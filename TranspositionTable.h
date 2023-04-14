@@ -10,7 +10,7 @@
 // one cluster holds two nodes
 // 32 bytes
 struct Cluster {
-    Node entry[2];
+    Node entry[2] = {Node(), Node()};
 };
 
 // this was the stockfish way to find the index for a cluster.  If it works for them, it works for me

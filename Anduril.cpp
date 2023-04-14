@@ -36,11 +36,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     movesExplored++;
     constexpr bool PvNode = nodeType != NonPV;
 
-    // did we receive a stop command?
-    if (movesExplored % 5000 == 0) {
-        UCI::ReadInput(*this);
-    }
-
     // is the time up?
     if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
         return 0;
@@ -187,11 +182,6 @@ template <Anduril::NodeType nodeType>
 int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, bool cutNode) {
     constexpr bool PvNode = nodeType != NonPV;
     constexpr bool rootNode = nodeType == Root;
-
-    // did we receive a stop command?
-    if (!rootNode && movesExplored % 5000 == 0) {
-        UCI::ReadInput(*this);
-    }
 
     // is the time up?  Mate distance pruning?
     if (!rootNode) {
@@ -580,14 +570,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             // new depth we will search with
             // we need to search at least one more move, we will also allow an "extension" of up to two ply
-            int newDepth = std::clamp(actualDepth - reduction, 1, depth + 1);
+            int newDepth = std::clamp(actualDepth - reduction, 1, actualDepth + 1);
 
             board.make_move(move);
             incPly();
             score = -negamax<NonPV>(board, newDepth, -(alpha + 1), -alpha, true);
 
             // full depth search when LMR fails high
-            if (score > alpha && newDepth < depth - 1) {
+            if (score > alpha && newDepth < actualDepth - 1) {
                 score = -negamax<NonPV>(board, actualDepth - 1, -(alpha + 1), -alpha, !cutNode);
             }
             decPly();
