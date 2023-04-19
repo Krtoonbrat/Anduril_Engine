@@ -7,3 +7,5 @@ The engine uses the negamax algorithm with many enhancements such as alpha-beta 
 This is a passion project and is my third attempt at writing a chess engine.  My first engine was built from the ground up and was extremely buggy and slow.
 My second attempt was built using python-chess and was better, but I started to reach the limitations of my own programming abilities.
 I decided to try to make a third attempt in C++ once I got comfortable enough in the language, and this is the fruits of that labor.
+
+Anduril has a lichess account (https://lichess.org/@/Anduril_Engine), but unfortunately it is a local script I have to run, so it is not available 24/7.
