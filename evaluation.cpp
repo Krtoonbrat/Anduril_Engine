@@ -26,16 +26,16 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     // reset the king tropism variables
     attackCount[0] = 0, attackCount[1] = 0;
     attackWeight[0] = 0, attackWeight[1] = 0;
-    kingZoneWBB = libchess::Bitboard(wKingSquare);
-    kingZoneBBB = libchess::Bitboard(bKingSquare);
+    kingZoneWBB = libchess::Bitboard(*libchess::Square::from(std::clamp(wKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(wKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
+    kingZoneBBB = libchess::Bitboard(*libchess::Square::from(std::clamp(bKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(bKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
 
     // reset each colors attack map
     wAttackMap = libchess::Bitboard();
     bAttackMap = libchess::Bitboard();
 
     // fill the king zone
-    kingZoneWBB |= libchess::lookups::king_attacks(board.king_square(libchess::constants::WHITE));
-    kingZoneBBB |= libchess::lookups::king_attacks(board.king_square(libchess::constants::BLACK));
+    kingZoneWBB |= libchess::lookups::king_attacks(*libchess::Square::from(std::clamp(wKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(wKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
+    kingZoneBBB |= libchess::lookups::king_attacks(*libchess::Square::from(std::clamp(bKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(bKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
 
     kingZoneWBB |= kingZoneWBB << 8;
     kingZoneBBB |= kingZoneBBB >> 8;

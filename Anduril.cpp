@@ -65,10 +65,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     // are we in check?
     bool check = board.in_check();
 
-
-    // get a move list
-    std::vector<std::tuple<int, libchess::Move>> moveList;
-
     int standPat = -32001;
     // we can't stand pat if we are in check
     if (!check) {
@@ -135,8 +131,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
             if (board.piece_type_on(move.to_square())
                 && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
                 && nonPawnMaterial(board.side_to_move(), board) -
-                   seeValues[board.piece_type_on(move.to_square())->value()] > 1300
-                && move.type() != libchess::Move::Type::PROMOTION) {
+                   seeValues[board.piece_type_on(move.to_square())->value()] > 1600
+                && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
                 continue;
             }
         }
@@ -184,7 +180,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     constexpr bool rootNode = nodeType == Root;
 
     // is the time up?  Mate distance pruning?
-    if (!rootNode) {
+    if constexpr (!rootNode) {
         // check for aborted search
         if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
@@ -280,10 +276,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     // razoring
-    // weird magic values stolen straight from stockfish
     if (!check
-        && staticEval < alpha - 258 * depth * depth) {
+        && staticEval < alpha - pMG * 3 - pMG * depth) {
         incPly();
+        // verification that the value is indeed less than alpha
         score = quiescence<NonPV>(board, alpha - 1, alpha);
         decPly();
         if (score < alpha) {
@@ -306,7 +302,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && staticEval >= beta
         && depth >= 3
         && excludedMove.value() == 0
-        && nonPawnMaterial(!board.side_to_move(), board) > 1300) {
+        && nonPawnMaterial(!board.side_to_move(), board) > 1600) {
 
         nullAllowed = false;
 
@@ -331,7 +327,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
     // the position would most likely cut at a full depth search as well
-    int probCutBeta = beta + 300;
+    int probCutBeta = beta + 264;
     if (!PvNode
         && depth > 4
         && !check
@@ -433,7 +429,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
 
         // search only legal moves
-        if (!board.is_legal_move(move)) {
+        // all moves are legal at root because we generated a legal move list
+        if (!rootNode && !board.is_legal_move(move)) {
             continue;
         }
 
@@ -451,16 +448,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         // futility pruning
         if (futile
             && move.type() != libchess::Move::Type::CAPTURE
-            && move.type() != libchess::Move::Type::PROMOTION) {
-            // there is one check we need to do before pruning that requires the move to
-            // be made.  I put it separately so that we don't make the move and unmake it
-            // every single iteration
-            board.make_move(move);
-            if (!board.in_check()) {
-                board.unmake_move();
-                continue;
-            }
-            board.unmake_move();
+            && move.type() != libchess::Move::Type::PROMOTION
+            && move.type() != libchess::Move::Type::CAPTURE_PROMOTION
+            && !board.gives_check(move)) {
+            continue;
         }
 
         // the actual depth we will search this move to
