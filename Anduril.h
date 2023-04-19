@@ -236,7 +236,6 @@ private:
 
     // futility margins
     int margin[5] = {0, 100, 200, 400, 600};
-    int reverseMargin[5] = {0,200,330,600,800};
 
     // point bonus that increases the value of knights with more pawns on the board
     int knightPawnBonus[9] = { -20, -16, -12, -8, -4,  0,  4,  8, 12 };

@@ -122,7 +122,7 @@ void MovePicker::score() {
 
 }
 
-libchess::Move MovePicker::nextMove() {
+libchess::Move MovePicker::nextMove(bool skipQuiet) {
 
 top:
     switch (stage) {
@@ -172,17 +172,24 @@ top:
             stage++;
 
         case QUIET_INIT:
-            cur = endBadCaptures;
-            board.generate_quiet_moves(moves, board.side_to_move());
-            endMoves = moves.end();
+            if (!skipQuiet) {
+                cur = endBadCaptures;
+                board.generate_quiet_moves(moves, board.side_to_move());
+                endMoves = moves.end();
 
-            score<QUIETS>();
-            partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
+                score<QUIETS>();
+                partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
+            }
+
             stage++;
 
         case QUIET:
             while (cur < endMoves) {
-                if (*cur != transposition && *cur != refutations[0] && *cur != refutations[1] && *cur != refutations[2]) {
+                if (!skipQuiet
+                    && *cur != transposition
+                    && *cur != refutations[0]
+                    && *cur != refutations[1]
+                    && *cur != refutations[2]) {
                     return *cur++;
                 }
                 else {

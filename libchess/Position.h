@@ -278,6 +278,8 @@ class Position {
     int getPSQTEG() { return state().scoreEG; }
     Move getExcluded() { return state().excludedMove; }
     void setExcluded(Move move) { state_mut_ref().excludedMove = move; }
+    int& staticEval() { return state_mut_ref().staticEval; }
+    int& staticEval(int ply) { return state_mut_ref(ply).staticEval; }
 
 protected:
     // clang-format off
@@ -305,6 +307,7 @@ protected:
         int scoreMG = 0;
         int scoreEG = 0;
         Move excludedMove = Move(0);
+        int staticEval = 0;
     };
 
     [[nodiscard]] int ply() const {

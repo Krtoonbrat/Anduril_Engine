@@ -29,6 +29,17 @@ void prefetch(void* addr) {
 #  endif
 }
 
+// returns the amount of moves we need to search before we can use move count based pruning
+constexpr int moveCountPruningThreshold(bool improving, int depth) {
+    return improving ? (3 + depth * depth) : (3 + depth * depth) / 2;
+}
+
+// returns the margin for reverse futility pruning.  Returns the same values as the list we used before, except this is
+// able to a higher depth, and we introduced the improving factor to it
+int reverseFutilityMargin(int depth, bool improving) {
+    return 200 * (depth - improving);
+}
+
 // the quiescence search
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
@@ -120,11 +131,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
                 continue;
             }
 
-            // don't search moves with negative see
-            if (board.see_for(move, seeValues) < 0) {
-                continue;
-            }
-
             // delta pruning
             // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
             // we can just skip delta pruning there and it shouldn't cost too much
@@ -133,6 +139,12 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
                 && nonPawnMaterial(board.side_to_move(), board) -
                    seeValues[board.piece_type_on(move.to_square())->value()] > 1600
                 && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
+                continue;
+            }
+
+            // don't search moves with negative see
+            // -28 is the difference between a knight and bishop, and we are ok with searching bishop for knight exchanges
+            if (board.see_for(move, seeValues) < -28) {
                 continue;
             }
         }
@@ -231,6 +243,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // holds the score of the move we just searched
     int score = -32001;
 
+    // Idea from Stockfish: these variable represent if we are improving our score over our last turn, and how much
+    bool improving;
+    int improvement;
+
     // transposition lookup
     uint64_t hash = board.hash();
     bool found = false;
@@ -259,21 +275,42 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // it won't be needed if in check however
     int staticEval;
     if (check) {
-        staticEval = 32001;
+        board.staticEval() = staticEval = 32001;
+        improving = false;
+        improvement = 0;
     }
     else if (found) {
         // little check in case something gets messed up
         if (node->nodeEval == -32001) {
-            staticEval = evaluateBoard(board);
+            board.staticEval() = staticEval = evaluateBoard(board);
         }
         else {
-            staticEval = node->nodeEval;
+            board.staticEval() = staticEval = node->nodeEval;
+        }
+
+        // previously saved transposition score can be used as a better position evaluation
+        if (nScore != -32001
+            && (nType == 1 || (nScore > staticEval ? nType == 2 : nType == 3))) {
+            staticEval = nScore;
         }
     }
     else {
-        staticEval = evaluateBoard(board);
+        board.staticEval() = staticEval = evaluateBoard(board);
         node->save(hash, -32001, -1, -99, 0, 0, staticEval);
     }
+
+    // set up the improvement variable, which is the difference in static evals between the current turn and
+    // our last turn.  If we were in check the last turn, we try the move prior to that
+    if (ply - rootPly >= 2 && board.staticEval(ply - 2) != 0) {
+        improvement = board.staticEval() - board.staticEval(ply - 2);
+    }
+    else if (ply - rootPly >= 4 && board.staticEval(ply - 4) != 0) {
+        improvement = board.staticEval() - board.staticEval(ply - 4);
+    }
+    else {
+        improvement = 1; // if we were in check the last two turns, assume we are improving by some amount
+    }
+    improving = improvement > 0;
 
     // razoring
     if (!check
@@ -290,8 +327,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // reverse futility pruning
     if (!PvNode
         && !check
-        && depth < 5
-        && staticEval - reverseMargin[depth] >= beta) {
+        && depth < 8
+        && staticEval - reverseFutilityMargin(depth, improving) >= beta
+        && staticEval >= beta
+        && staticEval < 31000) {
         return staticEval;
     }
 
@@ -300,6 +339,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nullAllowed
         && !check
         && staticEval >= beta
+        && staticEval >= board.staticEval()
         && depth >= 3
         && excludedMove.value() == 0
         && nonPawnMaterial(!board.side_to_move(), board) > 1600) {
@@ -327,7 +367,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
     // the position would most likely cut at a full depth search as well
-    int probCutBeta = beta + 264;
+    int probCutBeta = beta + 264 - 44 * improving;
     if (!PvNode
         && depth > 4
         && !check
@@ -337,7 +377,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nScore < probCutBeta)) {
 
         // get a move picker
-        MovePicker picker(board, nMove, probCutBeta - staticEval, &seeValues);
+        MovePicker picker(board, nMove, probCutBeta - board.staticEval(), &seeValues);
 
         // we loop through all the moves to try and find one that
         // causes a beta cut on a reduced search
@@ -369,7 +409,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 if (!(found
                     && nDepth >= depth - 3
                     && nScore != -32001)) {
-                    node->save(hash, score, 2, depth - 3, move.value(), age, staticEval);
+                    node->save(hash, score, 2, depth - 3, move.value(), age, board.staticEval());
 
                 }
                 cutNodes++;
@@ -387,7 +427,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && depth <= 4
         && !check
         && abs(alpha) < 9000     // this condition makes sure we aren't thinking about mate
-        && staticEval + margin[depth] <= alpha) {
+        && board.staticEval() + margin[depth] <= alpha) {
         futile = true;
     }
 
@@ -407,10 +447,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // indicates that the transposition move has been singularly extended
     bool singularQuietLMR = false;
 
+    // can we use move count pruning?
+    bool moveCountPruning = false;
+
     int moveCounter = 0;
     int extension = 0;
     // loop through the possible moves and score each
-    while ((move = picker.nextMove()).value() != 0) {
+    while ((move = picker.nextMove(moveCountPruning)).value() != 0) {
 
         // at root, we do this check just in case the move picker has some illegal moves in it
         if constexpr (rootNode) {
@@ -444,6 +487,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
 
         moveCounter++;
+
+        // check for move count pruning
+        if (!rootNode
+            && nonPawnMaterial(!board.side_to_move(), board)
+            && bestScore > -32000) {
+            moveCountPruning = moveCounter > moveCountPruningThreshold(improving, depth);
+        }
 
         // futility pruning
         if (futile
@@ -628,7 +678,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     if (excludedMove.value() == 0) {
-        node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), age, staticEval);
+        node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), age, board.staticEval());
     }
     return bestScore;
 

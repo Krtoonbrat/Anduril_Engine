@@ -37,7 +37,7 @@ public:
     MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see);
     MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see);
 
-    libchess::Move nextMove();
+    libchess::Move nextMove(bool skipQuiet = false);
 
     libchess::MoveList getMoves() { return moves; }
 
