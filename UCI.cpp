@@ -48,6 +48,12 @@ namespace UCI {
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = true;
 
+        // initialize the reduction table
+        for (int i = 1; i < 150; i++) {
+            AI.reductions[i] = int(std::log(i) * 1.45);
+        }
+
+        // start the search thread and park it until we need it
         std::thread searchThread(&waitForSearch, std::ref(AI), std::ref(board));
 
         while (true) {
@@ -99,7 +105,7 @@ namespace UCI {
                 std::cout << "id author Krtoonbrat" << std::endl;
 
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
-                std::cout << "option name Book type check default true" << std::endl;
+                std::cout << "option name OwnBook type check default true" << std::endl;
 
                 std::cout << "option name kMG type spin default 337 min -4000 max 4000" << std::endl;
                 std::cout << "option name kEG type spin default 281 min -4000 max 4000" << std::endl;
@@ -150,7 +156,7 @@ namespace UCI {
         }
 
         // set book open or closed
-        if ((ptr = strstr(line, "Book"))) {
+        if ((ptr = strstr(line, "OwnBook"))) {
             if ((ptr = strstr(line, "true"))) {
                 bookOpen = true;
             }

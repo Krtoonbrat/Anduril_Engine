@@ -61,24 +61,67 @@ inline bool Position::is_promotion_move(Move move) const {
 }
 
 inline bool Position::gives_check(Move move) const {
-    if (side_to_move() == constants::WHITE) {
-        if (piece_type_on(move.from_square()) == constants::PAWN) {
-            return piece_type_bb(constants::KING, constants::BLACK) & lookups::pawn_attacks(move.to_square(), constants::WHITE);
+    Color stm = side_to_move();
+    Bitboard occ_after_move = occupancy_bb();
+    Bitboard king = piece_type_bb(constants::KING, !stm);
+
+    // we need this because the king won't be the one checking if we are castling
+    Square moving_square(0);
+
+    switch (move.type()) {
+        // normal, double push, promotion all just need to move the piece
+        case Move::Type::NORMAL:
+        case Move::Type::DOUBLE_PUSH:
+        case Move::Type::PROMOTION:
+            occ_after_move ^= Bitboard{ move.from_square() } ^ Bitboard{ move.to_square() };
+            moving_square = move.to_square();
+            break;
+        // captures and capture promotions need to move the piece, but don't change the to square as that was already occupied
+        case Move::Type::CAPTURE:
+        case Move::Type::CAPTURE_PROMOTION:
+            occ_after_move ^= Bitboard{ move.from_square() };
+            moving_square = move.to_square();
+            break;
+        case Move::Type::ENPASSANT:
+            occ_after_move ^= Bitboard{ move.from_square() } ^ Bitboard{ move.to_square() };
+            occ_after_move ^= Bitboard{ stm == constants::WHITE ? move.to_square() - 8 : move.to_square() + 8 };
+            moving_square = move.to_square();
+            break;
+        case Move::Type::CASTLING:
+            occ_after_move ^= Bitboard{ move.from_square() } ^ Bitboard{ move.to_square() };
+            if (move.to_square().file() == constants::FILE_C) {
+                occ_after_move ^= (lookups::FILE_A_MASK ^ lookups::FILE_D_MASK) & lookups::rank_mask(move.to_square().rank());
+                moving_square = move.to_square() + 1;
+            }
+            else {
+                occ_after_move ^= (lookups::FILE_H_MASK ^ lookups::FILE_F_MASK) & lookups::rank_mask(move.to_square().rank());
+                moving_square = move.to_square() - 1;
+            }
+            break;
+        case Move::Type::NONE:
+            return false;
+
+    }
+
+    // first find direct checks from the moving piece
+    if (move.type() == Move::Type::PROMOTION || move.type() == Move::Type::CAPTURE_PROMOTION) {
+        if (lookups::non_pawn_piece_type_attacks(*move.promotion_piece_type(), moving_square, occ_after_move) & king) {
+            return true;
         }
-        else {
-            return piece_type_bb(constants::KING, constants::BLACK) & lookups::non_pawn_piece_type_attacks(
-                    *piece_type_on(move.from_square()), move.to_square(), occupancy_bb());
+    }
+    else if (piece_type_on(move.from_square()) == constants::PAWN) {
+        if (lookups::pawn_attacks(moving_square, stm) & king) {
+            return true;
         }
     }
     else {
-        if (piece_type_on(move.from_square()) == constants::PAWN) {
-            return piece_type_bb(constants::KING, constants::WHITE) & lookups::pawn_attacks(move.to_square(), constants::BLACK);
-        }
-        else {
-            return piece_type_bb(constants::KING, constants::WHITE) & lookups::non_pawn_piece_type_attacks(
-                    *piece_type_on(move.from_square()), move.to_square(), occupancy_bb());
+        if (lookups::non_pawn_piece_type_attacks(*piece_type_on(move.from_square()), moving_square, occ_after_move) & king) {
+            return true;
         }
     }
+
+    // look for discovered checks if there were no direct checks
+    return attackers_to(king.forward_bitscan(), occ_after_move) & ~color_bb(!stm);
 }
 
 inline void Position::unmake_move() {

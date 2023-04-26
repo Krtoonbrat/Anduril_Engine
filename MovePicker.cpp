@@ -111,7 +111,7 @@ void MovePicker::score() {
                       :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? UCI::minorOrderVal
                       :                                                                                                                                    0)
                       :                                                                                                                                    0)
-                      + std::min(moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square()), UCI::maxHistoryVal);
+                      + moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
         }
         else { // evasions
             m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
@@ -184,9 +184,8 @@ top:
             stage++;
 
         case QUIET:
-            while (cur < endMoves) {
-                if (!skipQuiet
-                    && *cur != transposition
+            while (!skipQuiet && cur < endMoves) {
+                if (*cur != transposition
                     && *cur != refutations[0]
                     && *cur != refutations[1]
                     && *cur != refutations[2]) {

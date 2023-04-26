@@ -2,6 +2,8 @@
 // Created by 80hugkev on 6/9/2022.
 //
 
+#include <cstdlib>
+
 #include "TranspositionTable.h"
 
 // saves the information passed to the node, possibly overwrting the old position
@@ -36,15 +38,33 @@ TranspositionTable::~TranspositionTable() {
 }
 
 void TranspositionTable::resize(size_t tSize) {
+    constexpr size_t alignment = 4096;
+
     std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
+
+    _aligned_free(tPtr);
+
     clusterCount = (tSize * 1024 * 1024) / sizeof(Cluster);
-    delete[] tPtr;
-    tPtr = new Cluster[clusterCount];
+    size_t bytes = clusterCount * sizeof(Cluster);
+
+    size_t size = ((bytes + alignment - 1) / alignment) * alignment;
+    tPtr = static_cast<Cluster*>(_aligned_malloc(size, alignment));
+
+    if (!tPtr) {
+        std::cerr << "Failed to allocate " << tSize
+                  << "MB for transposition table." << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < clusterCount; i++) {
+        tPtr[i] = Cluster();
+    }
 }
 
 void TranspositionTable::clear() {
-    delete[] tPtr;
-    tPtr = new Cluster[clusterCount];
+    for (int i = 0; i < clusterCount; i++) {
+        tPtr[i] = Cluster();
+    }
 }
 
 Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {

@@ -143,6 +143,10 @@ public:
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
 
+    // reduction table
+    // its oversize just in case something weird happens
+    int reductions[150];
+
 private:
     // total number of moves Anduril searched
     std::atomic<uint64_t> movesExplored = 0;

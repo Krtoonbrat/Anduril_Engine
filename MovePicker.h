@@ -61,8 +61,6 @@ private:
     int threshold;
     libchess::MoveList moves;
 
-
-
     // these values allow me to use see inside the move picker class.  I should find a better solution.
     std::array<int, 6> *seeValues;
 };
