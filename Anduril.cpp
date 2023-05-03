@@ -597,7 +597,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             || (!board.is_capture_move(move)
             && !check))) {
             // find our reduction
-            int reduction = reductions[depth] + reductions[moveCounter] * 2 / 3;
+            int reduction = reductions[depth] + (int)(reductions[moveCounter] * 2 / 3.0);
 
             // decrease if position is not likely to fail low
             if (PvNode && !likelyFailLow) {
