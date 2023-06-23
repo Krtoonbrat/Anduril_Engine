@@ -24,15 +24,15 @@ inline Color Position::side_to_move() const {
 }
 
 inline CastlingRights Position::castling_rights() const {
-    return history_[ply_].castling_rights_;
+    return (history_ + ply() + 7)->castling_rights_;
 }
 
 inline std::optional<Square> Position::enpassant_square() const {
-    return history_[ply_].enpassant_square_;
+    return (history_ + ply() + 7)->enpassant_square_;
 }
 
 inline int Position::halfmoves() const {
-    return history_[ply_].halfmoves_;
+    return (history_ + ply() + 7)->halfmoves_;
 }
 
 inline int Position::fullmoves() const {
@@ -40,19 +40,19 @@ inline int Position::fullmoves() const {
 }
 
 inline std::optional<Move> Position::previous_move() const {
-    return history_[ply_].previous_move_;
+    return (history_ + ply() + 7)->previous_move_;
 }
 
 inline std::optional<PieceType> Position::previously_captured_piece() const {
-    return history_[ply_].captured_pt_;
+    return (history_ + ply() + 7)->captured_pt_;
 }
 
 inline Position::hash_type Position::hash() const {
-    return history_[ply_].hash_;
+    return (history_ + ply() + 7)->hash_;
 }
 
 inline Position::hash_type Position::pawn_hash() const {
-    return history_[ply_].pawn_hash_;
+    return (history_ + ply() + 7)->pawn_hash_;
 }
 
 inline Square Position::king_square(Color color) const {
@@ -175,17 +175,45 @@ inline bool Position::is_legal_move(Move move) const {
     PieceType pt = piece.type();
     if (move.promotion_piece_type()) {
         if (pt != constants::PAWN) {
+
             return false;
         }
-
         if (lookups::relative_rank(to_sq.rank(), c) != constants::RANK_8) {
             return false;
         }
     }
 
+    Move::Type type = move.type();
+    if (pt == constants::PAWN) {
+        switch (type) {
+            case Move::Type::DOUBLE_PUSH:
+                if (abs(move.to_square() - move.from_square()) != 16) {
+                    return false;
+                }
+                break;
+            case Move::Type::PROMOTION:
+            case Move::Type::NORMAL:
+                if (abs(move.to_square() - move.from_square()) != 8) {
+                    return false;
+                }
+                break;
+            case Move::Type::CAPTURE:
+            case Move::Type::ENPASSANT:
+            case Move::Type::CAPTURE_PROMOTION:
+                if (abs(move.to_square() - move.from_square()) != 7 &&
+                    abs(move.to_square() - move.from_square()) != 9) {
+                    return false;
+                }
+                break;
+            // pawns cannot castle and move should not be none
+            default:
+                return false;
+        }
+    }
+
     // this fixes a bug within Anduril where a "capture" move would be played, but there was no piece to take.
     // This would result in a random piece being magically created on the board when the move was taken back
-    Move::Type type = move.type();
+    // I also added a double push rule because that is causing issues too
     Square s = c == constants::WHITE ? Square{to_sq - 8} : Square(to_sq + 8);
     switch (type) {
         case Move::Type::CAPTURE:
@@ -196,6 +224,46 @@ inline bool Position::is_legal_move(Move move) const {
             break;
         case Move::Type::ENPASSANT:
             if (!piece_on(s)) {
+                return false;
+            }
+            break;
+        case Move::Type::DOUBLE_PUSH:
+            if (pt != constants::PAWN) {
+                return false;
+            }
+            if (lookups::relative_rank(from_sq.rank(), c) != constants::RANK_2) {
+                return false;
+            }
+            // a capture being marked as anything other than capture types causes issues too
+            if (piece_on(move.to_square())) {
+                return false;
+            }
+            break;
+        case Move::Type::CASTLING:
+            if (side_to_move() == constants::WHITE) {
+                if (piece != constants::WHITE_KING) {
+                    return false;
+                }
+                if (to_sq == constants::G1 && !castling_rights().is_allowed(constants::WHITE_KINGSIDE)) {
+                    return false;
+                }
+                else if (to_sq == constants::C1 && !castling_rights().is_allowed(constants::WHITE_QUEENSIDE)) {
+                    return false;
+                }
+            }
+            else {
+                if (piece != constants::BLACK_KING) {
+                    return false;
+                }
+                if (to_sq == constants::G8 && !castling_rights().is_allowed(constants::BLACK_KINGSIDE)) {
+                    return false;
+                }
+                else if (to_sq == constants::C8 && !castling_rights().is_allowed(constants::BLACK_QUEENSIDE)) {
+                    return false;
+                }
+            }
+            // a capture being marked as anything other than capture types causes issues too
+            if (piece_on(move.to_square())) {
                 return false;
             }
             break;

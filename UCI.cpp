@@ -13,7 +13,6 @@
 #include "string.h"
 #endif
 
-#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -40,17 +39,17 @@ namespace UCI {
 
         char line[INPUTBUFFER];
 
-
-
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
-        Anduril AI;
+        std::unique_ptr<Anduril> AI = std::make_unique<Anduril>();
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = true;
 
-        // initialize the reduction table
-        for (int i = 1; i < 150; i++) {
-            AI.reductions[i] = int(std::log(i) * 1.45);
+        AI->resetHistories();
+
+        // initialize the oversize state array
+        for (int i = -7; i < 0; i++) {
+            board.continuationHistory(i) = &AI->continuationHistory[0][0][15][0];
         }
 
         // start the search thread and park it until we need it
@@ -79,10 +78,10 @@ namespace UCI {
             }
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
-                AI.table.clear();
-                AI.pTable = HashTable<PawnEntry, 8>();
-                AI.evalTable = HashTable<SimpleNode, 16>();
-                AI.resetHistories();
+                table.clear();
+                AI->pTable = HashTable<PawnEntry, 8>();
+                AI->evalTable = HashTable<SimpleNode, 16>();
+                AI->resetHistories();
                 board = *board.from_fen(StartFEN);
                 parsePosition(line, board, AI);
             }
@@ -90,13 +89,13 @@ namespace UCI {
                 parseGo(line, board, AI, openingBook, bookOpen);
             }
             else if (!strncmp(line, "stop", 4)) {
-                AI.stopped = true;
+                AI->stopped = true;
             }
             else if (!strncmp(line, "quit", 4)) {
-                AI.stopped = !AI.stopped;
-                AI.quit = true;
-                AI.searching = true;
-                AI.cv.notify_one();
+                AI->stopped = !AI->stopped;
+                AI->quit = true;
+                AI->searching = true;
+                AI->cv.notify_one();
                 searchThread.join();
                 break;
             }
@@ -132,9 +131,9 @@ namespace UCI {
                 std::cout << "option name Rph type spin default 2000 min 0 max 10000" << std::endl;
                 std::cout << "option name Qph type spin default 4000 min 0 max 10000" << std::endl;
 
-                std::cout << "option name QOV type spin default 50000 min 0 max 100000" << std::endl;
-                std::cout << "option name ROV type spin default 25000 min 0 max 100000" << std::endl;
-                std::cout << "option name MOV type spin default 15000 min 0 max 100000" << std::endl;
+                std::cout << "option name QOV type spin default 500000 min 0 max 1000000" << std::endl;
+                std::cout << "option name ROV type spin default 250000 min 0 max 1000000" << std::endl;
+                std::cout << "option name MOV type spin default 100000 min 0 max 1000000" << std::endl;
                 std::cout << "option name MHV type spin default 15000 min 0 max 1000000" << std::endl;
 
                 std::cout << "uciok" << std::endl;
@@ -143,16 +142,16 @@ namespace UCI {
             }
 
             // break the loop if quit is received
-            if (AI.quit) { break; }
+            if (AI->quit) { break; }
         }
     }
 
-    void parseOption(char* line, Anduril &AI, bool &bookOpen) {
+    void parseOption(char* line, std::unique_ptr<Anduril> &AI, bool &bookOpen) {
         char *ptr = NULL;
 
         // set hash size
         if ((ptr = strstr(line, "Hash"))) {
-            AI.table.resize(atoi(ptr + 10));
+            table.resize(atoi(ptr + 10));
         }
 
         // set book open or closed
@@ -167,79 +166,79 @@ namespace UCI {
 
         // setoption name pMG value 100
         if ((ptr = strstr(line, "kMG"))) {
-            AI.kMG = atoi(ptr + 10);
+            AI->kMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "kEG"))) {
-            AI.kEG = atoi(ptr + 10);
+            AI->kEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "bMG"))) {
-            AI.bMG = atoi(ptr + 10);
+            AI->bMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "bEG"))) {
-            AI.bEG = atoi(ptr + 10);
+            AI->bEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "rMG"))) {
-            AI.rMG = atoi(ptr + 10);
+            AI->rMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "rEG"))) {
-            AI.rEG = atoi(ptr + 10);
+            AI->rEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "qMG"))) {
-            AI.qMG = atoi(ptr + 10);
+            AI->qMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "qEG"))) {
-            AI.qEG = atoi(ptr + 10);
+            AI->qEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "oMG"))) {
-            AI.oMG = atoi(ptr + 10);
+            AI->oMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "oEG"))) {
-            AI.oEG = atoi(ptr + 10);
+            AI->oEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "tMG"))) {
-            AI.tMG = atoi(ptr + 10);
+            AI->tMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "tEG"))) {
-            AI.tEG = atoi(ptr + 10);
+            AI->tEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "pMG"))) {
-            AI.pMG = atoi(ptr + 10);
+            AI->pMG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "pEG"))) {
-            AI.pEG = atoi(ptr + 10);
+            AI->pEG = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "Pph"))) {
-            AI.Pph = atof(ptr + 10) / 1000;
+            AI->Pph = atof(ptr + 10) / 1000;
         }
 
         if ((ptr = strstr(line, "Kph"))) {
-            AI.Kph = atof(ptr + 10) / 1000;
+            AI->Kph = atof(ptr + 10) / 1000;
         }
 
         if ((ptr = strstr(line, "Bph"))) {
-            AI.Bph = atof(ptr + 10) / 1000;
+            AI->Bph = atof(ptr + 10) / 1000;
         }
 
         if ((ptr = strstr(line, "Rph"))) {
-            AI.Rph = atof(ptr + 10) / 1000;
+            AI->Rph = atof(ptr + 10) / 1000;
         }
 
         if ((ptr = strstr(line, "Qph"))) {
-            AI.Qph = atof(ptr + 10) / 1000;
+            AI->Qph = atof(ptr + 10) / 1000;
         }
 
         if ((ptr = strstr(line, "QOV"))) {
@@ -259,12 +258,12 @@ namespace UCI {
         }
     }
 
-    void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook, bool &bookOpen) {
+    void parseGo(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI, Book &openingBook, bool &bookOpen) {
         // reset all the limit
         int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
         int increment = -1;
-        AI.limits.timeSet = false;
+        AI->limits.timeSet = false;
         char *ptr = NULL;
 
         // this makes sure that the opening book is set to the correct state
@@ -311,21 +310,21 @@ namespace UCI {
             mtg = 1;
         }
 
-        AI.startTime = std::chrono::steady_clock::now();
-        AI.limits.depth = depth;
+        AI->startTime = std::chrono::steady_clock::now();
+        AI->limits.depth = depth;
 
         if (time != -1) {
-            AI.limits.timeSet = true;
+            AI->limits.timeSet = true;
             time /= mtg;
             time -= 50;
             std::chrono::milliseconds searchTime(time + increment);
-            AI.stopTime = std::chrono::steady_clock::now();
-            AI.stopTime += searchTime;
+            AI->stopTime = std::chrono::steady_clock::now();
+            AI->stopTime += searchTime;
         }
 
         if (depth == -1) {
             // we won't ever hit a depth of 100, so it stands in as a "max" or "infinite" depth
-            AI.limits.depth = 100;
+            AI->limits.depth = 100;
         }
 
         /*
@@ -342,43 +341,43 @@ namespace UCI {
             else {
                 //std::cout << "End of opening book, starting search" << std::endl;
                 openingBook.flipBookOpen();
-                AI.stopped = false;
-                AI.searching = true;
-                AI.cv.notify_one();
+                AI->stopped = false;
+                AI->searching = true;
+                AI->cv.notify_one();
                 //AI.go(board);
             }
         }
         else {
-            AI.stopped = false;
-            AI.searching = true;
-            AI.cv.notify_one();
+            AI->stopped = false;
+            AI->searching = true;
+            AI->cv.notify_one();
             //AI.go(board);
         }
     }
 
-    void waitForSearch(Anduril &AI, libchess::Position &board) {
+    void waitForSearch(std::unique_ptr<Anduril> &AI, libchess::Position &board) {
         while (true) {
-            std::unique_lock<std::mutex> lock(AI.mutex);
-            AI.stopped = true;
-            AI.searching = false;
-            AI.cv.wait(lock, [&AI] { return AI.searching.load(); });
+            std::unique_lock<std::mutex> lock(AI->mutex);
+            AI->stopped = true;
+            AI->searching = false;
+            AI->cv.wait(lock, [&AI] { return AI->searching.load(); });
 
-            if (AI.quit) {
+            if (AI->quit) {
                 return;
             }
 
             lock.unlock();
-            AI.go(board);
+            AI->go(board);
 
             // we have to check for a quit on both ends in case the quit command comes during a search
             // if that happens, stopped will be set to true, and we would wait at the top, but we actually want to exit
-            if (AI.quit) {
+            if (AI->quit) {
                 return;
             }
         }
     }
 
-    void parsePosition(char* line, libchess::Position &board, Anduril &AI) {
+    void parsePosition(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI) {
         // first move the pointer past the "position" token
         line += 9;
 
@@ -401,7 +400,7 @@ namespace UCI {
         }
 
         // reset the ply counter
-        AI.resetPly();
+        AI->resetPly();
 
         // set up the variable for parsing the moves
         ptrToken = strstr(line, "moves");
@@ -421,7 +420,7 @@ namespace UCI {
                 move = *libchess::Move::from(moveStr);
                 if (move.value() == 0) { break; }
                 board.make_move(move);
-                AI.incPly();
+                AI->incPly();
                 while (*ptrToken && *ptrToken != ' ') {
                     ptrToken++;
                 }
@@ -453,6 +452,7 @@ void Anduril::go(libchess::Position board) {
     int beta = 32001;
     int bestScore = -32001;
     int prevBestScore = bestScore;
+    int delta = 25;
 
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
@@ -461,8 +461,14 @@ void Anduril::go(libchess::Position board) {
         i[1] = libchess::Move(0);
     }
 
+    ply = board.ply();
     rootPly = ply;
     age++;
+
+    // initialize the oversize state array
+    for (int i = 0; i < 7; i++) {
+        board.continuationHistory(ply - i) = &continuationHistory[0][0][15][0];
+    }
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
@@ -529,8 +535,8 @@ void Anduril::go(libchess::Position board) {
                 if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
                 misses.push_back(rDepth);
                 aspMissesL++;
-                alpha = bestScore - 40 * (std::pow(2, aspMissesL));
-                beta = bestScore + 40 * (std::pow(2, aspMissesH));
+                beta = (alpha + beta) / 2;
+                alpha = alpha - delta;
                 incomplete = true;
                 upper = true;
             }
@@ -540,20 +546,20 @@ void Anduril::go(libchess::Position board) {
                 //std::cout << "High miss at: " << rDepth << std::endl;
                 misses.push_back(rDepth);
                 aspMissesH++;
-                alpha = bestScore - 40 * (std::pow(2, aspMissesL));
-                beta = bestScore + 40 * (std::pow(2, aspMissesH));
+                beta = beta + delta;
                 incomplete = true;
                 lower = true;
             }
                 // the search didn't fall outside the window, we can move to the next depth
             else {
-                alpha = bestScore - 40 * (std::pow(2, aspMissesL));
-                beta = bestScore + 40 * (std::pow(2, aspMissesH));
                 if (!incomplete) {
                     completedDepth = rDepth;
                 }
                 rDepth++;
                 upper = lower = false;
+                delta = 25;
+                alpha = bestScore - delta;
+                beta = bestScore + delta;
             }
         }
             // for depths less than 5
@@ -563,6 +569,9 @@ void Anduril::go(libchess::Position board) {
             }
             rDepth++;
         }
+
+        // expand search window in case we miss (will be reset anyway if we didn't)
+        delta += delta * 3 / 4;
 
         if (!incomplete && found) {
             prevBestMove = libchess::Move(node->bestMove);
@@ -653,18 +662,6 @@ void Anduril::go(libchess::Position board) {
                           << " pv"         << pv << std::endl;
             }
         }
-
-        int maxHist = 0;
-        // age the history table
-        for (auto & i : moveHistory) {
-            for (int j = 0; j < 64; j++) {
-                for (int k = 0; k < 64; k++) {
-                    maxHist = std::max(maxHist, i[j][k]);
-                    i[j][k] /= rDepth > 10 ? rDepth : 10 * rDepth;
-                }
-            }
-        }
-        //std::cout << "info string Max value in History table: " << maxHist << std::endl;
         //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
         //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
 
@@ -674,8 +671,6 @@ void Anduril::go(libchess::Position board) {
         if (n1 == 0){
             n1 = movesExplored;
         }
-            // we can't calculate a branching factor if we researched because of
-            // a window miss, so we first check if the last entry to misses is our current depth
         else {
             branchingFactor = (double) depthNodes / n1;
             avgBranchingFactor = ((avgBranchingFactor * (rDepth - 2)) + branchingFactor) / (rDepth - 1);
@@ -711,9 +706,6 @@ void Anduril::go(libchess::Position board) {
 
     // tell the GUI what move we want to make
     std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
-
-    board.make_move(prevBestMove);
-    incPly();
 
     //std::cout << board.fen() << std::endl;
 }

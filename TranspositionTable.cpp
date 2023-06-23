@@ -6,6 +6,8 @@
 
 #include "TranspositionTable.h"
 
+TranspositionTable table;
+
 // saves the information passed to the node, possibly overwrting the old position
 void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int a, int ev) {
     // keep the move the same for the same position
@@ -28,13 +30,8 @@ void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int a, int ev) {
 
 }
 
-TranspositionTable::TranspositionTable(size_t tSize) {
-    resize(tSize);
-    clear();
-}
-
 TranspositionTable::~TranspositionTable() {
-    delete[] tPtr;
+    _aligned_free(tPtr);
 }
 
 void TranspositionTable::resize(size_t tSize) {

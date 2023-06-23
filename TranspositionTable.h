@@ -31,8 +31,6 @@ inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
 
 class TranspositionTable {
 public:
-    explicit TranspositionTable(size_t tSize);
-
     ~TranspositionTable();
 
     void resize(size_t tSize);
@@ -60,5 +58,7 @@ struct HashTable {
 private:
     std::vector<nodeType> table = std::vector<nodeType>((Size * 1024 * 1024) / sizeof(nodeType));
 };
+
+extern TranspositionTable table;
 
 #endif //ANDURIL_ENGINE_TRANSPOSITIONTABLE_H

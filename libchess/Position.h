@@ -11,6 +11,7 @@
 #include "Bitboard.h"
 #include "CastlingRights.h"
 #include "Color.h"
+#include "../History.h"
 #include "Lookups.h"
 #include "Move.h"
 #include "Piece.h"
@@ -279,7 +280,19 @@ class Position {
     Move getExcluded() { return state().excludedMove; }
     void setExcluded(Move move) { state_mut_ref().excludedMove = move; }
     int& staticEval() { return state_mut_ref().staticEval; }
+    int& moveCount() { return state_mut_ref().moveCount; }
     int& staticEval(int ply) { return state_mut_ref(ply).staticEval; }
+    int& moveCount(int ply) { return state_mut_ref(ply).moveCount; }
+    PieceHistory*& continuationHistory() { return state_mut_ref().continuationHistory; }
+    PieceHistory*& continuationHistory(int ply) { return state_mut_ref(ply).continuationHistory; }
+    Move::Type prevMoveType(int ply) { return state(ply).move_type_; }
+    bool found() { return state().found; }
+    bool found(int ply) { return state(ply).found; }
+
+
+    [[nodiscard]] int ply() const {
+        return ply_;
+    }
 
 protected:
     // clang-format off
@@ -306,28 +319,23 @@ protected:
         int halfmoves_ = 0;
         int scoreMG = 0;
         int scoreEG = 0;
+        int moveCount = 0;
+        bool found = false;
         Move excludedMove = Move(0);
         int staticEval = 0;
+        PieceHistory *continuationHistory;
     };
-
-    [[nodiscard]] int ply() const {
-        return ply_;
-    }
-
-    [[nodiscard]] const std::array<State, 1000>& history() const {
-        return history_;
-    }
     State& state_mut_ref() {
-        return history_[ply()];
+        return *(history_ + ply() + 7);
     }
     State& state_mut_ref(int ply) {
-        return history_[ply];
+        return *(history_ + ply + 7);
     }
     [[nodiscard]] const State& state() const {
-        return history_[ply()];
+        return *(history_ + ply() + 7);
     }
     [[nodiscard]] const State& state(int ply) const {
-        return history_[ply];
+        return *(history_ + ply + 7);
     }
     [[nodiscard]] hash_type calculate_hash() const {
         hash_type hash_value = 0;
@@ -402,7 +410,7 @@ protected:
     Color side_to_move_;
     int fullmoves_;
     int ply_;
-    std::array<State, 1000> history_;
+    State history_[1000];
 
     std::string start_fen_;
 };

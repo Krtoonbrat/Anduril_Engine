@@ -6,15 +6,17 @@
 #include "UCI.h"
 
 // constructor for main search
-MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move& cm,
-                       std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see)
-                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), seeValues(see) {
+MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
+                       ButterflyHistory *his, const PieceHistory **contHis,
+                       std::array<int, 6> *see)
+                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), continuationHistory(contHis), seeValues(see) {
     stage = (board.in_check() ? EVASION_TT : MAIN_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
 // constructor for qsearch
-MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see)
-                      : board(b), transposition(ttm), moveHistory(his), seeValues(see) {
+MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
+                       const PieceHistory **contHis, std::array<int, 6> *see)
+                      : board(b), transposition(ttm), moveHistory(his), continuationHistory(contHis), seeValues(see) {
     stage = (board.in_check() ? EVASION_TT : QSEARCH_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
@@ -105,16 +107,26 @@ void MovePicker::score() {
             m.score = board.see_for(m, *seeValues);
         }
         else if constexpr(type == QUIETS) {
-            m.score = (threatenedPieces & libchess::lookups::square(m.from_square()) ?
+            m.score =  (threatenedPieces & libchess::lookups::square(m.from_square()) ?
                        (*board.piece_type_on(m.from_square()) == libchess::constants::QUEEN && !(libchess::lookups::square(m.to_square()) & rookThreat ) ? UCI::queenOrderVal
                       : *board.piece_type_on(m.from_square()) == libchess::constants::ROOK  && !(libchess::lookups::square(m.to_square()) & minorThreat) ? UCI::rookOrderVal
                       :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? UCI::minorOrderVal
                       :                                                                                                                                    0)
                       :                                                                                                                                    0)
-                      + moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
+                      +  moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())
+                      + (2 * (*continuationHistory[0])[board.piece_on(m.from_square())->value()][m.to_square()])
+                      + (*continuationHistory[1])[board.piece_on(m.from_square())->value()][m.to_square()]
+                      + (*continuationHistory[3])[board.piece_on(m.from_square())->value()][m.to_square()]
+                      + (*continuationHistory[5])[board.piece_on(m.from_square())->value()][m.to_square()];
         }
         else { // evasions
-            m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
+            if (board.is_capture_move(m)) {
+                m.score = board.see_for(m, *seeValues);
+            }
+            else {
+                m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())
+                        + (*continuationHistory[0])[board.piece_on(m.from_square())->value()][m.to_square()];
+            }
         }
 
 
@@ -160,11 +172,18 @@ top:
 
             cur = std::begin(refutations);
             endMoves = std::end(refutations);
+
+            // if countermove is the same as one of the killer moves, we can skip it
+            if (refutations[0] == refutations[2]
+                || refutations[1] == refutations[2]) {
+                endMoves--;
+            }
+
             stage++;
 
         case REFUTATION:
             while (cur < endMoves) {
-                if (cur->value() != 0 && board.is_legal_move(*cur) && *cur != transposition && board.piece_on(cur->to_square())) {
+                if (cur->value() != 0 && board.is_legal_move(*cur) && *cur != transposition) {
                     return *cur++;
                 }
                 cur++;

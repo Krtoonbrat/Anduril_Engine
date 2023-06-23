@@ -321,11 +321,14 @@ inline void Position::make_move(Move move) {
                                                  castling_spoilers[from_square.value()] &
                                                  castling_spoilers[to_square.value()]};
 
-    std::optional<PieceType> moving_pt = piece_type_on(from_square);
-    std::optional<PieceType> captured_pt = piece_type_on(to_square);
-    std::optional<PieceType> promotion_pt = move.promotion_piece_type();
-
     Move::Type move_type = move_type_of(move);
+
+    std::optional<PieceType> moving_pt = piece_type_on(from_square);
+    std::optional<PieceType> captured_pt = move_type == Move::Type::ENPASSANT ?
+                                           stm == constants::WHITE            ? piece_type_on(to_square - 8)
+                                                                              : piece_type_on(to_square + 8)
+                                                                              : piece_type_on(to_square);
+    std::optional<PieceType> promotion_pt = move.promotion_piece_type();
 
     hash_type hash = prev_state.hash_;
     hash_type phash = prev_state.pawn_hash_;
@@ -620,6 +623,8 @@ inline void Position::make_null_move() {
     next.halfmoves_ = prev.halfmoves_ + 1;
     next.enpassant_square_ = {};
     next.castling_rights_ = prev.castling_rights_;
+    next.captured_pt_ = {};
+    next.move_type_ = Move::Type::NONE;
 
     // editied by Krtoonbrat
     // We should be able to incrementally update the hash for null moves.  The only things that change are the turn

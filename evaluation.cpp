@@ -6,6 +6,37 @@
 
 #include "Anduril.h"
 
+// table holding the values for king tropism
+constexpr int SafetyTable[100] = {
+        0,  0,   1,   2,   3,   5,   7,   9,  12,  15,
+        18,  22,  26,  30,  35,  39,  44,  50,  56,  62,
+        68,  75,  82,  85,  89,  97, 105, 113, 122, 131,
+        140, 150, 169, 180, 191, 202, 213, 225, 237, 248,
+        260, 272, 283, 295, 307, 319, 330, 342, 354, 366,
+        377, 389, 401, 412, 424, 436, 448, 459, 471, 483,
+        494, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+        500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+        500, 500, 500, 500, 500, 500, 500, 500, 500, 500,
+        500, 500, 500, 500, 500, 500, 500, 500, 500, 500
+};
+
+// mask for the central squares we are looking for in space evaluations
+libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
+                                 & (libchess::lookups::RANK_2_MASK | libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_4_MASK);
+libchess::Bitboard centerBlack = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
+                                 & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_6_MASK | libchess::lookups::RANK_5_MASK);
+
+// point bonus that increases the value of knights with more pawns on the board
+int knightPawnBonus[9] = { -20, -16, -12, -8, -4,  0,  4,  8, 12 };
+
+// point bonus that increases the value of rooks with less pawns
+int rookPawnBonus[9] = { 15,  12,  9,  6,  3,  0, -3, -6, -9 };
+
+// passed pawn bonuses by rank
+// values stolen from stockfish (their values are reported to the GUI using v * 100 / 361, which is already applied)
+int passedBonusMG[7] = {0, 1, 4, 6, 18, 46, 78};
+int passedBonusEG[7] = {0, 10, 10, 14, 22, 51, 74};
+
 // generates a static evaluation of the board
 int Anduril::evaluateBoard(libchess::Position &board) {
     // first check for transpositions
@@ -626,99 +657,6 @@ inline void Anduril::evaluateQueens(libchess::Position &board, libchess::Square 
         attackCount[white]++;
         attackWeight[white] += 3 * kingZoneAttacks.popcount();
     }
-}
-
-// finds the raw material score for the position
-std::pair<int, int> Anduril::getMaterialScore(libchess::Position &board) {
-    std::pair<int, int> score = {0, 0};
-
-    // we first need a bitboard with every piece on the board
-    libchess::Bitboard pieces = board.occupancy_bb();
-
-    // loop goes through all the pieces
-    while (pieces) {
-        // grab the next piece
-        libchess::Square square = pieces.forward_bitscan();
-        std::optional<libchess::Piece> currPiece = board.piece_on(square);
-
-        if (currPiece) {
-            switch (currPiece->type()) {
-                case libchess::constants::PAWN:
-                    if (!currPiece->color()) {
-                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += pMG + pawnSquareTableMG[tableCoords];
-                        score.second += pEG + pawnSquareTableEG[tableCoords];
-                    }
-                    else {
-                        score.first  -= pMG + pawnSquareTableMG[square];
-                        score.second -= pEG + pawnSquareTableEG[square];
-                    }
-                    break;
-                case libchess::constants::KNIGHT:
-                    if (!currPiece->color()) {
-                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += kMG + knightSquareTableMG[tableCoords];
-                        score.second += kEG + knightSquareTableEG[tableCoords];
-                    }
-                    else {
-                        score.first  -= kMG + knightSquareTableMG[square];
-                        score.second -= kEG + knightSquareTableEG[square];
-                    }
-                    break;
-                case libchess::constants::BISHOP:
-                    if (!currPiece->color()) {
-                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += bMG + bishopSquareTableMG[tableCoords];
-                        score.second += bEG + bishopSquareTableEG[tableCoords];
-                    }
-                    else {
-                        score.first  -= bMG + bishopSquareTableMG[square];
-                        score.second -= bEG + bishopSquareTableEG[square];
-                    }
-                    break;
-                case libchess::constants::ROOK:
-                    if (!currPiece->color()) {
-                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += rMG + rookSquareTableMG[tableCoords];
-                        score.second += rEG + rookSquareTableEG[tableCoords];
-                    }
-                    else {
-                       score.first  -= rMG + rookSquareTableMG[square];
-                       score.second -= rEG + rookSquareTableEG[square];
-                    }
-                    break;
-                case libchess::constants::QUEEN:
-                    if (!currPiece->color()) {
-                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += qMG + queenSquareTableMG[tableCoords];
-                        score.second += qEG  + queenSquareTableEG[tableCoords];
-                    }
-                    else {
-                        score.first  -= qMG + queenSquareTableMG[square];
-                        score.second -= qEG  + queenSquareTableEG[square];
-                    }
-                    break;
-                case libchess::constants::KING:
-                    if (!currPiece->color()) {
-                        int tableCoords = ((7 - (square / 8)) * 8) + square % 8;
-                        score.first  += kingSquareTableMG[tableCoords];
-                        score.second += kingSquareTableEG[tableCoords];
-                    }
-                    else {
-                        score.first  -= kingSquareTableMG[square];
-                        score.second -= kingSquareTableEG[square];
-                    }
-                    break;
-
-
-            }
-        }
-
-        // get rid of the last piece on the board to prepare for scoring the next
-        pieces.forward_popbit();
-    }
-
-    return score;
 }
 
 // finds the pawn structure bonus for the position

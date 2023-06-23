@@ -5,8 +5,9 @@
 #ifndef ANDURIL_ENGINE_MOVEPICKER_H
 #define ANDURIL_ENGINE_MOVEPICKER_H
 
-#include "libchess/Position.h"
 #include "Anduril.h"
+#include "History.h"
+#include "libchess/Position.h"
 
 class MovePicker {
     enum Stages {
@@ -21,7 +22,8 @@ class MovePicker {
     };
 
     // enumeration type for the pieces
-    enum PieceType { PAWN,
+    enum PieceType {
+        PAWN,
         KNIGHT,
         BISHOP,
         ROOK,
@@ -33,8 +35,11 @@ public:
     MovePicker(const MovePicker&) = delete;
     MovePicker& operator=(const MovePicker&) = delete;
 
-    MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move& cm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see);
-    MovePicker(libchess::Position &b, libchess::Move &ttm, std::array<std::array<std::array<int, 64>, 64>, 2>* his, std::array<int, 6> *see);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
+               ButterflyHistory *his, const PieceHistory **contHis,
+               std::array<int, 6> *see);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
+               const PieceHistory **contHis, std::array<int, 6> *see);
     MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see);
 
     libchess::Move nextMove(bool skipQuiet = false);
@@ -54,14 +59,15 @@ private:
 
     libchess::Move *cur, *endMoves, *endBadCaptures;
     libchess::Position& board;
-    std::array<std::array<std::array<int, 64>, 64>, 2>* moveHistory;
+    ButterflyHistory *moveHistory;
+    const PieceHistory **continuationHistory;
     libchess::Move transposition;
     libchess::Move refutations[3];
     int stage;
     int threshold;
     libchess::MoveList moves;
 
-    // these values allow me to use see inside the move picker class.  I should find a better solution.
+    // I should find a better solution for this, but for now passing a pointer works.
     std::array<int, 6> *seeValues;
 };
 

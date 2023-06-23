@@ -14,21 +14,22 @@ namespace UCI {
     void loop();
 
     // parses the go command from the GUI
-    void parseGo(char* line, libchess::Position &board, Anduril &AI, Book &openingBook, bool &bookOpen);
+    void parseGo(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI, Book &openingBook, bool &bookOpen);
 
     // parses position commands from the GUI
-    void parsePosition(char* line, libchess::Position &board, Anduril &AI);
+    void parsePosition(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI);
 
     // parses setoptions
-    void parseOption(char* line, Anduril &AI, bool &bookOpen);
+    void parseOption(char* line, std::unique_ptr<Anduril> &AI, bool &bookOpen);
 
     // parks thread waiting for a search
-    void waitForSearch(Anduril &AI, libchess::Position &board);
+    void waitForSearch(std::unique_ptr<Anduril> &AI, libchess::Position &board);
 
-    static int queenOrderVal = 50000;
-    static int rookOrderVal =  25000;
-    static int minorOrderVal = 10000;
+    static int queenOrderVal = 500000;
+    static int rookOrderVal =  250000;
+    static int minorOrderVal = 150000;
     static int maxHistoryVal = 15000;
+    static int maxContinuationVal = 25000;
 }
 
 #endif //ANDURIL_ENGINE_UCI_H

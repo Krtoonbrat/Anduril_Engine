@@ -20,6 +20,9 @@ class Piece {
     constexpr Color color() const {
         return Color{value_ >> 3};
     }
+    constexpr value_type value() const {
+        return value_;
+    }
 
     constexpr bool operator==(const Piece rhs) const {
         return type() == rhs.type() && color() == rhs.color();
