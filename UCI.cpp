@@ -665,19 +665,8 @@ void Anduril::go(libchess::Position board) {
         //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
         //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
 
-        // add the current depth to the branching factor
-        // if we searched to depth 1, then we need to do another search
-        // to get a branching factor
-        if (n1 == 0){
-            n1 = movesExplored;
-        }
-        else {
-            branchingFactor = (double) depthNodes / n1;
-            avgBranchingFactor = ((avgBranchingFactor * (rDepth - 2)) + branchingFactor) / (rDepth - 1);
-            n1 = depthNodes;
-            depthNodes = 0;
-            //std::cout << "info string Branching factor: " << avgBranchingFactor << std::endl;
-        }
+        // calculate branching factor
+        std::cout << "info string Branching factor (the stockfish way):" << std::pow((double) movesExplored, (1.0 / (rDepth - 1))) << std::endl;
 
 
         // for debugging

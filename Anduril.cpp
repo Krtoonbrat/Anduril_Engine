@@ -48,7 +48,6 @@ constexpr int stat_bonus(int depth) {
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
 int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
-    movesExplored++;
     constexpr bool PvNode = nodeType != NonPV;
 
     // is the time up?
@@ -175,6 +174,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
                                                           [board.piece_on(move.from_square())->value()]
                                                           [move.to_square()];
 
+        movesExplored++;
         board.make_move(move);
 
         quiesceExplored++;
@@ -248,9 +248,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         return quiescence<PvNode ? PV : NonPV>(board, alpha, beta);
     }
 
-    // increment counters now that we know we aren't going into quiescence
-    depthNodes++;
-    movesExplored++;
     if (PvNode && selDepth < (ply - rootPly) + 1) {
         selDepth = (ply - rootPly) + 1;
     }
@@ -398,7 +395,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && staticEval >= board.staticEval()
         && depth >= 3
         && excludedMove.value() == 0
-        && nonPawnMaterial(!board.side_to_move(), board) > 1600) {
+        && nonPawnMaterial(!board.side_to_move(), board) > 1600
+        && ((ply - rootPly) >= minNullPly)) {
 
         nullAllowed = false;
 
@@ -406,6 +404,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         board.continuationHistory() = &continuationHistory[0][0][15][0]; // no piece has a value of 15 so we can use that as our "null" flag
 
+        movesExplored++;
         board.make_null_move();
         incPly();
         int nullScore = -negamax<NonPV>(board, depth - R, -beta, -beta + 1, !cutNode);
@@ -415,7 +414,24 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         nullAllowed = true;
 
         if (nullScore >= beta) {
-            return nullScore;
+
+            // dont return unproven mate
+            nullScore = std::min(nullScore, 31507);  // It doesn't have to be this number but this is what stockfish uses and I thought that was fun that it was such a random number but picked with a purpose
+
+            if (minNullPly || depth < 12) {
+                return nullScore;
+            }
+
+            // verification search at high depths, null pruning disabled until minNullPly is reached
+            minNullPly = (ply - rootPly) + 3 * (depth - R) / 4;
+
+            int s = negamax<NonPV>(board, depth - R, beta - 1, beta, false);
+
+            minNullPly = 0;
+
+            if (s >= beta) {
+                return nullScore;
+            }
         }
     }
     // need to set this to true here because we can't razor if we just made a null move
@@ -451,6 +467,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                                                               [board.piece_on(move.from_square())->value()]
                                                               [move.to_square()];
 
+            movesExplored++;
             board.make_move(move);
 
             // perform a qsearch to verify that the move still is less than beta
@@ -655,6 +672,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // prefetch before we make a move
         prefetch(table.firstEntry(board.hashAfter(move)));
+
+        movesExplored++;
 
         // make the move
         board.make_move(move);

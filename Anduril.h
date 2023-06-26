@@ -175,9 +175,6 @@ private:
     // amount of moves we searched in quiescence
     std::atomic<uint64_t> quiesceExplored = 0;
 
-    // amount of nodes searched at the current depth
-    std::atomic<uint64_t> depthNodes = 0;
-
     // the ply of the root node
     int rootPly = 0;
 
@@ -186,6 +183,9 @@ private:
 
     // current ply
     int ply = 0;
+
+    // minimum ply for null move
+    int minNullPly = 0;
 
     // age tracker for transposition table
     int age = 0;
