@@ -415,6 +415,32 @@ inline Bitboard relative_rank_mask(Rank rank, Color c) {
     return rank_mask(relative_rank(rank, c));
 }
 
+inline Bitboard forward_ranks_mask(Square square, Color color) {
+    return color == constants::WHITE ? RANK_1_MASK << 8 * relative_rank(Rank(square.value() / 8), constants::WHITE)
+                                     : RANK_8_MASK >> 8 * relative_rank(Rank(square.value() / 8), constants::BLACK);
+}
+
+inline Bitboard forward_file_mask(Square square, Color color) {
+    return forward_ranks_mask(square, color) & FILE_MASK[square.file()];
+}
+
+inline Bitboard adjacent_files_mask(Square square) {
+    return ((FILE_MASK[square.file()] & ~FILE_H_MASK) << 1) | ((FILE_MASK[square.file()] & ~FILE_A_MASK) >> 1);
+}
+
+inline Bitboard pawn_attack_span(Color color, Square square) {
+    return forward_ranks_mask(square, color) & adjacent_files_mask(square);
+}
+
+inline Bitboard passed_pawn_span(Color color, Square square) {
+    return pawn_attack_span(color, square) | forward_file_mask(square, color);
+}
+
+inline Bitboard pawn_double_attacks(Color color, Bitboard pawns) {
+    return color == constants::WHITE ? ((pawns & ~FILE_H_MASK) << 9) | ((pawns & ~FILE_A_MASK) << 7)
+                                     : ((pawns & ~FILE_H_MASK) >> 7) | ((pawns & ~FILE_A_MASK) >> 9);
+}
+
 inline Bitboard bishop_attacks_classical(Square square, Bitboard occupancy) {
     Bitboard attacks = bishop_attacks(square);
     Bitboard nw_blockers = (northwest(square) & occupancy) | Bitboard{constants::A8};

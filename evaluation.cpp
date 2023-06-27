@@ -20,6 +20,13 @@ constexpr int SafetyTable[100] = {
         500, 500, 500, 500, 500, 500, 500, 500, 500, 500
 };
 
+// Connected pawn bonus
+constexpr int Connected[7] = { 0, 1, 3, 3, 6, 21, 34 };
+
+// blocked pawns at 5th or 6th rank
+constexpr int BlockedPawnMG[2] = { 6, 2 };
+constexpr int BlockedPawnEG[2] = { 2, 1 };
+
 // mask for the central squares we are looking for in space evaluations
 libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
                                  & (libchess::lookups::RANK_2_MASK | libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_4_MASK);
@@ -80,9 +87,13 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreEG += board.getPSQTEG();
 
     // get the pawn score for the board
-    std::pair<int, int> p = getPawnScore(board);
-    scoreMG += p.first;
-    scoreEG += p.second;
+    std::pair<int, int> wp = getPawnScore<true>(board);
+    scoreMG += wp.first;
+    scoreEG += wp.second;
+
+    std::pair<int, int> bp = getPawnScore<false>(board);
+    scoreMG -= bp.first;
+    scoreEG -= bp.second;
 
     // get king safety bonus for the board
     // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
@@ -659,8 +670,11 @@ inline void Anduril::evaluateQueens(libchess::Position &board, libchess::Square 
     }
 }
 
-// finds the pawn structure bonus for the position
+template<bool color>
 std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
+    constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
+    constexpr libchess::Color them = color ? libchess::constants::BLACK : libchess::constants::WHITE;
+
     // first check for a transposition
     uint64_t hash = board.pawn_hash();
     PawnEntry *node = pTable[hash];
@@ -671,146 +685,97 @@ std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
         node->key = hash;
     }
 
+    libchess::Bitboard neighbors, stoppers, support, phalanx, opposed;
+    libchess::Bitboard lever, leverPush, blocked;
+    libchess::Square s(0);
+    bool backward, passed, doubled;
     std::pair<int, int> score = {0, 0};
+    libchess::Bitboard pawns = board.piece_type_bb(libchess::constants::PAWN, us);
 
-    // boards with white, black, and both color pawns
-    libchess::Bitboard whitePawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE);
-    libchess::Bitboard blackPawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK);
-    libchess::Bitboard pawns = board.piece_type_bb(libchess::constants::PAWN);
+    libchess::Bitboard ourPawns = board.piece_type_bb(libchess::constants::PAWN, us);
+    libchess::Bitboard theirPawns = board.piece_type_bb(libchess::constants::PAWN, them);
 
     while (pawns) {
-        libchess::Square currPawnSquare = pawns.forward_bitscan();
-        libchess::File file = currPawnSquare.file();
-        if (!*board.color_of(currPawnSquare)) {
-            switch (file) {
-                case libchess::constants::FILE_A:
-                    // isolated pawn
-                    if (!(whitePawns & libchess::lookups::FILE_B_MASK)) {
-                        score.first  -= 1;
-                        score.second -= 5;
-                    }
-
-                    // passed pawn
-                    if (!((blackPawns & libchess::lookups::FILE_A_MASK) | (blackPawns & libchess::lookups::FILE_B_MASK))) {
-                        score.first  += passedBonusMG[currPawnSquare.rank()];
-                        score.second += passedBonusEG[currPawnSquare.rank()];
-                    }
-
-                    break;
-                case libchess::constants::FILE_H:
-                    // isolated pawn
-                    if (!(whitePawns & libchess::lookups::FILE_G_MASK)) {
-                        score.first  -= 1;
-                        score.second -= 5;
-                    }
-
-                    // passed pawn
-                    if (!((blackPawns & libchess::lookups::FILE_H_MASK) | (blackPawns & libchess::lookups::FILE_G_MASK))) {
-                        score.first  += passedBonusMG[currPawnSquare.rank()];
-                        score.second += passedBonusEG[currPawnSquare.rank()];
-                    }
-
-                    break;
-                default:
-                    // isolated pawn
-                    if (!((whitePawns & libchess::lookups::FILE_MASK[file - 1]) | (whitePawns & libchess::lookups::FILE_MASK[file + 1]))) {
-                        score.first  -= 1;
-                        score.second -= 5;
-                    }
-
-                    // passed pawn
-                    if (!((blackPawns & libchess::lookups::FILE_MASK[file]) | (blackPawns & libchess::lookups::FILE_MASK[file - 1]) | (blackPawns & libchess::lookups::FILE_MASK[file + 1]))) {
-                        score.first  += passedBonusMG[currPawnSquare.rank()];
-                        score.second += passedBonusEG[currPawnSquare.rank()];
-                    }
-
-                    break;
-            }
-
-            // defended pawns
-            libchess::Bitboard defenders = board.attackers_to(currPawnSquare, libchess::constants::WHITE) & whitePawns;
-            if (defenders) {
-                score.first  += 6 * defenders.popcount();
-                // stolen from stockfish again, but I think this is an extremely smart idea to increase the bonus
-                // with rank in endgame, so I feel shameless stealing this one
-                score.second += (6 * (currPawnSquare.rank() - 2) / 4) * defenders.popcount();
-            }
-
-        }
-        else {
-            switch (file) {
-                case libchess::constants::FILE_A:
-                    // isolated pawn
-                    if (!(blackPawns & libchess::lookups::FILE_B_MASK)) {
-                        score.first  += 1;
-                        score.second += 5;
-                    }
-
-                    // passed pawn
-                    if (!((whitePawns & libchess::lookups::FILE_A_MASK) | (whitePawns & libchess::lookups::FILE_B_MASK))) {
-                        score.first  -= passedBonusMG[7 - currPawnSquare.rank()];
-                        score.second -= passedBonusEG[7 - currPawnSquare.rank()];
-                    }
-
-                    break;
-                case libchess::constants::FILE_H:
-                    // isolated pawn
-                    if (!(blackPawns & libchess::lookups::FILE_G_MASK)) {
-                        score.first  += 1;
-                        score.second += 5;
-                    }
-
-                    // passed pawn
-                    if (!((whitePawns & libchess::lookups::FILE_H_MASK) | (whitePawns & libchess::lookups::FILE_G_MASK))) {
-                        score.first  -= passedBonusMG[7 - currPawnSquare.rank()];
-                        score.second -= passedBonusEG[7 - currPawnSquare.rank()];
-                    }
-
-                    break;
-                default:
-                    // isolated pawn
-                    if (!((blackPawns & libchess::lookups::FILE_MASK[file - 1]) | (blackPawns & libchess::lookups::FILE_MASK[file + 1]))) {
-                        score.first  += 1;
-                        score.second += 5;
-                    }
-
-                    // passed pawn
-                    if (!((whitePawns & libchess::lookups::FILE_MASK[file]) | (whitePawns & libchess::lookups::FILE_MASK[file - 1]) | (whitePawns & libchess::lookups::FILE_MASK[file + 1]))) {
-                        score.first  -= passedBonusMG[7 - currPawnSquare.rank()];
-                        score.second -= passedBonusEG[7 - currPawnSquare.rank()];
-                    }
-
-                    break;
-            }
-
-            // defended pawns
-            libchess::Bitboard defenders = board.attackers_to(currPawnSquare, libchess::constants::BLACK) & blackPawns;
-            if (defenders) {
-                score.first  -= 6 * defenders.popcount();
-                // stolen from stockfish again, but I think this is an extremely smart idea to increase the bonus
-                // with rank in endgame, so I feel shameless stealing this one
-                score.second -= (6 * (currPawnSquare.rank() - 2) / 4) * defenders.popcount();
-            }
-        }
-
+        s = pawns.forward_bitscan();
         pawns.forward_popbit();
-    }
 
-    // doubled pawns
-    for (auto file : libchess::lookups::FILE_MASK) {
-        int pawnsOnFileWhite = (file & whitePawns).popcount();
-        int pawnsOnFileBlack = (file & blackPawns).popcount();
-        if (pawnsOnFileWhite > 1) {
-            score.first  -= 3 * (pawnsOnFileWhite - 1);
-            score.second -= 14 * (pawnsOnFileWhite - 1);
+        libchess::Rank r = libchess::lookups::relative_rank(s.rank(), us);
+
+        // flag the pawn
+        opposed = theirPawns & libchess::lookups::forward_file_mask(s, us);
+        blocked = theirPawns & libchess::lookups::pawn_shift(libchess::Bitboard(s), us);
+        stoppers = theirPawns & libchess::lookups::passed_pawn_span(us, s);
+        lever = theirPawns & libchess::lookups::pawn_attacks(s, us);
+        leverPush = theirPawns & libchess::lookups::pawn_attacks(libchess::lookups::pawn_shift(s, us), us);
+        doubled = ourPawns & libchess::Bitboard(libchess::lookups::pawn_shift(s, them));
+        neighbors = ourPawns & libchess::lookups::adjacent_files_mask(s);
+        phalanx = neighbors & libchess::lookups::RANK_MASK[s.rank()];
+        support = neighbors & libchess::lookups::RANK_MASK[(libchess::lookups::pawn_shift(s, them)).rank()];
+
+        // A pawn is backward when it is behind all pawns of the same color on adjacent files and cannot advance
+        backward = !(neighbors & libchess::lookups::forward_ranks_mask(libchess::lookups::pawn_shift(s, us), them))
+                    && (leverPush | blocked);
+
+        // a pawn is passed if there are no stoppers except some levers, the only stoppers are the leverPush, but we outnumber them,
+        // and there is only one front stopper that can be levered
+        passed = !(stoppers ^ lever)
+                 || (!(stoppers ^ leverPush)
+                     && phalanx.popcount() >= leverPush.popcount())
+                 || (stoppers == blocked && r.value() >= 5
+                     && (libchess::lookups::pawn_shift(support, libchess::constants::WHITE) & ~(theirPawns | libchess::lookups::pawn_double_attacks(them, theirPawns))));
+
+        passed &= !(libchess::lookups::forward_file_mask(s, us) & ourPawns);
+
+        if (passed) {
+            score.first += passedBonusMG[libchess::lookups::relative_rank(s.rank(), us).value()];
+            score.second += passedBonusEG[libchess::lookups::relative_rank(s.rank(), us).value()];
         }
-        if (pawnsOnFileBlack > 1) {
-            score.first  += 3 * (pawnsOnFileBlack - 1);
-            score.second += 14 * (pawnsOnFileBlack - 1);
+
+        if (support | phalanx) {
+            int bonus = Connected[r] * (2 + bool(phalanx) - bool(opposed)) + 6 * support.popcount();
+            score.first += bonus;
+            score.second += bonus * (r.value() - 2) / 4;
+        }
+        else if (!neighbors) {
+            if (opposed
+                && (ourPawns & libchess::lookups::forward_file_mask(s, them))
+                && !(theirPawns & libchess::lookups::adjacent_files_mask(s))) {
+                // doubled
+                score.first -= 3;
+                score.second -= 15;
+            }
+            else {
+                // isolated
+                score.first -= 1;
+                score.second -= 5;
+                // weak unopposed
+                score.first -= 4 * !opposed;
+                score.second -= 5 * !opposed;
+            }
+        }
+        else if (backward) {
+            // backward
+            score.first -= 2;
+            score.second -= 6;
+            // weak unopposed
+            score.first -= 4 * !opposed * bool(~(libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_H_MASK) & libchess::Bitboard(s));
+            score.second -= 5 * !opposed * bool(~(libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_H_MASK) & libchess::Bitboard(s));
+        }
+
+        if (!support) {
+            // doubled
+            score.first -= 3 * doubled;
+            score.second -= 15 * doubled;
+            // weak lever
+            score.first -= 1 * bool(lever & (lever - 1));
+            score.second -= 17 * bool(lever & (lever - 1));
+        }
+
+        if (blocked && r >= 5) {
+            score.first -= BlockedPawnMG[r.value() - libchess::constants::RANK_5.value()];
+            score.second -= BlockedPawnEG[r.value() - libchess::constants::RANK_5.value()];
         }
     }
-
-    node->score = score;
 
     return score;
 

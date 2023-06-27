@@ -223,6 +223,7 @@ private:
     int getPhase(libchess::Position &board);
 
     // finds the pawn structure bonus for the position
+    template<bool color>
     std::pair<int, int> getPawnScore(libchess::Position &board);
 
     // finds the king safety bonus for the position
