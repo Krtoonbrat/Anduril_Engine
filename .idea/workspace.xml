@@ -16,23 +16,18 @@
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
-      <configuration PROFILE_NAME="Release WSL" ENABLED="true" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" />
-      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
       <configuration PROFILE_NAME="Release" ENABLED="true" CONFIG_NAME="Release" />
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
       <configuration PROFILE_NAME="RelWithDebInfo" ENABLED="true" CONFIG_NAME="RelWithDebInfo" />
+      <configuration PROFILE_NAME="Release WSL" ENABLED="true" CONFIG_NAME="Release" TOOLCHAIN_NAME="WSL" />
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table.">
+    <list default="true" id="edbb2c17-95af-491b-a439-4689dc73dfe7" name="Changes" comment="Changed the way we evaluate pawns">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Anduril.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Anduril.h" beforeDir="false" afterPath="$PROJECT_DIR$/Anduril.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TranspositionTable.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TranspositionTable.h" beforeDir="false" afterPath="$PROJECT_DIR$/TranspositionTable.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UCI.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/UCI.h" beforeDir="false" afterPath="$PROJECT_DIR$/UCI.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libchess/Position.h" beforeDir="false" afterPath="$PROJECT_DIR$/libchess/Position.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/main.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MovePicker.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/MovePicker.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/evaluation.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/evaluation.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,6 +61,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectApplicationVersion">
     <option name="ide" value="CLion" />
@@ -357,21 +355,113 @@
       <workItem from="1681344408269" duration="82000" />
       <workItem from="1681344535023" duration="193000" />
       <workItem from="1681484110065" duration="1672000" />
-      <workItem from="1681490499626" duration="1067000" />
-    </task>
-    <task id="LOCAL-00001" summary="Fixed black piece square table from using mirrored values to rotated values">
-      <created>1654532716259</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1654532716259</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Added evaluation for rooks on open and semi open files">
-      <created>1654542284125</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1654542284125</updated>
+      <workItem from="1681490499626" duration="1669000" />
+      <workItem from="1681492316383" duration="37000" />
+      <workItem from="1681512196835" duration="429000" />
+      <workItem from="1681745151806" duration="2186000" />
+      <workItem from="1681758444183" duration="3149000" />
+      <workItem from="1681784859799" duration="1047000" />
+      <workItem from="1681877352079" duration="3503000" />
+      <workItem from="1681882103372" duration="284000" />
+      <workItem from="1681882531428" duration="4224000" />
+      <workItem from="1681887439364" duration="86000" />
+      <workItem from="1681887981256" duration="1577000" />
+      <workItem from="1681915690737" duration="343000" />
+      <workItem from="1681918599360" duration="122000" />
+      <workItem from="1681920999592" duration="103000" />
+      <workItem from="1681922941039" duration="60000" />
+      <workItem from="1681925605845" duration="205000" />
+      <workItem from="1681926037842" duration="3856000" />
+      <workItem from="1681932786605" duration="122000" />
+      <workItem from="1681933356791" duration="164000" />
+      <workItem from="1681933964296" duration="186000" />
+      <workItem from="1681934509950" duration="21000" />
+      <workItem from="1681934921662" duration="19000" />
+      <workItem from="1681935542132" duration="33000" />
+      <workItem from="1682010687262" duration="1038000" />
+      <workItem from="1682015104494" duration="395000" />
+      <workItem from="1682025861959" duration="240000" />
+      <workItem from="1682130942148" duration="46000" />
+      <workItem from="1682356144623" duration="33000" />
+      <workItem from="1682376541213" duration="1687000" />
+      <workItem from="1682455026592" duration="240000" />
+      <workItem from="1682469967287" duration="114000" />
+      <workItem from="1682472508052" duration="1586000" />
+      <workItem from="1682522528647" duration="16947000" />
+      <workItem from="1682615568551" duration="74000" />
+      <workItem from="1683078893918" duration="954000" />
+      <workItem from="1683126761154" duration="110000" />
+      <workItem from="1683129196154" duration="1635000" />
+      <workItem from="1683133284938" duration="24859000" />
+      <workItem from="1683159260937" duration="489000" />
+      <workItem from="1683172381385" duration="4668000" />
+      <workItem from="1683177143145" duration="1044000" />
+      <workItem from="1683179889839" duration="2836000" />
+      <workItem from="1683221416368" duration="558000" />
+      <workItem from="1683232930925" duration="4664000" />
+      <workItem from="1683245788416" duration="13015000" />
+      <workItem from="1683259112036" duration="509000" />
+      <workItem from="1683259850089" duration="188000" />
+      <workItem from="1683260206347" duration="27000" />
+      <workItem from="1683260360801" duration="108000" />
+      <workItem from="1683261084611" duration="61000" />
+      <workItem from="1683263676477" duration="1048000" />
+      <workItem from="1683264762632" duration="470000" />
+      <workItem from="1683265265613" duration="207000" />
+      <workItem from="1683265530921" duration="3347000" />
+      <workItem from="1683301332930" duration="5881000" />
+      <workItem from="1683664162628" duration="1458000" />
+      <workItem from="1683666035668" duration="21000" />
+      <workItem from="1683677628352" duration="248000" />
+      <workItem from="1683678600643" duration="167000" />
+      <workItem from="1683679367035" duration="807000" />
+      <workItem from="1683682270582" duration="2654000" />
+      <workItem from="1683687065460" duration="3774000" />
+      <workItem from="1683692174779" duration="40000" />
+      <workItem from="1683719032774" duration="39000" />
+      <workItem from="1683720281979" duration="879000" />
+      <workItem from="1683732519278" duration="189000" />
+      <workItem from="1683733143271" duration="570000" />
+      <workItem from="1683736234567" duration="96000" />
+      <workItem from="1683736546458" duration="2247000" />
+      <workItem from="1683739391404" duration="350000" />
+      <workItem from="1683740137261" duration="72000" />
+      <workItem from="1683740294004" duration="1178000" />
+      <workItem from="1683743637906" duration="279000" />
+      <workItem from="1683743949207" duration="47000" />
+      <workItem from="1683744675506" duration="10350000" />
+      <workItem from="1683755147684" duration="967000" />
+      <workItem from="1684365468217" duration="77000" />
+      <workItem from="1684365670395" duration="86000" />
+      <workItem from="1684367746293" duration="24000" />
+      <workItem from="1684821578935" duration="1393000" />
+      <workItem from="1684886193027" duration="72000" />
+      <workItem from="1684887434273" duration="31000" />
+      <workItem from="1684889823820" duration="707000" />
+      <workItem from="1687488824198" duration="1465000" />
+      <workItem from="1687490419423" duration="33000" />
+      <workItem from="1687550805646" duration="304000" />
+      <workItem from="1687552553114" duration="1271000" />
+      <workItem from="1687559291891" duration="104000" />
+      <workItem from="1687559418081" duration="34000" />
+      <workItem from="1687577655823" duration="60000" />
+      <workItem from="1687814661844" duration="416000" />
+      <workItem from="1687815602621" duration="1105000" />
+      <workItem from="1687816979701" duration="59000" />
+      <workItem from="1687819028614" duration="94000" />
+      <workItem from="1687820418349" duration="6805000" />
+      <workItem from="1687827358494" duration="41000" />
+      <workItem from="1687827924119" duration="27000" />
+      <workItem from="1687875075124" duration="792000" />
+      <workItem from="1687877012753" duration="1000" />
+      <workItem from="1687877065471" duration="297000" />
+      <workItem from="1687877424131" duration="141000" />
+      <workItem from="1687877605595" duration="21000" />
+      <workItem from="1687877686615" duration="19000" />
+      <workItem from="1687877854297" duration="69000" />
+      <workItem from="1687902183147" duration="184000" />
+      <workItem from="1687902598139" duration="150000" />
+      <workItem from="1688001247644" duration="375000" />
     </task>
     <task id="LOCAL-00003" summary="Changed piece values for bishops and knights.  Changed some values for the King Square Table">
       <created>1654578404693</created>
@@ -653,7 +743,70 @@
       <option name="project" value="LOCAL" />
       <updated>1681184438713</updated>
     </task>
-    <option name="localTasksCounter" value="43" />
+    <task id="LOCAL-00043" summary="Proof of concept for threading.  The search itself is not multithreaded, but the UCI loop and search are disconnected, this way we don't have to check for a stop command during our search, giving us a minor performance boost.">
+      <created>1681491663367</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1681491663367</updated>
+    </task>
+    <task id="LOCAL-00044" summary="A few bug fixes and tweaks:&#10;- Removed declaration of an unused move list object inside quiescence&#10;- Non pawn material needed for delta pruning increased to 1600 from 1300&#10;- Move type check inside delta pruning now correctly checks for capture promotion instead of regular promotion&#10;- Changed razoring offset to be 3 pawns plus one pawn times depth&#10;- Non pawn material needed for null move pruning increased to 1600 from 1300&#10;- Probcut beta offset reduced to 264 (3 pawns) from 300&#10;- Added condition for capture promotions inside futility pruning&#10;- Futility pruning now uses gives_check instead of making a move and then looking for check&#10;- King zone inside evaluation now clamped to be squares not on the outside edges of the board.  This makes the king zone wider for those cases.">
+      <created>1681879232524</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1681879232524</updated>
+    </task>
+    <task id="LOCAL-00045" summary="Update Readme">
+      <created>1681879807685</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1681879807685</updated>
+    </task>
+    <task id="LOCAL-00046" summary="A bunch of random changes:&#10;- Added move count pruning&#10;- Changed reverse futility pruning rules&#10;- Switched order of delta pruning and SEE pruning in quiescence&#10;- Introduced tracking improvement of position score to the search&#10;- Minor adjustment to null move pruning rules&#10;- Probcut beta reduces by 1/2 pawn if we are improving">
+      <created>1681888701430</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1681888701430</updated>
+    </task>
+    <task id="LOCAL-00047" summary="Another list of changes:&#10;- Quiescence now replaces stand pat scores with transposition scores where possible for more accurate position evaluation&#10;- Added condition to reverse futility pruning that makes sure we don't accidentally prune during a singular search&#10;- Added Internal Iterative Reduction.  Idea came from Ethereal.  We lower the depth on cut nodes that we expected to find a transposition move from, but didn't.&#10;- likelyFailLow variable now correctly has a depth condition&#10;- Introduced Move Count Pruning: if non pawn material exists on the board and we are not looking for checkmates, we can ignore quiet moves in certain positions after searching some amount of moves first.&#10;- Reduced the max depth that search extensions can be applied at.  Down to 1.5 * root search depth from 2.  This should help ease search explosion that happened in some positions.&#10;- Search now makes and unmakes moves only once per move.  We used to do it directly before each new iteration of search or qsearch, which wasted time because sometimes moves need to be searched twice&#10;- Major changes to LMR: 1. Changed where LMR is applied.  It now applies at every nonPV node, and at PV nodes it applies so long as we are not in check and the move is not a capture.  2. Reduction size is now determined by a formula instead of a flat reduction of 4.&#10;- Minor change to how move history is saved.  Instead of checking for the max value inside the move picker, we save either the previous score + depth, or the max history value, whichever is smaller.&#10;- Transposition no longer creates a general array on the heap, instead it allocates general aligned memory.  The alignment should improve performance a little.&#10;- Fixed gives_check inside of move integration">
+      <created>1682543231090</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1682543231090</updated>
+    </task>
+    <task id="LOCAL-00048" summary="Changed the reduction calculation inside LMR.  The move count part of the calculation orignally used all integers, causing that part to always equal zero (because we divided 2/3 and multiplied that by the base value).  One of the numbers in the calculation is now a floating point number and the end result is cast back to an integer.">
+      <created>1683079059425</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1683079059425</updated>
+    </task>
+    <task id="LOCAL-00049" summary="Added continuation history statistic to move ordering.&#10;Also: &quot;Minor fixes&quot; ;)">
+      <created>1687489203713</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1687489203713</updated>
+    </task>
+    <task id="LOCAL-00050" summary="Added verification for null search at high depths">
+      <created>1687814755479</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1687814755479</updated>
+    </task>
+    <task id="LOCAL-00051" summary="Changed the way we evaluate pawns">
+      <created>1687875160988</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1687875160988</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -685,15 +838,6 @@
       <path value="$PROJECT_DIR$/libchess" />
       <path value="$PROJECT_DIR$/libchess/lib/Catch2" />
     </ignored-roots>
-    <MESSAGE value="Added outposts to the evaluation.  Anduril will also now search castling moves before equal captures" />
-    <MESSAGE value="Aspiration window is now active at depth &gt; 4 instead of depth &gt;= 2" />
-    <MESSAGE value="Bug fixes and changes to some magic numbers" />
-    <MESSAGE value="Changed how trapped rooks are evaluated" />
-    <MESSAGE value="General refactoring" />
-    <MESSAGE value="Added king tropism to the evaluation, general refactoring" />
-    <MESSAGE value="Added history heuristic, checks for threefold repetition, and fixed bug with making and unmaking null moves" />
-    <MESSAGE value="Increased quiescense depth and changed the way queens are evaluated in the opening" />
-    <MESSAGE value="Position Stack now updates with every move made and keeps the previous board positions when searching a new position" />
     <MESSAGE value="Removed depth limit to quiescence.  Also changed CMake to generate stand-alone executables" />
     <MESSAGE value="Adjusted rules for standing pat in the quiescence search" />
     <MESSAGE value="Added in the HashMap for transposing simpler features.  HashMap is now used for pawn eval transposition and eval transposition" />
@@ -710,12 +854,22 @@
     <MESSAGE value="Changed search order at root.&#10;Previously, we were searching the transposition move first, and then each move afterward was search according to the various rules outlined in the move picker.  Now, after the first search each move is searched in the order of the score we determined from the last search.  This *should* make the search more accurate because we wont try the more aggressive pruning techniques on better moves that could have been ordered last by accident." />
     <MESSAGE value="Minor adjustments to transposition table and node.&#10;-transposition table: check for the age being equal before deciding to replace based on depth.  We don't want to change which node we are replacing if the first node in the cluster is older than the second.  We only change based on depth if the ages are equal.&#10;-node: changed from a class to struct.  This doesn't do much, but because it's a POD it probably should be a struct." />
     <MESSAGE value="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table." />
-    <option name="LAST_COMMIT_MESSAGE" value="Each node is now 16 bytes instead of 20.  This allows us to fit more nodes in the transposition table." />
+    <MESSAGE value="Proof of concept for threading.  The search itself is not multithreaded, but the UCI loop and search are disconnected, this way we don't have to check for a stop command during our search, giving us a minor performance boost." />
+    <MESSAGE value="A few bug fixes and tweaks:&#10;- Removed declaration of an unused move list object inside quiescence&#10;- Non pawn material needed for delta pruning increased to 1600 from 1300&#10;- Move type check inside delta pruning now correctly checks for capture promotion instead of regular promotion&#10;- Changed razoring offset to be 3 pawns plus one pawn times depth&#10;- Non pawn material needed for null move pruning increased to 1600 from 1300&#10;- Probcut beta offset reduced to 264 (3 pawns) from 300&#10;- Added condition for capture promotions inside futility pruning&#10;- Futility pruning now uses gives_check instead of making a move and then looking for check&#10;- King zone inside evaluation now clamped to be squares not on the outside edges of the board.  This makes the king zone wider for those cases." />
+    <MESSAGE value="Update Readme" />
+    <MESSAGE value="A bunch of random changes:&#10;- Added move count pruning&#10;- Changed reverse futility pruning rules&#10;- Switched order of delta pruning and SEE pruning in quiescence&#10;- Introduced tracking improvement of position score to the search&#10;- Minor adjustment to null move pruning rules&#10;- Probcut beta reduces by 1/2 pawn if we are improving" />
+    <MESSAGE value="Another list of changes:&#10;- Quiescence now replaces stand pat scores with transposition scores where possible for more accurate position evaluation&#10;- Added condition to reverse futility pruning that makes sure we don't accidentally prune during a singular search&#10;- Added Internal Iterative Reduction.  Idea came from Ethereal.  We lower the depth on cut nodes that we expected to find a transposition move from, but didn't.&#10;- likelyFailLow variable now correctly has a depth condition&#10;- Introduced Move Count Pruning: if non pawn material exists on the board and we are not looking for checkmates, we can ignore quiet moves in certain positions after searching some amount of moves first.&#10;- Reduced the max depth that search extensions can be applied at.  Down to 1.5 * root search depth from 2.  This should help ease search explosion that happened in some positions.&#10;- Search now makes and unmakes moves only once per move.  We used to do it directly before each new iteration of search or qsearch, which wasted time because sometimes moves need to be searched twice&#10;- Major changes to LMR: 1. Changed where LMR is applied.  It now applies at every nonPV node, and at PV nodes it applies so long as we are not in check and the move is not a capture.  2. Reduction size is now determined by a formula instead of a flat reduction of 4.&#10;- Minor change to how move history is saved.  Instead of checking for the max value inside the move picker, we save either the previous score + depth, or the max history value, whichever is smaller.&#10;- Transposition no longer creates a general array on the heap, instead it allocates general aligned memory.  The alignment should improve performance a little.&#10;- Fixed gives_check inside of move integration" />
+    <MESSAGE value="Changed the reduction calculation inside LMR.  The move count part of the calculation orignally used all integers, causing that part to always equal zero (because we divided 2/3 and multiplied that by the base value).  One of the numbers in the calculation is now a floating point number and the end result is cast back to an integer." />
+    <MESSAGE value="Added continuation history statistic to move ordering.&#10;Also: &quot;Minor fixes&quot; ;)" />
+    <MESSAGE value="Added verification for null search at high depths" />
+    <MESSAGE value="Changed the way we evaluate pawns" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed the way we evaluate pawns" />
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
       <configuration name="CMakeRunConfiguration">
         <watch expression="move.to_str()" language="ObjectiveC" />
+        <watch expression="this-&gt;movesExplored" />
       </configuration>
     </watches-manager>
   </component>

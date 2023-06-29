@@ -121,7 +121,7 @@ void MovePicker::score() {
         }
         else { // evasions
             if (board.is_capture_move(m)) {
-                m.score = board.see_for(m, *seeValues);
+                m.score = board.see_for(m, *seeValues) + (100000); // we add a large number to make sure captures are always searched first
             }
             else {
                 m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())
@@ -183,7 +183,7 @@ top:
 
         case REFUTATION:
             while (cur < endMoves) {
-                if (cur->value() != 0 && board.is_legal_move(*cur) && *cur != transposition) {
+                if (cur->value() != 0 && *cur != transposition) {
                     return *cur++;
                 }
                 cur++;
@@ -221,12 +221,13 @@ top:
             stage++;
 
         case BAD_CAPTURE:
-            if (cur < endMoves) {
-                return *cur++;
+            while (cur < endMoves) {
+                if (*cur != transposition) {
+                    return *cur++;
+                }
+                cur++;
             }
-            else {
-                return libchess::Move(0);
-            }
+            return libchess::Move(0);
 
         case EVASION_INIT:
             moves = board.check_evasion_move_list();
@@ -238,12 +239,13 @@ top:
             stage++;
 
         case EVASION:
-            if (cur < endMoves) {
-                return *cur++;
+            while (cur < endMoves) {
+                if (*cur != transposition) {
+                    return *cur++;
+                }
+                cur++;
             }
-            else {
-                return libchess::Move(0);
-            }
+            return libchess::Move(0);
 
         case PROBCUT:
             while (cur < endMoves) {
@@ -255,12 +257,13 @@ top:
             return libchess::Move(0);
 
         case QCAPTURE:
-            if (cur < endMoves) {
-                return *cur++;
+            while (cur < endMoves) {
+                if (*cur != transposition) {
+                    return *cur++;
+                }
+                cur++;
             }
-            else {
-                return libchess::Move(0);
-            }
+            return libchess::Move(0);
     }
 
     return libchess::Move(0);

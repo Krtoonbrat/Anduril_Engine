@@ -86,14 +86,28 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreMG += board.getPSQTMG();
     scoreEG += board.getPSQTEG();
 
-    // get the pawn score for the board
-    std::pair<int, int> wp = getPawnScore<true>(board);
-    scoreMG += wp.first;
-    scoreEG += wp.second;
+    // first check for a transposition
+    uint64_t phash = board.pawn_hash();
+    PawnEntry *node = pTable[phash];
+    if (node->key == hash) {
+        scoreMG += node->score.first;
+        scoreEG += node->score.second;
+    }
+    else {
+        // reset the node
+        node->key = hash;
 
-    std::pair<int, int> bp = getPawnScore<false>(board);
-    scoreMG -= bp.first;
-    scoreEG -= bp.second;
+        // get the pawn score for the board
+        std::pair<int, int> wp = getPawnScore<true>(board);
+        std::pair<int, int> bp = getPawnScore<false>(board);
+
+        scoreMG += wp.first - bp.first;
+        scoreEG += wp.second - bp.second;
+
+        // save the node
+        node->score.first = wp.first - bp.first;
+        node->score.second = wp.second - bp.second;
+    }
 
     // get king safety bonus for the board
     // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
@@ -674,16 +688,6 @@ template<bool color>
 std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
     constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
     constexpr libchess::Color them = color ? libchess::constants::BLACK : libchess::constants::WHITE;
-
-    // first check for a transposition
-    uint64_t hash = board.pawn_hash();
-    PawnEntry *node = pTable[hash];
-    if (node->key == hash) {
-        return node->score;
-    }
-    else {
-        node->key = hash;
-    }
 
     libchess::Bitboard neighbors, stoppers, support, phalanx, opposed;
     libchess::Bitboard lever, leverPush, blocked;

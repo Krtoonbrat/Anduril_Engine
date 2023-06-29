@@ -160,7 +160,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 
             // don't search moves with negative see
             // -28 is the difference between a knight and bishop, and we are ok with searching bishop for knight exchanges
-            if (board.see_for(move, seeValues) < -28) {
+            if (move.score < -28) { // we use move.score here because see was already calculated and stored there
                 continue;
             }
         }
