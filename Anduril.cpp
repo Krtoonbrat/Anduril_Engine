@@ -26,6 +26,33 @@ constexpr int stat_bonus(int depth) {
     return 2 * depth * depth;
 }
 
+// changes mate scores from being relative to the root to being relative to the current ply
+int tableScore(int score, int ply) {
+    return score > 30000 ? score + ply : score < -30000 ? score - ply : score;
+}
+
+int scoreFromTable(int score, int ply, int rule50) {
+    if (score > 30000) {
+        // don't return a mate score if we are going to hit the 50 move rule
+        if (32000 - score > 99 - rule50) {
+            return 31753; // this is below what checkmate in maximum search would be
+        }
+        
+        return score - ply;
+    }
+
+    if (score < -30000) {
+        // don't return a mate score if we are going to hit the 50 move rule
+        if (score + 32000 > 99 - rule50) {
+            return -31753; // this is below what checkmate in maximum search would be
+        }
+
+        return score + ply;
+    }
+
+    return score;
+}
+
 // the quiescence search
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
@@ -50,14 +77,14 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     bool found = false;
     Node *node = table.probe(hash, found);
     int nType = found ? node->nodeType : -1;
-    int nScore = found ? node->nodeScore : -32001;
+    int nScore = found ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
 	if (!PvNode
 		&& found
 		&& node->nodeDepth >= -1
-        && (node->nodeType == 1 || (node->nodeScore >= beta ? node->nodeType == 2 : node->nodeType == 3))) {
+        && (node->nodeType == 1 || (nScore >= beta ? node->nodeType == 2 : node->nodeType == 3))) {
 		movesTransposed++;
-		return node->nodeScore;
+		return nScore;
 	}
 
     // are we in check?
@@ -89,7 +116,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         // adjust alpha and beta based on the stand pat
         if (standPat >= beta) {
 			if (!found) {
-                node->save(hash, standPat, 2, -1, 0, age, standPat);
+                node->save(hash, tableScore(standPat, (ply - rootPly)), 2, -1, 0, age, standPat);
 			}
             return standPat;
         }
@@ -185,7 +212,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, bestScore, bestScore >= beta ? 2 : 3, -1, bestMove.value(), age, standPat);
+    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 3, -1, bestMove.value(), age, standPat);
     return bestScore;
 
 }
@@ -262,7 +289,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     Node *node = table.probe(hash, found);
     int nDepth = found ? node->nodeDepth : -99;
     int nType = found ? node->nodeType : -1;
-    int nScore = found ? node->nodeScore : -32001;
+    int nScore = found ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
     bool transpositionCapture = found ? board.is_capture_move(nMove) : false;
 
@@ -465,7 +492,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 if (!(found
                     && nDepth >= depth - 3
                     && nScore != -32001)) {
-                    node->save(hash, score, 2, depth - 3, move.value(), age, board.staticEval());
+                    node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.value(), age, board.staticEval());
 
                 }
                 cutNodes++;
@@ -777,7 +804,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     if (excludedMove.value() == 0) {
-        node->save(hash, bestScore, bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), age, board.staticEval());
+        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), age, board.staticEval());
     }
     return bestScore;
 
