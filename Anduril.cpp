@@ -11,24 +11,6 @@
 #include "MovePicker.h"
 #include "UCI.h"
 
-// prefetches an address in memory to CPU cache that doesn't block execution
-// this should speed up the program by reducing the amount of time we wait for transposition table probes
-// copied from Stockfish
-void prefetch(void* addr) {
-
-#  if defined(__INTEL_COMPILER)
-    // This hack prevents prefetches from being optimized away by
-   // Intel compiler. Both MSVC and gcc seem not be affected by this.
-   __asm__ ("");
-#  endif
-
-#  if defined(__INTEL_COMPILER) || defined(_MSC_VER)
-    _mm_prefetch((char*)addr, _MM_HINT_T0);
-#  else
-    __builtin_prefetch(addr);
-#  endif
-}
-
 // returns the amount of moves we need to search before we can use move count based pruning
 constexpr int moveCountPruningThreshold(bool improving, int depth) {
     return improving ? (3 + depth * depth) : (3 + depth * depth) / 2;
@@ -389,18 +371,17 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     // null move pruning
     if (!PvNode
-        && nullAllowed
         && !check
+        && board.prevMoveType(ply - 1) != libchess::Move::Type::NONE
         && staticEval >= beta
         && staticEval >= board.staticEval()
-        && depth >= 3
+        && depth >= 2
         && excludedMove.value() == 0
-        && nonPawnMaterial(!board.side_to_move(), board) > 1600
+        && nonPawnMaterial(!board.side_to_move(), board)
         && ((ply - rootPly) >= minNullPly)) {
 
-        nullAllowed = false;
-
-        int R = depth / 2 + depth % 2;
+        // set reduction based on depth, eval, and whether or not the last move made was tactical
+        int R = 4 + depth / 5 + std::min(3, (staticEval - beta) / 50) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
 
         board.continuationHistory() = &continuationHistory[0][0][15][0]; // no piece has a value of 15 so we can use that as our "null" flag
 
@@ -410,8 +391,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         int nullScore = -negamax<NonPV>(board, depth - R, -beta, -beta + 1, !cutNode);
         decPly();
         board.unmake_move();
-
-        nullAllowed = true;
 
         if (nullScore >= beta) {
 
@@ -434,9 +413,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
         }
     }
-    // need to set this to true here because we can't razor if we just made a null move
-    // but the flag needs to be reset for the next node
-    nullAllowed = true;
 
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
@@ -502,7 +478,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // Internal Iterative Reduction.  Idea taken from Ethereal.  We lower the depth on cutnodes that are high in the
     // search tree where we expected to find a transposition, but didn't.  This is a modernized approach to Internal Iterative Deepening
     if (cutNode
-        && !check
         && depth >= 7
         && nMove.value() == 0) {
         depth -= 1;
