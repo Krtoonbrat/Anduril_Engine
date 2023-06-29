@@ -53,7 +53,7 @@ private:
 // I totally stole this from stockfish
 template<class nodeType, int Size>
 struct HashTable {
-    nodeType* operator[](uint64_t key) { return &table[key & Size]; }
+    nodeType* operator[](uint64_t key) { return &table[(uint32_t)key & (Size - 1)]; }
 
 private:
     std::vector<nodeType> table = std::vector<nodeType>((Size * 1024 * 1024) / sizeof(nodeType));

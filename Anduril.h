@@ -279,9 +279,24 @@ private:
     libchess::Bitboard wAttackMap;
     libchess::Bitboard bAttackMap;
 
-    // this will be used to make sure the same color doesn't do a null move twice in a row
-    bool nullAllowed = true;
-
 };
+
+// prefetches an address in memory to CPU cache that doesn't block execution
+// this should speed up the program by reducing the amount of time we wait for transposition table probes
+// copied from Stockfish
+inline void prefetch(void* addr) {
+
+#  if defined(__INTEL_COMPILER)
+    // This hack prevents prefetches from being optimized away by
+   // Intel compiler. Both MSVC and gcc seem not be affected by this.
+   __asm__ ("");
+#  endif
+
+#  if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+    _mm_prefetch((char*)addr, _MM_HINT_T0);
+#  else
+    __builtin_prefetch(addr);
+#  endif
+}
 
 #endif //ANDURIL_ENGINE_ANDURIL_H

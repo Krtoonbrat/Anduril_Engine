@@ -53,6 +53,9 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         return eNode->score;
     }
 
+    // prefetch the pawn evaluation node
+    prefetch(pTable[board.pawn_hash()]);
+
     // squares the kings are on
     libchess::Square wKingSquare = board.king_square(libchess::constants::WHITE);
     libchess::Square bKingSquare = board.king_square(libchess::constants::BLACK);
