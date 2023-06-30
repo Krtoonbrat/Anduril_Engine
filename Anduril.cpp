@@ -81,6 +81,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
 	if (!PvNode
 		&& found
+        && nScore != -32001
 		&& node->nodeDepth >= -1
         && (node->nodeType == 1 || (nScore >= beta ? node->nodeType == 2 : node->nodeType == 3))) {
 		movesTransposed++;
@@ -96,22 +97,21 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         // stand pat score to see if we can exit early
         if (found) {
             if (node->nodeEval != -32001) {
-                standPat = node->nodeEval;
+                bestScore = standPat = node->nodeEval;
             }
             else {
-                standPat = evaluateBoard(board);
+                bestScore = standPat = evaluateBoard(board);
             }
 
             // previously saved transposition score can be used as a better position evaluation
             if (nScore != -32001
                 && (nType == 1 || (nScore > standPat ? nType == 2 : nType == 3))) {
-                standPat = nScore;
+                bestScore = nScore;
             }
         }
         else {
-            standPat = evaluateBoard(board);
+            bestScore = standPat = board.prevMoveType(ply - rootPly - 1) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - rootPly - 1);
         }
-        bestScore = standPat;
 
         // adjust alpha and beta based on the stand pat
         if (standPat >= beta) {
@@ -295,6 +295,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
 	if (!PvNode
 		&& found
+        && nScore != -32001
         && excludedMove.value() == 0
 		&& nDepth > depth - (nType == 1)
         && (nType == 1 || (nScore >= beta ? nType == 2 : nType == 3))) {
