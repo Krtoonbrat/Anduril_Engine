@@ -374,6 +374,10 @@ namespace UCI {
             }
         }
         else {
+            for (auto &i : gondor) {
+                i->stopped = false;
+                i->searching = true;
+            }
             AI->stopped = false;
             AI->searching = true;
             AI->cv.notify_one();
