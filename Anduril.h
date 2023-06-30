@@ -48,7 +48,7 @@ public:
     // the quiescence search
     // searches possible captures to make sure we aren't mis-evaluating certain positions
     template <NodeType nodeType>
-    int quiescence(libchess::Position &board, int alpha, int beta);
+    int quiescence(libchess::Position &board, int alpha, int beta, int depth = 0);
 
     // generates a static evaluation of the board
     int evaluateBoard(libchess::Position &board);
@@ -148,6 +148,10 @@ public:
 
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
+
+    // endgame values used for qsearch
+    int pieceValues[16] = { pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0,
+                            pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0};
 
     // reduction table
     // its oversize just in case something weird happens

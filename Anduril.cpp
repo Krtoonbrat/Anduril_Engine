@@ -56,7 +56,7 @@ int scoreFromTable(int score, int ply, int rule50) {
 // the quiescence search
 // searches possible captures to make sure we aren't mis-evaluating certain positions
 template <Anduril::NodeType nodeType>
-int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
+int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int depth) {
     constexpr bool PvNode = nodeType != NonPV;
 
     // is the time up?
@@ -71,6 +71,10 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 
     // represents the best score we have found so far
     int bestScore = -32001;
+
+    // threshold for futility pruning
+    int futility = -32001;
+    int futilityValue;
 
     // transposition lookup
     uint64_t hash = board.hash();
@@ -114,15 +118,18 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
         }
 
         // adjust alpha and beta based on the stand pat
-        if (standPat >= beta) {
+        if (bestScore >= beta) {
 			if (!found) {
-                node->save(hash, tableScore(standPat, (ply - rootPly)), 2, -1, 0, age, standPat);
+                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -1, 0, age, standPat);
 			}
             return standPat;
         }
-        if (PvNode && standPat > alpha) {
-            alpha = standPat;
+        if (PvNode && bestScore > alpha) {
+            alpha = bestScore;
         }
+
+        // calculate futility threshold
+        futility = bestScore + 200;
     }
 
     // holds the continuation history from previous moves
@@ -130,7 +137,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
                                          nullptr                               , board.continuationHistory(ply - 4),
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
-    MovePicker picker(board, nMove, &moveHistory, contHistory, &seeValues);
+    libchess::Square prevMoveSq = board.prevMoveType(ply - rootPly - 1) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
+    MovePicker picker(board, nMove, &moveHistory, contHistory, &seeValues, depth);
 
     // arbitrarily low score to make sure its replaced
     int score = -32001;
@@ -139,7 +147,11 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     libchess::Move move;
     libchess::Move bestMove;
 
+    bool givesCheck = false;
+    bool isCapture = false;
+
     int moveCounter = 0;
+    int quietCheckCounter = 0;
     // loop through the moves and score them
     while ((move = picker.nextMove()).value() != 0) {
 
@@ -148,13 +160,45 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
             continue;
         }
 
+        givesCheck = board.gives_check(move);
+        isCapture = board.is_capture_move(move);
+
         moveCounter++;
 
-        // just in case we are searching evasions
-        if (!check) {
-            if (!board.is_capture_move(move)) {
-                continue;
-            }
+
+        // pruning steps
+        if (bestScore > -30000) { // if we are in check, bestScore will by default be -32001, this makes sure we at least search the first value when in check
+            // futility pruning
+            if (!givesCheck
+                && move.to_square() != prevMoveSq
+                && futility > -30000
+                && !board.is_promotion_move(move)) {
+                    if (moveCounter > 2) {
+                        continue;
+                    }
+
+                    if (board.piece_on(move.to_square())) {
+                        futilityValue = futility + pieceValues[board.piece_on(move.to_square())->value()];
+                    }
+                    else {
+                        futilityValue = futility;
+                    }
+
+                    if (futilityValue <= alpha) {
+                        bestScore = std::max(bestScore, futilityValue);
+                        continue;
+                    }
+
+                    if (futility <= alpha && board.see_for(move, seeValues) < 1) {
+                        bestScore = std::max(bestScore, futility);
+                        continue;
+                    }
+                }
+
+                // prune quiet check evasions after the second move
+                if (quietCheckCounter > 1) {
+                    break;
+                }
 
             // delta pruning
             // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
@@ -167,15 +211,16 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
                 continue;
             }
 
-            // don't search moves with negative see
-            // -28 is the difference between a knight and bishop, and we are ok with searching bishop for knight exchanges
-            if (move.score < -28) { // we use move.score here because see was already calculated and stored there
-                continue;
-            }
+                // see pruning
+                if (board.see_for(move, seeValues) <  -28) {
+                    continue;
+                }
         }
 
         // prefetch before we make a move
         prefetch(table.firstEntry(board.hashAfter(move)));
+
+        quietCheckCounter += !isCapture && check;
 
         // update continuation history
         board.continuationHistory() = &continuationHistory[check]
@@ -188,7 +233,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
 
         quiesceExplored++;
         incPly();
-        score = -quiescence<nodeType>(board, -beta, -alpha);
+        score = -quiescence<nodeType>(board, -beta, -alpha, depth - 1);
         decPly();
         board.unmake_move();
 

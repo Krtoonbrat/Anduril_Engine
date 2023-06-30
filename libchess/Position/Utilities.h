@@ -187,7 +187,7 @@ inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
     int seeVal = piece_val - this->see_to(square, piece_values);
     this->unmake_move();
 
-    return 0 > seeVal ? 0 : seeVal;
+    return seeVal;
 }
 
 // modified by Krtoonbrat
@@ -212,7 +212,7 @@ inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
     int seeVal = piece_val - this->see_to(move.to_square(), piece_values);
     this->unmake_move();
 
-    return 0 > seeVal ? 0 : seeVal;
+    return seeVal;
 
     }
 

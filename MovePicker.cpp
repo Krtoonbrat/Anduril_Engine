@@ -15,8 +15,8 @@ MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Mov
 
 // constructor for qsearch
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-                       const PieceHistory **contHis, std::array<int, 6> *see)
-                      : board(b), transposition(ttm), moveHistory(his), continuationHistory(contHis), seeValues(see) {
+                       const PieceHistory **contHis, std::array<int, 6> *see, int d)
+                      : board(b), transposition(ttm), moveHistory(his), continuationHistory(contHis), seeValues(see), depth(d) {
     stage = (board.in_check() ? EVASION_TT : QSEARCH_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
@@ -257,6 +257,43 @@ top:
             return libchess::Move(0);
 
         case QCAPTURE:
+            while (cur < endMoves) {
+                if (*cur != transposition) {
+                    return *cur++;
+                }
+                cur++;
+            }
+            if (depth < 0) {
+                return libchess::Move(0);
+            }
+
+            stage++;
+
+        case QTACTICAL_INIT:
+            board.generate_quiet_moves(moves, board.side_to_move());
+            endMoves = moves.end();
+
+            // we are going to use endBadCaptures to mark where the last move we want to search is
+            endBadCaptures = moves.begin();
+
+            // this will get rid of any non-tactical moves so that we dont waste time scoring them
+            while (cur < endMoves) {
+                if (board.is_promotion_move(*cur)
+                    || board.gives_check(*cur)) {
+                    *endBadCaptures++ = *cur++;
+                }
+                else {
+                    cur++;
+                }
+            }
+            // the top of the move list down to endBadCaptures has now been replaced with tacitcal moves
+            // we can now score, sort, and search them
+            cur = moves.begin();
+            endMoves = endBadCaptures;
+            score<QUIETS>();
+            partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
+            stage++;
+        case QTACTICAL:
             while (cur < endMoves) {
                 if (*cur != transposition) {
                     return *cur++;

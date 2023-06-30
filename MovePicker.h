@@ -14,7 +14,7 @@ class MovePicker {
         MAIN_TT, CAPTURE_INIT, GOOD_CAPTURE, REFUTATION, QUIET_INIT, QUIET, BAD_CAPTURE,
         EVASION_TT, EVASION_INIT, EVASION,
         PROBCUT_TT, PROBCUT_INIT, PROBCUT,
-        QSEARCH_TT, QCAPTURE_INIT, QCAPTURE,
+        QSEARCH_TT, QCAPTURE_INIT, QCAPTURE, QTACTICAL_INIT, QTACTICAL
     };
 
     enum ScoreType {
@@ -39,7 +39,7 @@ public:
                ButterflyHistory *his, const PieceHistory **contHis,
                std::array<int, 6> *see);
     MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-               const PieceHistory **contHis, std::array<int, 6> *see);
+               const PieceHistory **contHis, std::array<int, 6> *see, int d);
     MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see);
 
     libchess::Move nextMove(bool skipQuiet = false);
@@ -66,6 +66,7 @@ private:
     int stage;
     int threshold;
     libchess::MoveList moves;
+    int depth;
 
     // I should find a better solution for this, but for now passing a pointer works.
     std::array<int, 6> *seeValues;
