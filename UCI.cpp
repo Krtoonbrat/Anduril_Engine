@@ -83,11 +83,15 @@ namespace UCI {
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
                 table.clear();
+                for (auto &i : gondor) {
+                    i->pTable = HashTable<PawnEntry, 8>();
+                    i->evalTable = HashTable<SimpleNode, 16>();
+                    i->resetHistories();
+                }
                 AI->pTable = HashTable<PawnEntry, 8>();
                 AI->evalTable = HashTable<SimpleNode, 16>();
                 AI->resetHistories();
                 board = *board.from_fen(StartFEN);
-                parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "go", 2)) {
                 parseGo(line, board, AI, openingBook, bookOpen);
@@ -576,7 +580,7 @@ void Anduril::go(libchess::Position board) {
                 misses.push_back(rDepth);
                 aspMissesL++;
                 beta = (alpha + beta) / 2;
-                alpha = alpha - delta;
+                alpha = std::max(bestScore - delta, -32001);
                 incomplete = true;
                 upper = true;
             }
@@ -586,7 +590,7 @@ void Anduril::go(libchess::Position board) {
                 //std::cout << "High miss at: " << rDepth << std::endl;
                 misses.push_back(rDepth);
                 aspMissesH++;
-                beta = beta + delta;
+                beta = std::min(beta + delta, 32001);
                 incomplete = true;
                 lower = true;
             }
@@ -728,19 +732,20 @@ void Anduril::go(libchess::Position board) {
         }
     }
 
-    setMovesExplored(0);
-    cutNodes = 0;
-    movesTransposed = 0;
-    quiesceExplored = 0;
-
     if (id == 0) {
         // tell the GUI what move we want to make
         std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
+
+        setMovesExplored(0);
+        cutNodes = 0;
+        movesTransposed = 0;
+        quiesceExplored = 0;
 
         // stop the other threads
         for (auto &i : gondor) {
             i->stopped = true;
             i->searching = false;
+            i->setMovesExplored(0);
         }
     }
 
