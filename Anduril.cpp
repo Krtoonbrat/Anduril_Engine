@@ -60,7 +60,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta) {
     constexpr bool PvNode = nodeType != NonPV;
 
     // is the time up?
-    if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+    if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
         return 0;
     }
 
@@ -226,7 +226,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // is the time up?  Mate distance pruning?
     if constexpr (!rootNode) {
         // check for aborted search
-        if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
         }
 
@@ -579,10 +579,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // if we are at root, give the gui some information
         if constexpr (rootNode) {
-            auto now = std::chrono::steady_clock::now();
-            std::chrono::duration<double, std::milli> elapsed = now - startTime;
-            if (elapsed.count() > 2000 && depth > 5) {
-                std::cout << "info currmove " << move.to_str() << " currmovenumber " << moveCounter + 1 << std::endl;
+            if (id == 0) {
+                auto now = std::chrono::steady_clock::now();
+                std::chrono::duration<double, std::milli> elapsed = now - startTime;
+                if (elapsed.count() > 2000 && depth > 5) {
+                    std::cout << "info currmove " << move.to_str() << " currmovenumber " << moveCounter + 1
+                              << std::endl;
+                }
             }
         }
 
@@ -755,7 +758,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         board.unmake_move();
 
         // if the search was stopped for whatever reason, return immediately
-        if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
         }
 

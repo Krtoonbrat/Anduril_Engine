@@ -41,7 +41,11 @@ namespace UCI {
 
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
-        std::unique_ptr<Anduril> AI = std::make_unique<Anduril>();
+        std::unique_ptr<Anduril> AI = std::make_unique<Anduril>(0);
+        AI->quit = false;
+        AI->stopped = true;
+        AI->searching = false;
+        threads = 1;
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = true;
 
@@ -89,10 +93,17 @@ namespace UCI {
                 parseGo(line, board, AI, openingBook, bookOpen);
             }
             else if (!strncmp(line, "stop", 4)) {
+                for (auto &i : gondor) {
+                    i->stopped = true;
+                }
                 AI->stopped = true;
             }
             else if (!strncmp(line, "quit", 4)) {
-                AI->stopped = !AI->stopped;
+                for (auto &i : gondor) {
+                    i->stopped = true;
+                    i->quit = true;
+                }
+                AI->stopped = !AI->stopped.load();
                 AI->quit = true;
                 AI->searching = true;
                 AI->cv.notify_one();
@@ -105,6 +116,7 @@ namespace UCI {
 
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
+                std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
 
                 std::cout << "option name kMG type spin default 337 min -4000 max 4000" << std::endl;
                 std::cout << "option name kEG type spin default 281 min -4000 max 4000" << std::endl;
@@ -142,7 +154,7 @@ namespace UCI {
             }
 
             // break the loop if quit is received
-            if (AI->quit) { break; }
+            if (AI->quit.load()) { break; }
         }
     }
 
@@ -152,6 +164,16 @@ namespace UCI {
         // set hash size
         if ((ptr = strstr(line, "Hash"))) {
             table.resize(atoi(ptr + 10));
+        }
+
+        // set thread count
+        // this is probably risky cuz a thread could be executing on an object we are deleting, YOLO
+        if ((ptr = strstr(line, "Threads"))) {
+            threads = atoi(ptr + 13);
+            gondor.clear();
+            for (int i = 1; i < threads; i ++) {
+                gondor.emplace_back(std::make_unique<Anduril>(i));
+            }
         }
 
         // set book open or closed
@@ -341,6 +363,10 @@ namespace UCI {
             else {
                 //std::cout << "End of opening book, starting search" << std::endl;
                 openingBook.flipBookOpen();
+                for (auto &i : gondor) {
+                    i->stopped = false;
+                    i->searching = true;
+                }
                 AI->stopped = false;
                 AI->searching = true;
                 AI->cv.notify_one();
@@ -362,7 +388,7 @@ namespace UCI {
             AI->searching = false;
             AI->cv.wait(lock, [&AI] { return AI->searching.load(); });
 
-            if (AI->quit) {
+            if (AI->quit.load()) {
                 return;
             }
 
@@ -371,7 +397,7 @@ namespace UCI {
 
             // we have to check for a quit on both ends in case the quit command comes during a search
             // if that happens, stopped will be set to true, and we would wait at the top, but we actually want to exit
-            if (AI->quit) {
+            if (AI->quit.load()) {
                 return;
             }
         }
@@ -443,6 +469,16 @@ void Anduril::go(libchess::Position board) {
     //std::cout << board.fen() << std::endl;
     libchess::Move bestMove(0);
     libchess::Move prevBestMove = bestMove;
+
+    if (id == 0) {
+        movesExplored = 0;
+        cutNodes = 0;
+        movesTransposed = 0;
+        quiesceExplored = 0;
+        for (int i = 1; i < threads; i++) {
+            std::thread(&Anduril::go, gondor[i - 1].get(), board).detach();
+        }
+    }
 
     // this is for debugging
     std::string boardFENs = board.fen();
@@ -521,7 +557,7 @@ void Anduril::go(libchess::Position board) {
 
         // was the search stopped?
         // stop the search if time is up
-        if (stopped || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             incomplete = true;
             finalDepth = true;
         }
@@ -580,107 +616,107 @@ void Anduril::go(libchess::Position board) {
             //std::cout << "Total high misses: " << aspMissesH << std::endl;
         }
 
-        // send info to the GUI
-        end = std::chrono::steady_clock::now();
-        timeElapsed = end - startTime;
+        if (id == 0) {
 
-        std::vector<libchess::Move> PV = getPV(board, rDepth, prevBestMove);
-        std::string pv = "";
-        for (auto m: PV) {
-            pv += " " + m.to_str();
-        }
+            // send info to the GUI
+            end = std::chrono::steady_clock::now();
+            timeElapsed = end - startTime;
 
-        if (!incomplete) {
-            if (prevBestScore >= 31000) {
-                int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
-                std::cout << "info "
-                          << "score mate " << distance
-                          << " depth "     << completedDepth
-                          << " seldepth "  << selDepth
-                          << " nodes "     << movesExplored
-                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (uint64_t)timeElapsed.count()
-                          << " pv"         << pv << std::endl;
+            std::vector<libchess::Move> PV = getPV(board, rDepth, prevBestMove);
+            std::string pv = "";
+            for (auto m: PV) {
+                pv += " " + m.to_str();
             }
-            else if (prevBestScore <= -31000) {
-                int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
-                std::cout << "info "
-                          << "score mate " << distance
-                          << " depth "     << completedDepth
-                          << " seldepth "  << selDepth
-                          << " nodes "     << movesExplored
-                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (uint64_t)timeElapsed.count()
-                          << " pv"         << pv << std::endl;
+
+            if (!incomplete) {
+                if (prevBestScore >= 31000) {
+                    int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
+                    std::cout << "info "
+                              << "score mate " << distance
+                              << " depth " << completedDepth
+                              << " seldepth " << selDepth
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pv << std::endl;
+                } else if (prevBestScore <= -31000) {
+                    int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
+                    std::cout << "info "
+                              << "score mate " << distance
+                              << " depth " << completedDepth
+                              << " seldepth " << selDepth
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pv << std::endl;
+                } else {
+                    std::cout << "info "
+                              << "score cp " << prevBestScore
+                              << " depth " << completedDepth
+                              << " seldepth " << selDepth
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pv << std::endl;
+                }
             }
+                // still give some info on a fail high or low
             else {
-                std::cout << "info "
-                          << "score cp "   << prevBestScore
-                          << " depth "     << completedDepth
-                          << " seldepth "  << selDepth
-                          << " nodes "     << movesExplored
-                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (uint64_t)timeElapsed.count()
-                          << " pv"         << pv << std::endl;
+                if (prevBestScore >= 31000) {
+                    int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
+                    std::cout << "info "
+                              << "score mate " << distance
+                              << " depth " << rDepth
+                              << " seldepth " << selDepth
+                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pv << std::endl;
+                } else if (prevBestScore <= -31000) {
+                    int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
+                    std::cout << "info "
+                              << "score mate " << distance
+                              << " depth " << rDepth
+                              << " seldepth " << selDepth
+                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pv << std::endl;
+                } else {
+                    std::cout << "info "
+                              << "score cp " << prevBestScore
+                              << " depth " << rDepth - 1
+                              << " seldepth " << selDepth
+                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pv << std::endl;
+                }
             }
+            //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
+            //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
+
+            // calculate branching factor
+            std::cout << "info string Branching factor (the stockfish way):"
+                      << std::pow((double) getMovesExplored(), (1.0 / (rDepth - 1))) << std::endl;
+
+
+            // for debugging
+            if (boardFEN != board.fen()) {
+                std::cout << "info string Board does not match original at depth: " << rDepth << std::endl;
+                std::cout << "info string Bad fen: " << board.fen() << std::endl;
+                board.from_fen(boardFEN);
+            }
+
+            /*
+            std::cout << "Total Quiescence Moves Searched: " << quiesceExplored << std::endl;
+            std::cout << "Moves transposed: " << movesTransposed << std::endl;
+            std::cout << "Cut Nodes: " << cutNodes << std::endl;
+             */
         }
-        // still give some info on a fail high or low
-        else {
-            if (prevBestScore >= 31000) {
-                int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
-                std::cout << "info "
-                          << "score mate " << distance
-                          << " depth "     << rDepth
-                          << " seldepth "  << selDepth
-                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                          << " nodes "     << movesExplored
-                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (uint64_t)timeElapsed.count()
-                          << " pv"         << pv << std::endl;
-            }
-            else if (prevBestScore <= -31000) {
-                int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
-                std::cout << "info "
-                          << "score mate " << distance
-                          << " depth "     << rDepth
-                          << " seldepth "  << selDepth
-                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                          << " nodes "     << movesExplored
-                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (uint64_t)timeElapsed.count()
-                          << " pv"         << pv << std::endl;
-            }
-            else {
-                std::cout << "info "
-                          << "score cp "   << prevBestScore
-                          << " depth "     << rDepth - 1
-                          << " seldepth "  << selDepth
-                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                          << " nodes "     << movesExplored
-                          << " nps "       << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " time "      << (uint64_t)timeElapsed.count()
-                          << " pv"         << pv << std::endl;
-            }
-        }
-        //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
-        //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
-
-        // calculate branching factor
-        std::cout << "info string Branching factor (the stockfish way):" << std::pow((double) movesExplored, (1.0 / (rDepth - 1))) << std::endl;
-
-
-        // for debugging
-        if (boardFEN != board.fen()) {
-            std::cout << "info string Board does not match original at depth: " << rDepth << std::endl;
-            std::cout << "info string Bad fen: " << board.fen() << std::endl;
-            board.from_fen(boardFEN);
-        }
-
-        /*
-        std::cout << "Total Quiescence Moves Searched: " << quiesceExplored << std::endl;
-        std::cout << "Moves transposed: " << movesTransposed << std::endl;
-        std::cout << "Cut Nodes: " << cutNodes << std::endl;
-         */
 
         // reset the variables to prepare for the next loop
         if (!finalDepth) {
@@ -693,8 +729,16 @@ void Anduril::go(libchess::Position board) {
     movesTransposed = 0;
     quiesceExplored = 0;
 
-    // tell the GUI what move we want to make
-    std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
+    if (id == 0) {
+        // tell the GUI what move we want to make
+        std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
+
+        // stop the other threads
+        for (auto &i : gondor) {
+            i->stopped = true;
+            i->searching = false;
+        }
+    }
 
     //std::cout << board.fen() << std::endl;
 }

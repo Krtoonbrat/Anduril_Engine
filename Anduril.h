@@ -18,6 +18,9 @@
 #include "TranspositionTable.h"
 #include "PolyglotBook.h"
 
+// age tracker for transposition table
+static int age;
+
 class Anduril {
 public:
 
@@ -31,6 +34,8 @@ public:
                      ROOK,
                      QUEEN,
                      KING };
+
+    Anduril(int id) : id(id) {}
 
     // calls negamax and keeps track of the best move
     // this version will also interact with UCI
@@ -49,7 +54,7 @@ public:
     int evaluateBoard(libchess::Position &board);
 
     // getter and setter for moves explored
-    inline uint64_t getMovesExplored() const { return movesExplored; }
+    inline uint64_t getMovesExplored();
 
     inline void setMovesExplored(int moves) { movesExplored = moves; }
 
@@ -107,15 +112,6 @@ public:
     // time we should stop the search
     std::chrono::time_point<std::chrono::steady_clock> stopTime;
 
-    // did the GUI tell us to quit?
-    std::atomic<bool> quit = false;
-
-    // did the GUI tell us to stop the search?
-    std::atomic<bool> stopped = true;
-
-    // should we be searching?
-    std::atomic<bool> searching = false;
-
     // mutex for starting and stopping the search
     std::mutex mutex;
 
@@ -162,18 +158,21 @@ public:
     // this makes the actual structure 2x2x13x64x13x64.  Yikes.
     ContinuationHistory continuationHistory[2][2];
 
-private:
+    const int id;
+
     // total number of moves Anduril searched
-    std::atomic<uint64_t> movesExplored = 0;
+    std::atomic<uint64_t> movesExplored;
 
-    // total amount of cut nodes
-    std::atomic<uint64_t> cutNodes = 0;
+    // did the GUI tell us to quit?
+    std::atomic<bool> quit;
 
-    // amount of moves we hashed from the transpo table
-    std::atomic<uint64_t> movesTransposed = 0;
+    // did the GUI tell us to stop the search?
+    std::atomic<bool> stopped;
 
-    // amount of moves we searched in quiescence
-    std::atomic<uint64_t> quiesceExplored = 0;
+    // should we be searching?
+    std::atomic<bool> searching;
+
+private:
 
     // the ply of the root node
     int rootPly = 0;
@@ -186,9 +185,6 @@ private:
 
     // minimum ply for null move
     int minNullPly = 0;
-
-    // age tracker for transposition table
-    int age = 0;
 
     // selective depth
     int selDepth = 0;
@@ -280,6 +276,30 @@ private:
     libchess::Bitboard bAttackMap;
 
 };
+
+// number of threads to search with
+static int threads;
+
+// each thread gets its own object
+static std::vector<std::unique_ptr<Anduril>> gondor;
+
+// total amount of cut nodes
+static std::atomic<uint64_t> cutNodes;
+
+// amount of moves we hashed from the transpo table
+static std::atomic<uint64_t> movesTransposed;
+
+// amount of moves we searched in quiescence
+static std::atomic<uint64_t> quiesceExplored;
+
+inline uint64_t Anduril::getMovesExplored() {
+    uint64_t total = 0;
+    for (auto &t : gondor) {
+        total += t->movesExplored.load();
+    }
+    total += movesExplored.load();
+    return total;
+}
 
 // prefetches an address in memory to CPU cache that doesn't block execution
 // this should speed up the program by reducing the amount of time we wait for transposition table probes
