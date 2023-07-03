@@ -590,7 +590,7 @@ void Anduril::go(libchess::Position board) {
                 //std::cout << "High miss at: " << rDepth << std::endl;
                 misses.push_back(rDepth);
                 aspMissesH++;
-                beta = std::min(beta + delta, 32001);
+                beta = std::min(bestScore + delta, 32001);
                 incomplete = true;
                 lower = true;
             }
@@ -602,8 +602,8 @@ void Anduril::go(libchess::Position board) {
                 rDepth++;
                 upper = lower = false;
                 delta = 25;
-                alpha = bestScore - delta;
-                beta = bestScore + delta;
+                alpha = std::max(bestScore - delta, -32001);
+                beta = std::min(bestScore + delta, 32001);
             }
         }
             // for depths less than 5
