@@ -32,6 +32,12 @@ int tableScore(int score, int ply) {
 }
 
 int scoreFromTable(int score, int ply, int rule50) {
+    // if the score we are given is our "none" flag just return it
+    if (score == -32001) {
+        return score;
+    }
+
+    // if a mate score is stored, we need to adjust it to be relative to the current ply
     if (score > 30000) {
         // don't return a mate score if we are going to hit the 50 move rule
         if (32000 - score > 99 - rule50) {
