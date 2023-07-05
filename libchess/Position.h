@@ -263,6 +263,11 @@ class Position {
     [[nodiscard]] MoveList pseudo_legal_move_list() const;
     [[nodiscard]] MoveList legal_move_list() const;
 
+    // added by Krtoonbrat
+    void generate_quiet_checks(MoveList& move_list, Color stm) const;
+    void generate_pawn_checks(MoveList& move_list, Color stm) const;
+    void generate_non_pawn_checks(PieceType pt, MoveList& move_list, Color stm) const;
+
     // Utilities
     void display_raw(std::ostream& ostream = std::cout) const;
     void display(std::ostream& ostream = std::cout) const;

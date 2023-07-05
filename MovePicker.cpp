@@ -270,26 +270,10 @@ top:
             stage++;
 
         case QTACTICAL_INIT:
-            board.generate_quiet_moves(moves, board.side_to_move());
+            board.generate_quiet_checks(moves, board.side_to_move());
+            board.generate_quiet_promotions(moves, board.side_to_move());
             endMoves = moves.end();
-
-            // we are going to use endBadCaptures to mark where the last move we want to search is
-            endBadCaptures = moves.begin();
-
-            // this will get rid of any non-tactical moves so that we dont waste time scoring them
-            while (cur < endMoves) {
-                if (board.is_promotion_move(*cur)
-                    || board.gives_check(*cur)) {
-                    *endBadCaptures++ = *cur++;
-                }
-                else {
-                    cur++;
-                }
-            }
-            // the top of the move list down to endBadCaptures has now been replaced with tacitcal moves
-            // we can now score, sort, and search them
-            cur = moves.begin();
-            endMoves = endBadCaptures;
+            
             score<QUIETS>();
             partial_insertion_sort(cur, endMoves, std::numeric_limits<int>::min());
             stage++;

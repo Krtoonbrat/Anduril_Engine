@@ -3,6 +3,61 @@
 
 namespace libchess {
 
+// added by Krtoonbrat
+inline void Position::generate_quiet_checks(MoveList& move_list, Color stm) const {
+    generate_pawn_checks(move_list, stm);
+    generate_non_pawn_checks(constants::KNIGHT, move_list, stm);
+    generate_non_pawn_checks(constants::BISHOP, move_list, stm);
+    generate_non_pawn_checks(constants::ROOK, move_list, stm);
+    generate_non_pawn_checks(constants::QUEEN, move_list, stm);
+}
+
+inline void Position::generate_pawn_checks(MoveList& move_list, Color stm) const {
+    Square king = king_square(!stm);
+    Bitboard pawns = piece_type_bb(constants::PAWN, stm);
+    pawns &= ~lookups::relative_rank_mask(constants::RANK_7, stm);
+    Bitboard double_push_candidate = pawns & lookups::relative_rank_mask(constants::RANK_2, stm);
+
+    Bitboard single_pushes = lookups::pawn_shift(pawns, stm) & ~occupancy_bb();
+    Bitboard double_pushes = lookups::pawn_shift(double_push_candidate, stm, 2) & ~occupancy_bb();
+
+    Bitboard target = lookups::pawn_attacks(king, !stm);
+    Bitboard single_push_checks = single_pushes & target;
+    Bitboard double_push_checks = double_pushes & target;
+
+    while (single_push_checks) {
+        Square to_sq = single_push_checks.forward_bitscan();
+        single_push_checks.forward_popbit();
+        move_list.add(Move{lookups::pawn_shift(to_sq, !stm), to_sq, Move::Type::NORMAL});
+    }
+
+    while (double_push_checks) {
+        Square to_sq = double_push_checks.forward_bitscan();
+        double_push_checks.forward_popbit();
+        move_list.add(Move{lookups::pawn_shift(to_sq, !stm, 2), to_sq, Move::Type::DOUBLE_PUSH});
+    }
+
+}
+
+inline void Position::generate_non_pawn_checks(PieceType pt, MoveList& move_list, Color stm) const {
+    Bitboard pieces = piece_type_bb(pt, stm);
+    Bitboard occ = occupancy_bb();
+    Bitboard target = lookups::non_pawn_piece_type_attacks(pt, king_square(!stm), occ) & (~occ);
+
+    while (pieces) {
+        Square from = pieces.forward_bitscan();
+        pieces.forward_popbit();
+        Bitboard attacks = lookups::non_pawn_piece_type_attacks(pt, from, occ) & target;
+
+        while (attacks) {
+            Square to_sq = attacks.forward_bitscan();
+            attacks.forward_popbit();
+            move_list.add(Move{from, to_sq, Move::Type::NORMAL});
+        }
+    }
+
+}
+
 inline void Position::generate_quiet_promotions(MoveList& move_list, Color stm) const {
     Bitboard promotion_candidates =
         lookups::pawn_shift(piece_type_bb(constants::PAWN, stm) &
