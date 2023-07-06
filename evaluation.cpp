@@ -182,12 +182,12 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
     // bishop pair
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() >= 2) {
-        scoreMG += 25;
-        scoreEG += 40;
+        scoreMG += 3;
+        scoreEG += 12;
     }
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() >= 2) {
-        scoreMG -= 25;
-        scoreEG -= 40;
+        scoreMG -= 3;
+        scoreEG -= 12;
     }
 
     // rook on (semi)open files

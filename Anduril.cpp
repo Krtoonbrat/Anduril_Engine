@@ -678,7 +678,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 && abs(nScore) < 31000
                 && (nType == 1 || nType == 2)
                 && nDepth >= depth - 3) {
-                int singleBeta = nScore - (3 + 2 * (nType == 1 && !PvNode)) * depth / 2;
+                int singleBeta = nScore - (5 + 3 * (nType == 1 && !PvNode)) * depth / 2;
                 int singleDepth = (depth - 1) / 2;
                 singularAttempts++;
 
