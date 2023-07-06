@@ -589,7 +589,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // at root, we are going to ignore the picker object.  The amount of time spent allocating and selecting moves should be negligible because this only happens for one position per search
     // here we set the pointer for the current root move to the beginning of the move list, and sort the list
     if constexpr (rootNode) {
-        partial_insertion_sort(rootMoves.begin(), rootMoves.end(), std::numeric_limits<int>::min());
+        if (id == 0) {
+            partial_insertion_sort(rootMoves.begin(), rootMoves.end(), std::numeric_limits<int>::min());
+        }
         currRootMove = rootMoves.begin();
     }
 
@@ -615,7 +617,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // at root, replace the move with the current root move
         if constexpr (rootNode) {
-            move = *currRootMove;
+            if (id == 0) {
+                move = *currRootMove;
+            }
         }
 
         if (move == excludedMove) {
@@ -664,7 +668,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         extension = 0;
 
         // search extensions
-        if (ply - rootPly < rDepth * 1.5) {
+        if (ply - rootPly < rDepth * 2) {
             // Singular extension search
             // based on the stockfish implementation
             if (!rootNode

@@ -708,8 +708,7 @@ void Anduril::go(libchess::Position board) {
             //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
 
             // calculate branching factor
-            std::cout << "info string Branching factor (the stockfish way):"
-                      << std::pow((double) getMovesExplored(), (1.0 / (rDepth - 1))) << std::endl;
+            //std::cout << "info string Branching factor (the stockfish way):" << std::pow((double) getMovesExplored(), (1.0 / (rDepth - 1))) << std::endl;
 
 
             // for debugging
