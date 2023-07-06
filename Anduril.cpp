@@ -628,7 +628,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // search only legal moves
         // all moves are legal at root because we generated a legal move list
-        if (!rootNode && !board.is_legal_move(move)) {
+        if ((!rootNode || id != 0) && !board.is_legal_move(move)) {
             continue;
         }
 
