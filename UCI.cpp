@@ -49,8 +49,6 @@ namespace UCI {
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = true;
 
-        AI->resetHistories();
-
         // initialize the oversize state array
         for (int i = -7; i < 0; i++) {
             board.continuationHistory(i) = &AI->continuationHistory[0][0][15][0];

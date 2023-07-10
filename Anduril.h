@@ -35,7 +35,7 @@ public:
                      QUEEN,
                      KING };
 
-    Anduril(int id) : id(id) {}
+    Anduril(int id) : id(id) { resetHistories(); }
 
     // calls negamax and keeps track of the best move
     // this version will also interact with UCI
