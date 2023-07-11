@@ -576,18 +576,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         depth -= 1;
     }
 
-    // decide if we can use futility pruning
-    // if the eval is below (alpha - margin), searching non-tactical moves at lower
-    // depths wastes time, so we set a flag to prune them
-    bool futile = false;
-    if (!PvNode
-        && depth <= 4
-        && !check
-        && abs(alpha) < 9000     // this condition makes sure we aren't thinking about mate
-        && board.staticEval() + margin[depth] <= alpha) {
-        futile = true;
-    }
-
     // holds the continuation history from previous moves
     const PieceHistory *contHistory[] = {board.continuationHistory(ply - 1), board.continuationHistory(ply - 2),
                                          nullptr                               , board.continuationHistory(ply - 4),
@@ -661,21 +649,47 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         board.moveCount() = ++moveCounter;
         bool capture = board.is_capture_move(move);
         bool promotion = board.is_promotion_move(move);
+        bool givesCheck = board.gives_check(move);
 
-        // check for move count pruning
+        // quiet move pruning and move count pruning
         if (!rootNode
             && nonPawnMaterial(!board.side_to_move(), board)
-            && bestScore > -32000) {
-            moveCountPruning = moveCounter >= moveCountPruningThreshold(improving, depth);
-        }
+            && bestScore > -31000) {
 
-        // futility pruning
-        if (futile
-            && !capture
-            && !promotion
-            && !board.gives_check(move)) {
-            continue;
-        }
+                // move count pruning
+                // this doesn't require that the move we are searching is quiet so we do it here
+                moveCountPruning = moveCounter >= moveCountPruningThreshold(improving, depth);
+
+                // quiet move pruning
+                if (!capture
+                    && !promotion
+                    && !givesCheck) {
+
+                    int lmrDepth = depth - 1 - reductions[depth] + (int)(reductions[moveCounter] * 2 / 3.0);
+
+                    // futility pruning
+                    // TODO: get rid of margin array and replace with a function so that it futility can be applied to all nodes
+                    if (depth <= 4
+                        && !check
+                        && board.staticEval() + margin[depth] <= alpha) {
+                            continue;
+                    }
+
+                    // continuation history pruning
+                    int hist = (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()]
+                                + (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()]
+                                + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
+
+                    if (picker.getStage() > 3 // value of 3 == refutations
+                        && lmrDepth <= 3
+                        && hist < -1000) {
+                            continue;
+                        }
+
+                }
+
+            }
+
 
         // the actual depth we will search this move to
         int actualDepth = depth - 1;
@@ -730,7 +744,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
 
             // check extension
-            if (board.gives_check(move) && depth > 12) {
+            if (givesCheck && depth > 12) {
                 extension = 1;
             }
 

@@ -46,6 +46,8 @@ public:
 
     libchess::MoveList getMoves() { return moves; }
 
+    int getStage() { return stage; }
+
 private:
     template<ScoreType>
     void score();
