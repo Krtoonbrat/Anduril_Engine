@@ -28,7 +28,7 @@ constexpr int stat_bonus(int depth) {
 
 // changes mate scores from being relative to the root to being relative to the current ply
 int tableScore(int score, int ply) {
-    return score > 30000 ? score + ply : score < -30000 ? score - ply : score;
+    return score > 31900 ? score + ply : score < -31900 ? score - ply : score;
 }
 
 int scoreFromTable(int score, int ply, int rule50) {
@@ -38,7 +38,7 @@ int scoreFromTable(int score, int ply, int rule50) {
     }
 
     // if a mate score is stored, we need to adjust it to be relative to the current ply
-    if (score > 30000) {
+    if (score > 31900) {
         // don't return a mate score if we are going to hit the 50 move rule
         if (32000 - score > 99 - rule50) {
             return 31753; // this is below what checkmate in maximum search would be
@@ -47,9 +47,9 @@ int scoreFromTable(int score, int ply, int rule50) {
         return score - ply;
     }
 
-    if (score < -30000) {
+    if (score < -31900) {
         // don't return a mate score if we are going to hit the 50 move rule
-        if (score + 32000 > 99 - rule50) {
+        if (32000 + score > 99 - rule50) {
             return -31753; // this is below what checkmate in maximum search would be
         }
 
@@ -65,9 +65,16 @@ template <Anduril::NodeType nodeType>
 int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int depth) {
     constexpr bool PvNode = nodeType != NonPV;
 
+    // are we in check?
+    bool check = board.in_check();
+
     // is the time up?
     if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
         return 0;
+    }
+
+    if ((ply - rootPly) >= 100) {
+        return !check ? evaluateBoard(board) : 0;
     }
 
     // check for a draw
@@ -97,9 +104,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 		movesTransposed++;
 		return nScore;
 	}
-
-    // are we in check?
-    bool check = board.in_check();
 
     int standPat = -32001;
     // we can't stand pat if we are in check
@@ -274,11 +278,18 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     constexpr bool PvNode = nodeType != NonPV;
     constexpr bool rootNode = nodeType == Root;
 
+    // are we in check?
+    int check = board.in_check();
+
     // is the time up?  Mate distance pruning?
     if constexpr (!rootNode) {
         // check for aborted search
         if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
+        }
+
+        if (ply - rootPly >= 100) {
+            return !check ? evaluateBoard(board) : 0;
         }
 
         // Mate distance pruning.  If we mate at the next move, our score would be mate in current ply + 1.  If alpha
@@ -296,9 +307,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     if (board.halfmoves() >= 100 || board.is_repeat(2)) {
         return 0;
     }
-
-    // are we in check?
-    int check = board.in_check();
 
     // did alpha change?
     bool alphaChange = false;
@@ -471,10 +479,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         decPly();
         board.unmake_move();
 
-        if (nullScore >= beta) {
+        // dont return unproven mate
+        nullScore = std::min(nullScore, 31507);  // It doesn't have to be this number but this is what stockfish uses and I thought that was fun that it was such a random number but picked with a purpose
 
-            // dont return unproven mate
-            nullScore = std::min(nullScore, 31507);  // It doesn't have to be this number but this is what stockfish uses and I thought that was fun that it was such a random number but picked with a purpose
+        if (nullScore >= beta && nullScore != 31507) {
 
             if (minNullPly || depth < 12) {
                 return nullScore;

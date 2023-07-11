@@ -635,7 +635,7 @@ void Anduril::go(libchess::Position board) {
             }
 
             if (!incomplete) {
-                if (prevBestScore >= 31000) {
+                if (prevBestScore >= 31900) {
                     int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
@@ -645,7 +645,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
-                } else if (prevBestScore <= -31000) {
+                } else if (prevBestScore <= -31900) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
@@ -668,7 +668,7 @@ void Anduril::go(libchess::Position board) {
             }
                 // still give some info on a fail high or low
             else {
-                if (prevBestScore >= 31000) {
+                if (prevBestScore >= 31900) {
                     int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
@@ -679,7 +679,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
-                } else if (prevBestScore <= -31000) {
+                } else if (prevBestScore <= -31900) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
