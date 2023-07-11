@@ -514,9 +514,6 @@ void Anduril::go(libchess::Position board) {
 
     // these variables are for debugging
     int aspMissesL = 0, aspMissesH = 0;
-    int n1 = 0;
-    double branchingFactor = 0;
-    double avgBranchingFactor = 0;
     std::vector<int> misses;
 
     rDepth = 1;
@@ -635,7 +632,7 @@ void Anduril::go(libchess::Position board) {
             }
 
             if (!incomplete) {
-                if (prevBestScore >= 31900) {
+                if (prevBestScore >= 31000) {
                     int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
@@ -645,7 +642,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
-                } else if (prevBestScore <= -31900) {
+                } else if (prevBestScore <= -31000) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
@@ -668,7 +665,7 @@ void Anduril::go(libchess::Position board) {
             }
                 // still give some info on a fail high or low
             else {
-                if (prevBestScore >= 31900) {
+                if (prevBestScore >= 31000) {
                     int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
@@ -679,7 +676,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
-                } else if (prevBestScore <= -31900) {
+                } else if (prevBestScore <= -31000) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance

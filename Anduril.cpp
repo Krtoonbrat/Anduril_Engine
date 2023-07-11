@@ -325,6 +325,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     libchess::Move bestMove = move;
     libchess::Move excludedMove = board.getExcluded();
 
+    // reset killers for next ply
+    killers[ply - rootPly + 1][0] = libchess::Move(0);
+    killers[ply - rootPly + 1][1] = libchess::Move(0);
+
     // amount of quiet moves we searched and what moves they were
     int quietCount = 0;
     libchess::Move quietMoves[64];
@@ -459,13 +463,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // null move pruning
     if (!PvNode
         && !check
+        && abs(beta) < 31000
         && board.prevMoveType(ply - 1) != libchess::Move::Type::NONE
         && staticEval >= beta
         && staticEval >= board.staticEval()
         && depth >= 2
         && excludedMove.value() == 0
         && nonPawnMaterial(!board.side_to_move(), board)
-        && ((ply - rootPly) >= minNullPly)) {
+        && (ply - rootPly) >= minNullPly) {
 
         // set reduction based on depth, eval, and whether or not the last move made was tactical
         int R = 4 + depth / 5 + std::min(3, (staticEval - beta) / 50) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
@@ -479,12 +484,12 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         decPly();
         board.unmake_move();
 
-        // dont return unproven mate
-        nullScore = std::min(nullScore, 31507);  // It doesn't have to be this number but this is what stockfish uses and I thought that was fun that it was such a random number but picked with a purpose
+        if (nullScore >= beta) {
 
-        if (nullScore >= beta && nullScore != 31507) {
+            // dont return unproven mate
+            nullScore = std::min(nullScore, 31507);  // It doesn't have to be this number but this is what stockfish uses and I thought that was fun that it was such a random number but picked with a purpose
 
-            if (minNullPly || depth < 12) {
+            if (nullScore != 31507 && (minNullPly || depth < 12)) {
                 return nullScore;
             }
 
@@ -496,7 +501,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             minNullPly = 0;
 
             if (s >= beta) {
-                return nullScore;
+                return s;
             }
         }
     }
@@ -504,10 +509,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
     // the position would most likely cut at a full depth search as well
-    int probCutBeta = beta + 264 - 44 * improving;
+    int probCutBeta = beta + pEG - 44 * improving;
     if (!PvNode
         && depth > 4
         && !check
+        && abs(beta) < 31000
         && !(found
         && nDepth >= depth - 3
         && nScore != -32001
@@ -635,7 +641,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
 
         // search only legal moves
-        // all moves are legal at root because we generated a legal move list
+        // all moves are legal at root because we generated a legal move list (for main thread)
         if ((!rootNode || id != 0) && !board.is_legal_move(move)) {
             continue;
         }
