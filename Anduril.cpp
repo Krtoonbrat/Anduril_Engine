@@ -679,8 +679,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                             + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
 
                 if (picker.getStage() > 3 // value of 3 == refutations
-                    && lmrDepth <= 3
-                    && hist < -1000) {
+                    && lmrDepth <= 5
+                    && hist < -1250 * depth) {
                         continue;
                     }
 

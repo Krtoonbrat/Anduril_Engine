@@ -173,7 +173,7 @@ namespace UCI {
         if ((ptr = strstr(line, "Threads"))) {
             threads = atoi(ptr + 13);
             gondor.clear();
-            for (int i = 1; i < threads; i ++) {
+            for (int i = 1; i < threads; i++) {
                 gondor.emplace_back(std::make_unique<Anduril>(i));
             }
         }
@@ -481,7 +481,16 @@ void Anduril::go(libchess::Position board) {
         cutNodes = 0;
         movesTransposed = 0;
         quiesceExplored = 0;
+        //threads = 4;   // for profiling
         for (int i = 1; i < threads; i++) {
+            // more profiling stuff
+            /*
+            gondor.emplace_back(std::make_unique<Anduril>(i));
+            gondor[i - 1]->limits.depth = 20;
+            gondor[i - 1]->stopped = false;
+            gondor[i - 1]->searching = true;
+            gondor[i - 1]->startTime = std::chrono::steady_clock::now();
+            */
             std::thread(&Anduril::go, gondor[i - 1].get(), board).detach();
         }
     }
