@@ -210,14 +210,13 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                     break;
                 }
 
-            // delta pruning
-            // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
-            // we can just skip delta pruning there and it shouldn't cost too much
-            if (board.piece_type_on(move.to_square())
-                && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
-                && nonPawnMaterial(board.side_to_move(), board) -
-                   seeValues[board.piece_type_on(move.to_square())->value()] > 1600
-                && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
+                // delta pruning
+                // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
+                // we can just skip delta pruning there and it shouldn't cost too much
+                if (board.piece_type_on(move.to_square())
+                    && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
+                    && nonPawnMaterial(board.side_to_move(), board) - seeValues[board.piece_type_on(move.to_square())->value()] > 1600
+                    && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
                 continue;
             }
 
@@ -656,40 +655,48 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             && nonPawnMaterial(!board.side_to_move(), board)
             && bestScore > -31000) {
 
-                // move count pruning
-                // this doesn't require that the move we are searching is quiet so we do it here
-                moveCountPruning = moveCounter >= moveCountPruningThreshold(improving, depth);
+            // move count pruning
+            // this doesn't require that the move we are searching is quiet so we do it here
+            moveCountPruning = moveCounter >= moveCountPruningThreshold(improving, depth);
 
-                // quiet move pruning
-                if (!capture
-                    && !promotion
-                    && !givesCheck) {
+            // quiet move pruning
+            if (!capture
+                && !promotion
+                && !givesCheck) {
 
-                    int lmrDepth = depth - 1 - reductions[depth] + (int)(reductions[moveCounter] * 2 / 3.0);
+                int lmrDepth = depth - 1 - reductions[depth] + (int)(reductions[moveCounter] * 2 / 3.0);
 
-                    // futility pruning
-                    // TODO: get rid of margin array and replace with a function so that it futility can be applied to all nodes
-                    if (depth <= 4
-                        && !check
-                        && board.staticEval() + margin[depth] <= alpha) {
-                            continue;
+                // futility pruning
+                if (lmrDepth <= 8
+                    && !check
+                    && board.staticEval() + pEG + lmrDepth * 60 <= alpha) {
+                        continue;
+                }
+
+                // continuation history pruning
+                int hist = (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()]
+                            + (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()]
+                            + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
+
+                if (picker.getStage() > 3 // value of 3 == refutations
+                    && lmrDepth <= 3
+                    && hist < -1000) {
+                        continue;
                     }
-
-                    // continuation history pruning
-                    int hist = (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()]
-                                + (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()]
-                                + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
-
-                    if (picker.getStage() > 3 // value of 3 == refutations
-                        && lmrDepth <= 3
-                        && hist < -1000) {
-                            continue;
-                        }
 
                 }
 
-            }
+        }
 
+        int seeMargin = (!capture && !promotion && !givesCheck) ? -75 * depth : -25 * depth * depth;
+
+        // see pruning
+        if (bestScore > -31000
+            && depth <= 8
+            && picker.getStage() > 2 // value of 2 == good captures
+            && board.see_for(move, seeValues) <= seeMargin) {
+                continue;
+            }
 
         // the actual depth we will search this move to
         int actualDepth = depth - 1;

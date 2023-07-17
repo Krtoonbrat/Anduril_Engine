@@ -258,9 +258,6 @@ private:
     // history table
     ButterflyHistory moveHistory;
 
-    // futility margins
-    int margin[5] = {0, 100, 200, 400, 600};
-
     // number of pieces attacking the king zone
     int attackCount[2] = {0};
 
