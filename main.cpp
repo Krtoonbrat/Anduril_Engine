@@ -67,7 +67,7 @@ int main() {
     AI->go(board);
     */
     
-    //UCI::loop();
+    UCI::loop();
 
     return 0;
 }
