@@ -463,7 +463,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     if (!PvNode
         && !check
         && abs(beta) < 31000
-        && board.prevMoveType(ply - 1) != libchess::Move::Type::NONE
+        && board.prevMoveType(ply) != libchess::Move::Type::NONE
         && staticEval >= beta
         && staticEval >= board.staticEval()
         && depth >= 2
