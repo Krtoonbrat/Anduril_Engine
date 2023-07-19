@@ -11,9 +11,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 # add debug flags if needed
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Og -ginline-points")
-endif()
+#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Og -ginline-points")
+#endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -O2 -ginline-points")

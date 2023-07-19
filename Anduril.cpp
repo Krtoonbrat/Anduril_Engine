@@ -199,7 +199,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                         continue;
                     }
 
-                    if (futility <= alpha && board.see_for(move, seeValues) < 1) {
+                    if (futility <= alpha && !board.see_ge(move, 1)) {
                         bestScore = std::max(bestScore, futility);
                         continue;
                     }
@@ -221,7 +221,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
             }
 
                 // see pruning
-                if (board.see_for(move, seeValues) <  -28) {
+                if (!board.see_ge(move, -28)) {
                     continue;
                 }
         }
@@ -694,7 +694,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if (bestScore > -31000
             && depth <= 8
             && picker.getStage() > 2 // value of 2 == good captures
-            && board.see_for(move, seeValues) <= seeMargin) {
+            && !board.see_ge(move, seeMargin)) {
                 continue;
             }
 

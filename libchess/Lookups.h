@@ -415,6 +415,7 @@ inline Bitboard relative_rank_mask(Rank rank, Color c) {
     return rank_mask(relative_rank(rank, c));
 }
 
+// everything from here down to least significant square function is inspired/taken from stockfish
 inline Bitboard forward_ranks_mask(Square square, Color color) {
     return color == constants::WHITE ? RANK_1_MASK << 8 * relative_rank(Rank(square.value() / 8), constants::WHITE)
                                      : RANK_8_MASK >> 8 * relative_rank(Rank(square.value() / 8), constants::BLACK);
@@ -439,6 +440,10 @@ inline Bitboard passed_pawn_span(Color color, Square square) {
 inline Bitboard pawn_double_attacks(Color color, Bitboard pawns) {
     return color == constants::WHITE ? ((pawns & ~FILE_H_MASK) << 9) | ((pawns & ~FILE_A_MASK) << 7)
                                      : ((pawns & ~FILE_H_MASK) >> 7) | ((pawns & ~FILE_A_MASK) >> 9);
+}
+
+inline Bitboard least_significant_square_bb(Bitboard b) {
+    return square(b.forward_bitscan());
 }
 
 inline Bitboard bishop_attacks_classical(Square square, Bitboard occupancy) {

@@ -160,6 +160,117 @@ inline std::optional<Move> Position::smallest_capture_move_to(Square square) con
     return std::nullopt;
 }
 
+// added by Krtoonbrat, based on the Stockfish implementation
+inline bool Position::see_ge(Move move, int threshold) {
+    // stockfish has this early exit for moves that are not a capture, double push, or normal
+    if (move.type() != Move::Type::CAPTURE && move.type() != Move::Type::DOUBLE_PUSH &&
+        move.type() != Move::Type::NORMAL) {
+        return 0 >= threshold;
+    }
+
+    Square from_square = move.from_square(), to_square = move.to_square();
+    auto from_pt = piece_type_on(from_square), to_pt = piece_type_on(to_square);
+
+    int swap = pieceValuesMG[to_pt ? to_pt->value() : 5] - threshold;
+    if (swap < 0) {
+        return false;
+    }
+
+    swap = pieceValuesMG[from_pt ? from_pt->value() : 5] - swap;
+    if (swap <= 0) {
+        return true;
+    }
+
+    Bitboard occupied = occupancy_bb() ^ lookups::square(from_square) ^ lookups::square(to_square);
+    Color stm = side_to_move();
+    Bitboard attackers = attackers_to(to_square, occupied);
+    Bitboard pinners[2] = {this->pinners(constants::WHITE), this->pinners(constants::BLACK)};
+    Bitboard blockers[2] = {this->pinned_pieces_of(constants::WHITE), this->pinned_pieces_of(constants::BLACK)};
+    Bitboard stmAttackers, bb;
+    int res = 1;
+
+    while (true) {
+        stm = !stm;
+        attackers &= occupied;
+
+        // if stm has no more attackers then give up, stm loses
+        if (!(stmAttackers = attackers & color_bb(stm))) {
+            break;
+        }
+
+        // Don't allow pinned pieces to attack as long as there are pinners on their original square
+        if (pinners[!stm] & occupied) {
+            stmAttackers &= ~blockers[stm];
+
+            if (!stmAttackers) {
+                break;
+            }
+
+        }
+
+        res ^= 1;
+
+        // locate and remove the next least valuable attacker, and add to the bitboard
+        // 'attackers' any x-ray attackers behind it
+        if ((bb = stmAttackers & piece_type_bb(constants::PAWN))) {
+            occupied ^= lookups::least_significant_square_bb(bb);
+            if ((swap = pieceValuesMG[constants::PAWN] - swap) < res) {
+                break;
+            }
+
+            attackers |= lookups::bishop_attacks(to_square, occupied) & (piece_type_bb(constants::BISHOP) | piece_type_bb(constants::QUEEN));
+
+        }
+        
+        else if ((bb = stmAttackers & piece_type_bb(constants::KNIGHT))) {
+            occupied ^= lookups::least_significant_square_bb(bb);
+            if ((swap = pieceValuesMG[constants::KNIGHT] - swap) < res) {
+                break;
+            }
+        }
+
+        else if ((bb = stmAttackers & piece_type_bb(constants::BISHOP))) {
+            occupied ^= lookups::least_significant_square_bb(bb);
+            if ((swap = pieceValuesMG[constants::BISHOP] - swap) < res) {
+                break;
+            }
+
+            attackers |= lookups::bishop_attacks(to_square, occupied) & (piece_type_bb(constants::BISHOP) | piece_type_bb(constants::QUEEN));
+
+        }
+
+        else if ((bb = stmAttackers & piece_type_bb(constants::ROOK))) {
+            occupied ^= lookups::least_significant_square_bb(bb);
+            if ((swap = pieceValuesMG[constants::ROOK] - swap) < res) {
+                break;
+            }
+
+            attackers |= lookups::rook_attacks(to_square, occupied) & (piece_type_bb(constants::ROOK) | piece_type_bb(constants::QUEEN));
+
+        }
+
+        else if ((bb = stmAttackers & piece_type_bb(constants::QUEEN))) {
+            occupied ^= lookups::least_significant_square_bb(bb);
+            if ((swap = pieceValuesMG[constants::QUEEN] - swap) < res) {
+                break;
+            }
+
+            attackers |= (lookups::bishop_attacks(to_square, occupied) & (piece_type_bb(constants::BISHOP) | piece_type_bb(constants::QUEEN))) |
+                         (lookups::rook_attacks(to_square, occupied) & (piece_type_bb(constants::ROOK) | piece_type_bb(constants::QUEEN)));
+
+        }
+        
+        // king, if we "capture" with the king but the opponent has attackers, reverse the result
+        else {
+            return (attackers & ~color_bb(stm)) ? res ^ 1 : res;
+        }
+
+    }
+
+    return bool(res);
+
+}
+
 // modified by Krtoonbrat
 inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
     auto smallest_capture_move = smallest_capture_move_to(square);

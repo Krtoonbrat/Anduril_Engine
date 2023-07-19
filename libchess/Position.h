@@ -237,6 +237,9 @@ class Position {
     [[nodiscard]] Bitboard attacks_of_piece_on(Square square) const;
     [[nodiscard]] Bitboard pinned_pieces_of(Color c) const;
 
+    // added by Krtoonbrat
+    [[nodiscard]] Bitboard pinners(Color c) const;
+
     // Move Generation
     void generate_quiet_promotions(MoveList& move_list, Color stm) const;
     void generate_capture_promotions(MoveList& move_list, Color stm) const;
@@ -279,6 +282,9 @@ class Position {
     int see_for(Move move, std::array<int, 6> piece_values);
     static std::optional<Position> from_fen(const std::string& fen);
     static std::optional<Position> from_uci_position_line(const std::string& line);
+
+    // added by Krtoonbrat, based on the Stockfish implementation
+    bool see_ge(Move move, int threshold);
 
     int getPSQTMG() { return state().scoreMG; }
     int getPSQTEG() { return state().scoreEG; }

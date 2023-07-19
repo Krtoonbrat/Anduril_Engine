@@ -64,6 +64,26 @@ inline Bitboard Position::pinned_pieces_of(Color c) const {
     return pinned_bb;
 }
 
+inline Bitboard Position::pinners(Color c) const {
+    Bitboard pinners, bb;
+    Square king_sq = king_square(!c), sq(0);
+    Bitboard potential_pinners_bb = ((piece_type_bb(constants::QUEEN) | piece_type_bb(constants::ROOK)) &
+                           color_bb(c) & lookups::rook_attacks(king_sq)) |
+                          ((piece_type_bb(constants::QUEEN) | piece_type_bb(constants::BISHOP)) &
+                           color_bb(c) & lookups::bishop_attacks(king_sq));
+    
+    while (potential_pinners_bb) {
+        sq = potential_pinners_bb.forward_bitscan();
+        potential_pinners_bb.forward_popbit();
+        bb = lookups::intervening(sq, king_sq) & color_bb(!c);
+        if (bb.popcount() == 1) {
+            pinners |= Bitboard(sq);
+        }
+    }
+
+    return pinners;
+}
+
 }  // namespace libchess
 
 #endif  // LIBCHESS_ATTACKS_H
