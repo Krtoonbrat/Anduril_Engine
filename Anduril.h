@@ -279,7 +279,7 @@ private:
 };
 
 // number of threads to search with
-static int threads;
+extern int threads;
 
 // each thread gets its own object
 static std::vector<std::unique_ptr<Anduril>> gondor;

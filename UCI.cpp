@@ -116,9 +116,9 @@ namespace UCI {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
 
+                std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
-                std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
 
                 std::cout << "option name kMG type spin default 337 min -4000 max 4000" << std::endl;
                 std::cout << "option name kEG type spin default 281 min -4000 max 4000" << std::endl;
@@ -163,11 +163,6 @@ namespace UCI {
     void parseOption(char* line, std::unique_ptr<Anduril> &AI, bool &bookOpen) {
         char *ptr = NULL;
 
-        // set hash size
-        if ((ptr = strstr(line, "Hash"))) {
-            table.resize(atoi(ptr + 10));
-        }
-
         // set thread count
         // this is probably risky cuz a thread could be executing on an object we are deleting, YOLO
         if ((ptr = strstr(line, "Threads"))) {
@@ -176,6 +171,11 @@ namespace UCI {
             for (int i = 1; i < threads; i++) {
                 gondor.emplace_back(std::make_unique<Anduril>(i));
             }
+        }
+
+        // set hash size
+        if ((ptr = strstr(line, "Hash"))) {
+            table.resize(atoi(ptr + 10));
         }
 
         // set book open or closed

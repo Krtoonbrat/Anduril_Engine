@@ -3,7 +3,10 @@
 //
 
 #include <cstdlib>
+#include <cstring>
+#include <thread>
 
+#include "Anduril.h"
 #include "TranspositionTable.h"
 
 TranspositionTable table;
@@ -53,14 +56,27 @@ void TranspositionTable::resize(size_t tSize) {
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < clusterCount; i++) {
-        tPtr[i] = Cluster();
-    }
+    clear();
 }
 
+// based on the stockfish multi-threaded implementation
 void TranspositionTable::clear() {
-    for (int i = 0; i < clusterCount; i++) {
-        tPtr[i] = Cluster();
+    std::vector<std::thread> threadPool;
+
+    for (size_t idx = 0; idx < size_t(threads); ++idx) {
+        threadPool.emplace_back([this, idx]() {
+
+            const size_t stride = size_t(clusterCount / threads),
+                    start  = size_t(stride * idx),
+                    len    = idx != size_t(threads) - 1 ?
+                             stride : clusterCount - start;
+
+            std::memset(&tPtr[start], 0, len * sizeof(Cluster));
+        });
+    }
+
+    for (auto & t : threadPool) {
+        t.join();
     }
 }
 

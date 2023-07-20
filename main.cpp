@@ -26,6 +26,8 @@ libchess::lookups::MagicAttacksLookup<libchess::lookups::SlidingPieceType::BISHO
 
 std::array<std::array<libchess::Bitboard, 64>, 64> libchess::lookups::FULL_RAY;
 
+int threads;
+
 int main() {
     libchess::lookups::SQUARES = libchess::lookups::init::squares();
 
@@ -51,8 +53,8 @@ int main() {
 
     libchess::lookups::FULL_RAY = libchess::lookups::init::full_ray();
 
+    threads = 1;
     table.resize(256);
-    table.clear();
 
     // for profiling
     /*
