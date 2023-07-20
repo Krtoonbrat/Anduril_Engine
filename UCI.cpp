@@ -147,8 +147,7 @@ namespace UCI {
 
                 std::cout << "option name QOV type spin default 500000 min 0 max 1000000" << std::endl;
                 std::cout << "option name ROV type spin default 250000 min 0 max 1000000" << std::endl;
-                std::cout << "option name MOV type spin default 100000 min 0 max 1000000" << std::endl;
-                std::cout << "option name MHV type spin default 15000 min 0 max 1000000" << std::endl;
+                std::cout << "option name MOV type spin default 150000 min 0 max 1000000" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -275,10 +274,6 @@ namespace UCI {
 
         if ((ptr = strstr(line, "MOV"))) {
             minorOrderVal = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "MHV"))) {
-            maxHistoryVal = atoi(ptr + 10);
         }
     }
 

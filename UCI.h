@@ -28,8 +28,8 @@ namespace UCI {
     static int queenOrderVal = 500000;
     static int rookOrderVal =  250000;
     static int minorOrderVal = 150000;
-    static int maxHistoryVal = 15000;
-    static int maxContinuationVal = 25000;
+    static int maxHistoryVal = 16384;
+    static int maxContinuationVal = 16384;
 }
 
 #endif //ANDURIL_ENGINE_UCI_H

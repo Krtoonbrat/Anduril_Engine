@@ -23,7 +23,8 @@ constexpr int reverseFutilityMargin(int depth, bool improving) {
 }
 
 constexpr int stat_bonus(int depth) {
-    return 2 * depth * depth;
+    return std::min(336 * depth - 547, 1561);
+    //return 2 * depth * depth;
 }
 
 // changes mate scores from being relative to the root to being relative to the current ply
@@ -606,6 +607,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     bool moveCountPruning = false;
 
     int extension = 0;
+    int hist;
     // loop through the possible moves and score each
     while ((move = picker.nextMove(moveCountPruning)).value() != 0) {
 
@@ -649,6 +651,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         bool capture = board.is_capture_move(move);
         bool promotion = board.is_promotion_move(move);
         bool givesCheck = board.gives_check(move);
+        hist = (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()]
+                + (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()]
+                + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
 
         // quiet move pruning and move count pruning
         if (!rootNode
@@ -674,13 +679,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 }
 
                 // continuation history pruning
-                int hist = (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()]
-                            + (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()]
-                            + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
 
                 if (picker.getStage() > 3 // value of 3 == refutations
                     && lmrDepth <= 5
-                    && hist < -1250 * depth) {
+                    && hist < -3500 * depth) {
                         continue;
                     }
 
@@ -813,6 +815,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             if (board.moveCount(ply - 1) > 7) {
                 reduction--;
             }
+
+            // adjust based on history stats
+            hist += moveHistory[board.side_to_move()][move.from_square()][move.to_square()];
+            reduction -= std::max(-2, std::min(2, hist / 8192));
 
             // new depth we will search with
             // we need to search at least one more move
