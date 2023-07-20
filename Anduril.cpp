@@ -77,9 +77,9 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         return !check ? evaluateBoard(board) : 0;
     }
 
-    // check for a draw
+    // check for a draw, add variance to draw score to avoid 3-fold blindness
     if (board.halfmoves() >= 100 || board.is_repeat(2)) {
-        return 0;
+        return 1 - (movesExplored.load() & 2);
     }
 
     // represents the best score we have found so far
@@ -302,9 +302,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
     }
 
-    // check for a draw
+    // check for a draw, add variance to draw score to avoid 3-fold blindness
     if (board.halfmoves() >= 100 || board.is_repeat(2)) {
-        return 0;
+        return 1 - (movesExplored.load() & 2);
     }
 
     // did alpha change?
@@ -942,10 +942,10 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
 
         // decrease stats for non-best quiets
         for (int i = 0; i < quietCount; i++) {
-            orderPenalty = stat_bonus(quietCount - i);
+            orderPenalty = -bonus - stat_bonus(quietCount - i);
             updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), -bonus - orderPenalty);
-            //moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] -= bonus;
-            moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] = std::clamp(moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] - bonus - orderPenalty, -UCI::maxHistoryVal, UCI::maxHistoryVal);
+            moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += bonus - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(bonus) / UCI::maxHistoryVal;
+            //moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] = std::clamp(moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] - bonus - orderPenalty, -UCI::maxHistoryVal, UCI::maxHistoryVal);
         }
     }
 
@@ -960,8 +960,8 @@ void Anduril::updateQuietStats(libchess::Position &board, libchess::Move bestMov
     insertKiller(bestMove, ply - rootPly);
 
     // update move history and continuation history for best move
-    moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] = std::clamp(moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] + bonus, -UCI::maxHistoryVal, UCI::maxHistoryVal);
-    //moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] += bonus;
+    //moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] = std::clamp(moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] + bonus, -UCI::maxHistoryVal, UCI::maxHistoryVal);
+    moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] += bonus - moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] * abs(bonus) / UCI::maxHistoryVal;
     updateContinuationHistory(board, *board.piece_on(bestMove.from_square()), bestMove.to_square(), bonus);
 
     // update countermoves
@@ -979,8 +979,8 @@ void Anduril::updateContinuationHistory(libchess::Position &board, libchess::Pie
         }
         // we index ply - i + 1 because we need to check that the ply we are looking at wasn't null, so we have to access the next ply's previous move
         if (board.prevMoveType(ply - i + 1) != libchess::Move::Type::NONE) {
-            //(*board.continuationHistory(ply - i))[piece.value()][to] += bonus;
-            (*board.continuationHistory(ply - i))[piece.value()][to] = std::clamp((*board.continuationHistory(ply - i))[piece.value()][to] + bonus, -UCI::maxContinuationVal, UCI::maxContinuationVal);
+            (*board.continuationHistory(ply - i))[piece.value()][to] += bonus - (*board.continuationHistory(ply - i))[piece.value()][to] * abs(bonus) / UCI::maxContinuationVal;
+            //(*board.continuationHistory(ply - i))[piece.value()][to] = std::clamp((*board.continuationHistory(ply - i))[piece.value()][to] + bonus, -UCI::maxContinuationVal, UCI::maxContinuationVal);
         }
     }
 }
