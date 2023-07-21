@@ -498,7 +498,7 @@ void Anduril::go(libchess::Position board) {
     int beta = 32001;
     int bestScore = -32001;
     int prevBestScore = bestScore;
-    int delta = 25;
+    int delta = 10;
 
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
@@ -600,7 +600,7 @@ void Anduril::go(libchess::Position board) {
                 }
                 rDepth++;
                 upper = lower = false;
-                delta = 25;
+                delta = 10;
                 alpha = std::max(bestScore - delta, -32001);
                 beta = std::min(bestScore + delta, 32001);
             }

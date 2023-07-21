@@ -211,6 +211,13 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                     break;
                 }
 
+                // continuation history based pruning
+                if (!isCapture
+                    && (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()] < 0
+                    && (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()] < 0) {
+                        continue;
+                    }
+
                 // delta pruning
                 // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
                 // we can just skip delta pruning there and it shouldn't cost too much
