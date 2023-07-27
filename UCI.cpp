@@ -521,6 +521,7 @@ void Anduril::go(libchess::Position board) {
     std::vector<int> misses;
 
     rDepth = 1;
+    int sDepth = rDepth;
     int completedDepth = 0;
     singularAttempts = 0;
     singularExtensions = 0;
@@ -554,8 +555,10 @@ void Anduril::go(libchess::Position board) {
 
         incomplete = false;
 
+        sDepth = sDepth < rDepth - 3 ? rDepth - 3 : sDepth;
+
         // search for the best score
-        bestScore = negamax<Root>(board, rDepth, alpha, beta, false);
+        bestScore = negamax<Root>(board, sDepth, alpha, beta, false);
 
         // if we didn't find a node before, try again now that we have searched
         if (!found) {
@@ -583,34 +586,37 @@ void Anduril::go(libchess::Position board) {
                 incomplete = true;
                 upper = true;
             }
-                // fail high
+            // fail high
             else if (bestScore >= beta) {
                 if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
                 //std::cout << "High miss at: " << rDepth << std::endl;
                 misses.push_back(rDepth);
                 aspMissesH++;
                 beta = std::min(bestScore + delta, 32001);
+                sDepth--;
                 incomplete = true;
                 lower = true;
             }
-                // the search didn't fall outside the window, we can move to the next depth
+            // the search didn't fall outside the window, we can move to the next depth
             else {
                 if (!incomplete) {
                     completedDepth = rDepth;
                 }
                 rDepth++;
+                sDepth = rDepth;
                 upper = lower = false;
                 delta = 10;
                 alpha = std::max(bestScore - delta, -32001);
                 beta = std::min(bestScore + delta, 32001);
             }
         }
-            // for depths less than 5
+        // for depths less than 5
         else {
             if (!incomplete) {
                 completedDepth = rDepth;
             }
             rDepth++;
+            sDepth = rDepth;
         }
 
         // expand search window in case we miss (will be reset anyway if we didn't)
