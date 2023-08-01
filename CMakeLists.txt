@@ -26,7 +26,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 # add pext if defined
-if (DEFINED $ENV{USE_PEXT})
+if (DEFINED USE_PEXT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -DUSE_PEXT")
 endif()
 

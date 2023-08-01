@@ -8,3 +8,4 @@
 /.idea/vcs.xml
 /cmake-build-release-wsl/
 /build/
+/cmake-build-release-no-pext/
