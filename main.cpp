@@ -52,6 +52,9 @@ int main() {
 
     libchess::lookups::FULL_RAY = libchess::lookups::init::full_ray();
 
+    libchess::lookups::init::init_magics(libchess::constants::ROOK, libchess::lookups::rook_table, libchess::lookups::rook_magics);
+    libchess::lookups::init::init_magics(libchess::constants::BISHOP, libchess::lookups::bishop_table, libchess::lookups::bishop_magics);
+
     threads = 1;
     table.resize(256);
 
