@@ -139,6 +139,11 @@ public:
     int tMG = 150;
     int tEG = 150;
 
+    int bpM = 3;
+    int bpE = 12;
+
+    int spc = 5;
+
     // phase values
     double Pph = 0.125;
     double Kph = 1;

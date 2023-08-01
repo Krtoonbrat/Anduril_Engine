@@ -182,12 +182,12 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
     // bishop pair
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() >= 2) {
-        scoreMG += 3;
-        scoreEG += 12;
+        scoreMG += bpM;
+        scoreEG += bpE;
     }
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() >= 2) {
-        scoreMG -= 3;
-        scoreEG -= 12;
+        scoreMG -= bpM;
+        scoreEG -= bpE;
     }
 
     // rook on (semi)open files
@@ -235,11 +235,11 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) > 3000) {
         // white
         libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap;
-        scoreMG += 5 * wCenterAttacks.popcount();
+        scoreMG += spc * wCenterAttacks.popcount();
 
         // black
         libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap;
-        scoreMG -= 5 * bCenterAttacks.popcount();
+        scoreMG -= spc * bCenterAttacks.popcount();
     }
 
     // get the phase for tapered eval

@@ -367,7 +367,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 		&& found
         && nScore != -32001
         && excludedMove.value() == 0
-		&& nDepth > depth - (nType == 1)
+		&& nDepth > depth
         && (nType == 1 || (nScore >= beta ? nType == 2 : nType == 3))) {
         movesTransposed++;
 
