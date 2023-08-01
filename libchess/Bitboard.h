@@ -58,6 +58,9 @@ class Bitboard {
     constexpr Bitboard operator^(Bitboard rhs) const {
         return Bitboard{value_ ^ rhs};
     }
+    constexpr Bitboard operator-(Bitboard rhs) const {
+        return Bitboard{value_ - rhs.value_};
+    }
 
     constexpr Bitboard operator~() const {
         return Bitboard{~value_};
@@ -111,6 +114,7 @@ class Bitboard {
     constexpr void reverse_popbit() {
         value_ ^= Bitboard{reverse_bitscan() + 1};
     }
+    
 
    private:
     value_type value_;

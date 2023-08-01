@@ -26,6 +26,11 @@ libchess::lookups::MagicAttacksLookup<libchess::lookups::SlidingPieceType::BISHO
 
 std::array<std::array<libchess::Bitboard, 64>, 64> libchess::lookups::FULL_RAY;
 
+libchess::lookups::Magic libchess::lookups::rook_magics[64] = {Magic()};
+libchess::lookups::Magic libchess::lookups::bishop_magics[64] = {Magic()};
+libchess::Bitboard libchess::lookups::rook_table[0x19000] = {Bitboard()};
+libchess::Bitboard libchess::lookups::bishop_table[0x1480] = {Bitboard()};
+
 int threads;
 
 int main() {
@@ -48,10 +53,16 @@ int main() {
     libchess::lookups::ROOK_ATTACKS = libchess::lookups::init::rook_attacks();
     libchess::lookups::QUEEN_ATTACKS = libchess::lookups::init::queen_attacks();
 
-    libchess::lookups::rook_magic_attacks_lookup = libchess::lookups::init::rook_magic_attacks_lookup();
-    libchess::lookups::bishop_magic_attacks_lookup = libchess::lookups::init::bishop_magic_attacks_lookup();
+    //libchess::lookups::rook_magic_attacks_lookup = libchess::lookups::init::rook_magic_attacks_lookup();
+    //libchess::lookups::bishop_magic_attacks_lookup = libchess::lookups::init::bishop_magic_attacks_lookup();
 
     libchess::lookups::FULL_RAY = libchess::lookups::init::full_ray();
+
+    libchess::lookups::init::init_magics(libchess::constants::ROOK, libchess::lookups::rook_table, libchess::lookups::rook_magics);
+    libchess::lookups::init::init_magics(libchess::constants::BISHOP, libchess::lookups::bishop_table, libchess::lookups::bishop_magics);
+    libchess::Position board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    std::cout << libchess::lookups::rook_attacks(libchess::constants::D5, board.occupancy_bb()) << std::endl;
+    std::cout << libchess::lookups::bishop_attacks(libchess::constants::D5, board.occupancy_bb()) << std::endl;
 
     threads = 1;
     table.resize(256);

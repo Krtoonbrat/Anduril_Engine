@@ -1,6 +1,7 @@
 #ifndef LIBCHESS_LOOKUPS_H
 #define LIBCHESS_LOOKUPS_H
 
+#include <cassert>
 #include <array>
 #include <memory>
 #include <random>
@@ -8,6 +9,16 @@
 #include "Bitboard.h"
 #include "Color.h"
 #include "PieceType.h"
+
+// for PEXT instructions
+#if defined(USE_PEXT)
+#include <immintrin.h>
+#define pext(b, m) _pext_u64(b, m)
+constexpr bool has_pext = true;
+#else
+#define pext(b, m) 0
+constexpr bool has_pext = false;
+#endif
 
 namespace libchess::lookups {
 
@@ -640,13 +651,148 @@ inline MagicAttacksLookup<SlidingPieceType::BISHOP> bishop_magic_attacks_lookup(
 extern MagicAttacksLookup<SlidingPieceType::ROOK> rook_magic_attacks_lookup;
 extern MagicAttacksLookup<SlidingPieceType::BISHOP> bishop_magic_attacks_lookup;
 
-inline Bitboard rook_attacks(Square square, Bitboard occupancy) {
+inline Bitboard rook_attacks_plain_magic(Square square, Bitboard occupancy) {
     return rook_magic_attacks_lookup.attacks[square][rook_magic_attacks_lookup.magic_lookup[square].magic_rook_attack_index(occupancy)];
 }
-inline Bitboard bishop_attacks(Square square, Bitboard occupancy) {
+inline Bitboard bishop_attacks_plain_magic(Square square, Bitboard occupancy) {
     return bishop_magic_attacks_lookup.attacks[square][bishop_magic_attacks_lookup.magic_lookup[square].magic_bishop_attack_index(occupancy)];
 }
 
+// Written by Krtoonbrat.  This is my attempt at replacing the plain magic bitboards with fancy magic bitboards.
+// The reason for doing this is so that we can use PEXT on systems that support it to hopefully provide a small speedup.
+// All of this is based on the stockfish implementation.
+struct Magic {
+    Bitboard mask;
+    Bitboard magic;
+    Bitboard* attacks;
+    unsigned shift;
+
+    // Computes the attack index
+    constexpr unsigned index(Bitboard occupancy) const {
+        if (has_pext) {
+            return unsigned(pext(occupancy, mask));
+        }
+        else {
+            return unsigned(((occupancy & mask) * magic) >> shift);
+        }
+    }
+};
+
+extern Magic rook_magics[64];
+extern Magic bishop_magics[64];
+
+extern Bitboard rook_table[0x19000];
+extern Bitboard bishop_table[0x1480];
+
+/// xorshift64star Pseudo-Random Number Generator
+/// This class is based on original code written and dedicated
+/// to the public domain by Sebastiano Vigna (2014).
+/// It has the following characteristics:
+///
+///  -  Outputs 64-bit numbers
+///  -  Passes Dieharder and SmallCrush test batteries
+///  -  Does not require warm-up, no zeroland to escape
+///  -  Internal state is a single 64-bit integer
+///  -  Period is 2^64 - 1
+///  -  Speed: 1.60 ns/call (Core i7 @3.40GHz)
+///
+/// For further analysis see
+///   <http://vigna.di.unimi.it/ftp/papers/xorshift.pdf>
+
+class PRNG {
+
+  uint64_t s;
+
+  uint64_t rand64() {
+
+    s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
+    return s * 2685821657736338717LL;
+  }
+
+public:
+  PRNG(uint64_t seed) : s(seed) { assert(seed); }
+
+  template<typename T> T rand() { return T(rand64()); }
+
+  /// Special generator used to fast init magic numbers.
+  /// Output values only have 1/8th of their bits set on average.
+  template<typename T> T sparse_rand()
+  { return T(rand64() & rand64() & rand64()); }
+};
+
+namespace init {
+
+inline void init_magics(PieceType pt, Bitboard table[], Magic magics[]) {
+    // Optimal PRNG seeds to pick the correct magics in the shortest time
+    int seeds[][8] = { { 8977, 44560, 54343, 38998,  5731, 95205, 104912, 17020 },
+                             {  728, 10316, 55013, 32803, 12281, 15100,  16645,   255 } };
+
+    Bitboard occupancy[4096], reference[4096], edges, b;
+    int epoch[4096] = {}, cnt = 0, size = 0;
+
+    for (Square square = constants::A1; square <= constants::H8; ++square) {
+        Bitboard edges = ((FILE_A_MASK | FILE_H_MASK) & ~file_mask(square.file())) |
+                         ((RANK_1_MASK | RANK_8_MASK) & ~rank_mask(square.rank()));
+
+        Magic& m = magics[square];
+        m.mask = (pt == constants::ROOK ? lookups::rook_attacks(square) : lookups::bishop_attacks(square)) & ~edges;
+        m.shift = 64 - m.mask.popcount();
+
+        m.attacks = square == constants::A1 ? table : magics[square - 1].attacks + size;
+
+        size = 0;
+        b = Bitboard();
+        do {
+            occupancy[size] = b;
+            reference[size] = (pt == constants::ROOK ? lookups::rook_attacks_classical(square, b) : lookups::bishop_attacks_classical(square, b));
+
+            if (has_pext) {
+                m.attacks[pext(b, m.mask)] = reference[size];
+            }
+
+            size++;
+            b = (b - m.mask) & m.mask;
+        } while (b);
+
+        if (has_pext) {
+            continue;
+        }
+
+        PRNG rng(seeds[1][square.rank()]);
+
+        for (int i = 0; i < size;) {
+            for (m.magic = Bitboard(); Bitboard(((m.magic * m.mask) >> 56)).popcount() < 6;) {
+                m.magic = rng.sparse_rand<Bitboard>();
+            }
+
+            for (++cnt, i = 0; i < size; ++i) {
+                unsigned idx = m.index(occupancy[i]);
+
+                if (epoch[idx] < cnt) {
+                    epoch[idx] = cnt;
+                    m.attacks[idx] = reference[i];
+                }
+                else if (m.attacks[idx] != reference[i]) {
+                    break;
+                }
+
+            }
+
+        }
+
+    }
+
+}
+
+}
+
+inline Bitboard rook_attacks(Square square, Bitboard occupancy) {
+    return rook_magics[square].attacks[rook_magics[square].index(occupancy)];
+}
+
+inline Bitboard bishop_attacks(Square square, Bitboard occupancy) {
+    return bishop_magics[square].attacks[bishop_magics[square].index(occupancy)];
+}
 
 inline Bitboard queen_attacks(Square square, Bitboard occupancy) {
     return rook_attacks(square, occupancy) | bishop_attacks(square, occupancy);
