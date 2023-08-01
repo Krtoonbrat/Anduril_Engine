@@ -721,7 +721,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 && abs(nScore) < 31000
                 && (nType == 1 || nType == 2)
                 && nDepth >= depth - 3) {
-                int singleBeta = nScore - (5 + 3 * (nType == 1 && !PvNode)) * depth / 2;
+                int singleBeta = nScore - (22 + 18 * (nType == 1 && !PvNode)) * depth / 20;
                 int singleDepth = (depth - 1) / 2;
                 singularAttempts++;
 
@@ -731,7 +731,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
                 if (score < singleBeta) {
                     extension = 1;
-                    singularQuietLMR = !board.gives_check(nMove);
+                    singularQuietLMR = !transpositionCapture;
                     singularExtensions++;
                 }
 
