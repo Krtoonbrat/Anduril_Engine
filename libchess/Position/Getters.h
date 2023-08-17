@@ -185,6 +185,11 @@ inline bool Position::is_legal_move(Move move) const {
 
     Move::Type type = move.type();
     if (pt == constants::PAWN) {
+        if (((move.to_square().rank() == constants::RANK_1 && side_to_move() == constants::BLACK)
+            || (move.to_square().rank() == constants::RANK_8 && side_to_move() == constants::WHITE))
+            && type != Move::Type::PROMOTION && type != Move::Type::CAPTURE_PROMOTION) {
+            return false;
+        }
         switch (type) {
             case Move::Type::DOUBLE_PUSH:
                 if (abs(move.to_square() - move.from_square()) != 16) {

@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <mutex>
+#include <thread>
 
 #include "Anduril.h"
 #include "libchess/Position.h"

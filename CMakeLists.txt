@@ -16,7 +16,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 #endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -O2 -ginline-points")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -march=native -flto -fuse-linker-plugin -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2")
 endif()
 
 # add release flags
