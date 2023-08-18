@@ -494,7 +494,7 @@ struct Magic {
     unsigned shift;
 
     // Computes the attack index
-    [[nodiscard]] constexpr unsigned index(Bitboard occupancy) const {
+    [[nodiscard]] unsigned index(Bitboard occupancy) const {
         if constexpr (has_pext) {
             return unsigned(pext(occupancy, mask));
         }
