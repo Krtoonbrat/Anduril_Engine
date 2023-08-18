@@ -101,7 +101,7 @@ public:
     HashTable<PawnEntry, 8> pTable = HashTable<PawnEntry, 8>();
 
     // transposition table for evaluations
-    HashTable<SimpleNode, 16> evalTable = HashTable<SimpleNode, 16>();
+    HashTable<SimpleNode, 8> evalTable = HashTable<SimpleNode, 8>();
 
     // the limit the GUI could send
     limit limits;

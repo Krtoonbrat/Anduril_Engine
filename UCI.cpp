@@ -84,11 +84,11 @@ namespace UCI {
                 table.clear();
                 for (auto &i : gondor) {
                     i->pTable = HashTable<PawnEntry, 8>();
-                    i->evalTable = HashTable<SimpleNode, 16>();
+                    i->evalTable = HashTable<SimpleNode, 8>();
                     i->resetHistories();
                 }
                 AI->pTable = HashTable<PawnEntry, 8>();
-                AI->evalTable = HashTable<SimpleNode, 16>();
+                AI->evalTable = HashTable<SimpleNode, 8>();
                 AI->resetHistories();
                 board = *board.from_fen(StartFEN);
             }
