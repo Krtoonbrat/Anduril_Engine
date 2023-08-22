@@ -20,9 +20,6 @@
 #include "internal/Zobrist.h"
 
 namespace libchess {
-    // values for the pieces
-    static constexpr int pieceValuesMG[6] = {88, 337, 365, 477, 1025, 0};
-    static constexpr int pieceValuesEG[6] = {138, 281, 297, 512, 936, 0};
 
     // piece square tables
     // values from Rofchade: http://www.talkchess.com/forum3/viewtopic.php?f=2&t=68311&start=19
@@ -304,6 +301,10 @@ class Position {
     [[nodiscard]] int ply() const {
         return ply_;
     }
+
+    // values for the pieces
+    static int pieceValuesMG[6];
+    static int pieceValuesEG[6];
 
 protected:
     // clang-format off

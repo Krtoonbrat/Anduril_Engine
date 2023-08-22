@@ -278,8 +278,8 @@ private:
     libchess::Bitboard kingZoneBBB;
 
     // contains the attack maps for each team
-    libchess::Bitboard wAttackMap;
-    libchess::Bitboard bAttackMap;
+    libchess::Bitboard wAttackMap[2];
+    libchess::Bitboard bAttackMap[2];
 
 };
 

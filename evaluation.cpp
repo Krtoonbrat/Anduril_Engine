@@ -71,8 +71,10 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     kingZoneBBB = libchess::Bitboard(*libchess::Square::from(std::clamp(bKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(bKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
 
     // reset each colors attack map
-    wAttackMap = libchess::Bitboard();
-    bAttackMap = libchess::Bitboard();
+    wAttackMap[0] = libchess::Bitboard();
+    wAttackMap[1] = libchess::Bitboard();
+    bAttackMap[0] = libchess::Bitboard();
+    bAttackMap[1] = libchess::Bitboard();
 
     // fill the king zone
     kingZoneWBB |= libchess::lookups::king_attacks(*libchess::Square::from(std::clamp(wKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(wKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
@@ -121,6 +123,10 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     std::pair<int, int> positional = positionalMobilityTropism(board);
     scoreMG += positional.first;
     scoreEG += positional.second;
+
+    // make the attack map with pawn attacks
+    wAttackMap[1] = wAttackMap[0] | wAttackMap[1];
+    bAttackMap[1] = bAttackMap[0] | bAttackMap[1];
 
     // king tropism (black is index 0, white is index 1)
     // white
@@ -234,11 +240,11 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     // only relevant if not in an endgame.  3000 seems like a decent number.  It was totally pulled out of my ass
     if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) > 3000) {
         // white
-        libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap;
+        libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap[0] & (~bAttackMap[1]);
         scoreMG += spc * wCenterAttacks.popcount();
 
         // black
-        libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap;
+        libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap[0] & (~wAttackMap[1]);
         scoreMG -= spc * bCenterAttacks.popcount();
     }
 
@@ -550,7 +556,7 @@ inline void Anduril::evaluateKnights(libchess::Position &board, libchess::Square
         whiteMobility[1] += 4 * (attackedSquares.popcount() - 4);
 
         // king zone attacks
-        wAttackMap |= attackedSquares;
+        wAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
@@ -563,7 +569,7 @@ inline void Anduril::evaluateKnights(libchess::Position &board, libchess::Square
         blackMobility[1] += 4 * (attackedSquares.popcount() - 4);
 
         // king zone attacks
-        bAttackMap |= attackedSquares;
+        bAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
@@ -589,7 +595,7 @@ inline void Anduril::evaluateBishops(libchess::Position &board, libchess::Square
         whiteMobility[1] += 3 * (attackedSquares.popcount() - 7);
 
         // king zone attacks
-        wAttackMap |= attackedSquares;
+        wAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
@@ -601,7 +607,7 @@ inline void Anduril::evaluateBishops(libchess::Position &board, libchess::Square
         blackMobility[1] += 3 * (attackedSquares.popcount() - 7);
 
         // king zone attacks
-        bAttackMap |= attackedSquares;
+        bAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
@@ -627,7 +633,7 @@ inline void Anduril::evaluateRooks(libchess::Position &board, libchess::Square s
         whiteMobility[1] += 4 * (attackedSquares.popcount() - 7);
 
         // king zone attacks
-        wAttackMap |= attackedSquares;
+        wAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
@@ -639,7 +645,7 @@ inline void Anduril::evaluateRooks(libchess::Position &board, libchess::Square s
         blackMobility[1] += 4 * (attackedSquares.popcount() - 7);
 
         // king zone attacks
-        bAttackMap |= attackedSquares;
+        bAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
@@ -665,7 +671,7 @@ inline void Anduril::evaluateQueens(libchess::Position &board, libchess::Square 
         whiteMobility[1] += 2 * (attackedSquares.popcount() - 14);
 
         // king zone attacks
-        wAttackMap |= attackedSquares;
+        wAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneBBB;
     }
         // black
@@ -677,7 +683,7 @@ inline void Anduril::evaluateQueens(libchess::Position &board, libchess::Square 
         blackMobility[1] += 2 * (attackedSquares.popcount() - 14);
 
         // king zone attacks
-        bAttackMap |= attackedSquares;
+        bAttackMap[0] |= attackedSquares;
         kingZoneAttacks = attackedSquares & kingZoneWBB;
     }
 
@@ -705,6 +711,14 @@ std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
     while (pawns) {
         s = pawns.forward_bitscan();
         pawns.forward_popbit();
+
+        // add to the attack map
+        if constexpr (color) {
+            wAttackMap[1] |= libchess::lookups::pawn_attacks(s, us);
+        }
+        else {
+            bAttackMap[1] |= libchess::lookups::pawn_attacks(s, us);
+        }
 
         libchess::Rank r = libchess::lookups::relative_rank(s.rank(), us);
 
