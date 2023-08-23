@@ -43,6 +43,11 @@ public:
         return &tPtr[mul_hi64(key, clusterCount)].entry[0];
     }
 
+    int hashFull();
+
+    // age tracker for transposition table
+    int age = 0;
+
 private:
     Cluster *tPtr = nullptr;
 

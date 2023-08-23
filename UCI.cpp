@@ -459,6 +459,7 @@ namespace UCI {
                     i->stopped = false;
                     i->searching = true;
                 }
+                table.age++;
                 AI->stopped = false;
                 AI->searching = true;
                 AI->cv.notify_one();
@@ -470,6 +471,7 @@ namespace UCI {
                 i->stopped = false;
                 i->searching = true;
             }
+            table.age++;
             AI->stopped = false;
             AI->searching = true;
             AI->cv.notify_one();
@@ -604,7 +606,6 @@ void Anduril::go(libchess::Position board) {
 
     ply = board.ply();
     rootPly = ply;
-    age++;
 
     // initialize the oversize state array
     for (int i = 0; i < 7; i++) {
@@ -746,6 +747,7 @@ void Anduril::go(libchess::Position board) {
                               << " seldepth " << selDepth
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
                 } else if (prevBestScore <= -31000) {
@@ -756,6 +758,7 @@ void Anduril::go(libchess::Position board) {
                               << " seldepth " << selDepth
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
                 } else {
@@ -765,6 +768,7 @@ void Anduril::go(libchess::Position board) {
                               << " seldepth " << selDepth
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
                 }
@@ -780,6 +784,7 @@ void Anduril::go(libchess::Position board) {
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
                 } else if (prevBestScore <= -31000) {
@@ -791,6 +796,7 @@ void Anduril::go(libchess::Position board) {
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
                 } else {
@@ -801,6 +807,7 @@ void Anduril::go(libchess::Position board) {
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
                               << " pv" << pv << std::endl;
                 }

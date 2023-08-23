@@ -10,7 +10,7 @@
 // 16 bytes
 struct Node {
     // saves the information passed in to the node
-    void save(uint64_t k, int s, int t, int d, uint32_t m, int a, int ev);
+    void save(uint64_t k, int s, int t, int d, uint32_t m, int ev);
 
     // the evaluation of the node after a full search
     int16_t nodeScore;

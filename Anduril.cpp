@@ -131,7 +131,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         // adjust alpha and beta based on the stand pat
         if (bestScore >= beta) {
 			if (!found) {
-                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -1, 0, age, standPat);
+                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -1, 0, standPat);
 			}
             return standPat;
         }
@@ -274,7 +274,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 3, -1, bestMove.value(), age, standPat);
+    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 3, -1, bestMove.value(), standPat);
     return bestScore;
 
 }
@@ -430,7 +430,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
     else {
         board.staticEval() = staticEval = evaluateBoard(board);
-        node->save(hash, -32001, -1, -99, 0, 0, staticEval);
+        node->save(hash, -32001, -1, -99, 0, staticEval);
     }
 
     // set up the improvement variable, which is the difference in static evals between the current turn and
@@ -565,7 +565,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 if (!(found
                     && nDepth >= depth - 3
                     && nScore != -32001)) {
-                    node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.value(), age, board.staticEval());
+                    node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.value(), board.staticEval());
 
                 }
                 cutNodes++;
@@ -910,7 +910,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     if (excludedMove.value() == 0) {
-        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), age, board.staticEval());
+        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange ? 1 : 3, depth, bestMove.value(), board.staticEval());
     }
     return bestScore;
 
