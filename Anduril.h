@@ -228,7 +228,7 @@ private:
 
     // finds the pawn structure bonus for the position
     template<bool color>
-    std::pair<int, int> getPawnScore(libchess::Position &board);
+    std::pair<int16_t, int16_t> getPawnScore(libchess::Position &board);
 
     // finds the king safety bonus for the position
     int getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing);

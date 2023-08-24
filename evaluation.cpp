@@ -103,8 +103,8 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         node->key = hash;
 
         // get the pawn score for the board
-        std::pair<int, int> wp = getPawnScore<true>(board);
-        std::pair<int, int> bp = getPawnScore<false>(board);
+        std::pair<int16_t, int16_t> wp = getPawnScore<true>(board);
+        std::pair<int16_t, int16_t> bp = getPawnScore<false>(board);
 
         scoreMG += wp.first - bp.first;
         scoreEG += wp.second - bp.second;
@@ -694,7 +694,7 @@ inline void Anduril::evaluateQueens(libchess::Position &board, libchess::Square 
 }
 
 template<bool color>
-std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
+std::pair<int16_t, int16_t> Anduril::getPawnScore(libchess::Position &board) {
     constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
     constexpr libchess::Color them = color ? libchess::constants::BLACK : libchess::constants::WHITE;
 
@@ -702,7 +702,7 @@ std::pair<int, int> Anduril::getPawnScore(libchess::Position &board) {
     libchess::Bitboard lever, leverPush, blocked;
     libchess::Square s(0);
     bool backward, passed, doubled;
-    std::pair<int, int> score = {0, 0};
+    std::pair<int16_t, int16_t> score = {0, 0};
     libchess::Bitboard pawns = board.piece_type_bb(libchess::constants::PAWN, us);
 
     libchess::Bitboard ourPawns = board.piece_type_bb(libchess::constants::PAWN, us);

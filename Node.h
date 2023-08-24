@@ -48,7 +48,7 @@ struct SimpleNode {
 };
 
 struct PawnEntry {
-    std::pair<int, int> score = {0, 0};
+    std::pair<int16_t, int16_t> score = {0, 0};
 
     uint64_t key = 0;
 };
