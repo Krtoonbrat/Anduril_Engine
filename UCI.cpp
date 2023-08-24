@@ -647,6 +647,7 @@ void Anduril::go(libchess::Position board) {
         // reset selDepth
         if (!incomplete) {
             selDepth = 0;
+            sDepth = rDepth;
         }
 
         incomplete = false;
@@ -667,6 +668,9 @@ void Anduril::go(libchess::Position board) {
             incomplete = true;
             finalDepth = true;
         }
+
+        // this is the depth we just searched to, we save it here because sDepth might change, but we want to report the value before the change to the GUI
+        completedDepth = sDepth;
 
         // set the aspiration window
         if (rDepth >= 5) {
@@ -695,11 +699,7 @@ void Anduril::go(libchess::Position board) {
             }
             // the search didn't fall outside the window, we can move to the next depth
             else {
-                if (!incomplete) {
-                    completedDepth = rDepth;
-                }
                 rDepth++;
-                sDepth = rDepth;
                 upper = lower = false;
                 delta = 10 + bestScore * bestScore / 10000;
                 alpha = std::max(bestScore - delta, -32001);
@@ -708,9 +708,6 @@ void Anduril::go(libchess::Position board) {
         }
         // for depths less than 5
         else {
-            if (!incomplete) {
-                completedDepth = rDepth;
-            }
             delta = 10 + bestScore * bestScore / 10000;
             rDepth++;
             sDepth = rDepth;
@@ -779,7 +776,7 @@ void Anduril::go(libchess::Position board) {
                     int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
-                              << " depth " << rDepth
+                              << " depth " << completedDepth
                               << " seldepth " << selDepth
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
@@ -791,7 +788,7 @@ void Anduril::go(libchess::Position board) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
                               << "score mate " << distance
-                              << " depth " << rDepth
+                              << " depth " << completedDepth
                               << " seldepth " << selDepth
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
@@ -802,7 +799,7 @@ void Anduril::go(libchess::Position board) {
                 } else {
                     std::cout << "info "
                               << "score cp " << prevBestScore
-                              << " depth " << rDepth - 1
+                              << " depth " << completedDepth - 1
                               << " seldepth " << selDepth
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
