@@ -557,7 +557,7 @@ inline void init_magics(PieceType pt, Bitboard table[], Magic magics[]) {
     int epoch[4096] = {}, cnt = 0, size = 0;
 
     for (Square square = constants::A1; square <= constants::H8; ++square) {
-        Bitboard edges = ((FILE_A_MASK | FILE_H_MASK) & ~file_mask(square.file())) |
+        edges = ((FILE_A_MASK | FILE_H_MASK) & ~file_mask(square.file())) |
                          ((RANK_1_MASK | RANK_8_MASK) & ~rank_mask(square.rank()));
 
         Magic& m = magics[square];
