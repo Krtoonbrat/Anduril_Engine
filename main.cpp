@@ -48,7 +48,7 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
             evaluator->spc = parameter.value();
         }
     }
-    return evaluator->quiescence<Anduril::PV>(board, -32000, 32000, 0);
+    return board.side_to_move() == libchess::constants::WHITE ? evaluator->quiescence<Anduril::PV>(board, -32000, 32000, 0) : -evaluator->quiescence<Anduril::PV>(board, -32000, 32000, 0);
 }
 
 int main() {
