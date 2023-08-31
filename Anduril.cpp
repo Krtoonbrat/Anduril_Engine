@@ -69,11 +69,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     // are we in check?
     bool check = board.in_check();
 
-    // is the time up?
-    if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
-        return 0;
-    }
-
     if ((ply - rootPly) >= 100) {
         return !check ? evaluateBoard(board) : 0;
     }
@@ -86,11 +81,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     // represents the best score we have found so far
     int bestScore = -32001;
 
-    // threshold for futility pruning
-    int futility = -32001;
-    int futilityValue;
-
     // transposition lookup
+    /*
     uint64_t hash = board.hash();
     bool found = false;
     Node *node = table.probe(hash, found);
@@ -105,42 +97,21 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 		movesTransposed++;
 		return nScore;
 	}
+     */
 
     int standPat = -32001;
     // we can't stand pat if we are in check
     if (!check) {
         // stand pat score to see if we can exit early
-        if (found) {
-            if (node->nodeEval != -32001) {
-                bestScore = standPat = node->nodeEval;
-            }
-            else {
-                bestScore = standPat = evaluateBoard(board);
-            }
-
-            // previously saved transposition score can be used as a better position evaluation
-            if (nScore != -32001
-                && (nType == 1 || (nScore > standPat ? nType == 2 : nType == 3))) {
-                bestScore = nScore;
-            }
-        }
-        else {
-            bestScore = standPat = board.prevMoveType(ply - rootPly - 1) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - rootPly - 1);
-        }
+        bestScore = standPat = evaluateBoard(board);
 
         // adjust alpha and beta based on the stand pat
         if (bestScore >= beta) {
-			if (!found) {
-                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -1, 0, standPat);
-			}
             return standPat;
         }
         if (PvNode && bestScore > alpha) {
             alpha = bestScore;
         }
-
-        // calculate futility threshold
-        futility = bestScore + 200;
     }
 
     // holds the continuation history from previous moves
@@ -149,7 +120,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
     libchess::Square prevMoveSq = board.prevMoveType(ply - rootPly - 1) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
-    MovePicker picker(board, nMove, &moveHistory, contHistory, &seeValues, depth);
+    libchess::Move tempMove(0);
+    MovePicker picker(board, tempMove, &moveHistory, contHistory, &seeValues, depth);
 
     // arbitrarily low score to make sure its replaced
     int score = -32001;
@@ -176,66 +148,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 
         moveCounter++;
 
-
-        // pruning steps
-        if (bestScore > -30000) { // if we are in check, bestScore will by default be -32001, this makes sure we at least search the first value when in check
-            // futility pruning
-            if (!givesCheck
-                && move.to_square() != prevMoveSq
-                && futility > -30000
-                && !board.is_promotion_move(move)) {
-                    if (moveCounter > 2) {
-                        continue;
-                    }
-
-                    if (board.piece_on(move.to_square())) {
-                        futilityValue = futility + pieceValues[board.piece_on(move.to_square())->value()];
-                    }
-                    else {
-                        futilityValue = futility;
-                    }
-
-                    if (futilityValue <= alpha) {
-                        bestScore = std::max(bestScore, futilityValue);
-                        continue;
-                    }
-
-                    if (futility <= alpha && !board.see_ge(move, 1)) {
-                        bestScore = std::max(bestScore, futility);
-                        continue;
-                    }
-                }
-
-                // prune quiet check evasions after the second move
-                if (quietCheckCounter > 1) {
-                    break;
-                }
-
-                // continuation history based pruning
-                if (!isCapture
-                    && (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()] < 0
-                    && (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()] < 0) {
-                        continue;
-                    }
-
-                // delta pruning
-                // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
-                // we can just skip delta pruning there and it shouldn't cost too much
-                if (board.piece_type_on(move.to_square())
-                    && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
-                    && nonPawnMaterial(board.side_to_move(), board) - seeValues[board.piece_type_on(move.to_square())->value()] > 1600
-                    && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
-                continue;
-            }
-
-                // see pruning
-                if (!board.see_ge(move, -28)) {
-                    continue;
-                }
-        }
-
         // prefetch before we make a move
-        prefetch(table.firstEntry(board.hashAfter(move)));
+        //prefetch(table.firstEntry(board.hashAfter(move)));
 
         quietCheckCounter += !isCapture && check;
 
@@ -273,8 +187,6 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     if (check && moveCounter == 0) {
         return -32000 + (ply - rootPly);
     }
-
-    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 3, -1, bestMove.value(), standPat);
     return bestScore;
 
 }

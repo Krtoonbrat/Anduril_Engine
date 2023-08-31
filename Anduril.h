@@ -153,9 +153,6 @@ public:
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
 
-    // endgame values used for qsearch
-    int pieceValues[16] = { pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0,
-                            pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0};
 
     // reduction table
     // its oversize just in case something weird happens

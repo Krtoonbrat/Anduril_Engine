@@ -46,15 +46,6 @@ int passedBonusEG[7] = {0, 10, 10, 14, 22, 51, 74};
 
 // generates a static evaluation of the board
 int Anduril::evaluateBoard(libchess::Position &board) {
-    // first check for transpositions
-    uint64_t hash = board.hash();
-    SimpleNode *eNode = evalTable[hash];
-    if (eNode->key == hash) {
-        return eNode->score;
-    }
-
-    // prefetch the pawn evaluation node
-    prefetch(pTable[board.pawn_hash()]);
 
     // squares the kings are on
     libchess::Square wKingSquare = board.king_square(libchess::constants::WHITE);
@@ -91,28 +82,12 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreMG += board.getPSQTMG();
     scoreEG += board.getPSQTEG();
 
-    // first check for a transposition
-    uint64_t phash = board.pawn_hash();
-    PawnEntry *node = pTable[phash];
-    if (node->key == hash) {
-        scoreMG += node->score.first;
-        scoreEG += node->score.second;
-    }
-    else {
-        // reset the node
-        node->key = hash;
+    // get the pawn score for the board
+    std::pair<int16_t, int16_t> wp = getPawnScore<true>(board);
+    std::pair<int16_t, int16_t> bp = getPawnScore<false>(board);
 
-        // get the pawn score for the board
-        std::pair<int16_t, int16_t> wp = getPawnScore<true>(board);
-        std::pair<int16_t, int16_t> bp = getPawnScore<false>(board);
-
-        scoreMG += wp.first - bp.first;
-        scoreEG += wp.second - bp.second;
-
-        // save the node
-        node->score.first = wp.first - bp.first;
-        node->score.second = wp.second - bp.second;
-    }
+    scoreMG += wp.first - bp.first;
+    scoreEG += wp.second - bp.second;
 
     // get king safety bonus for the board
     // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
@@ -254,10 +229,6 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     // for negamax to work, we must return a non-adjusted score for white
     // and a negated score for black
     int finalScore = !board.side_to_move() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
-
-    // save information to the node
-    eNode->key = hash;
-    eNode->score = finalScore;
 
     return finalScore;
 }

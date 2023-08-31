@@ -1,5 +1,6 @@
 #include <bitset>
 #include "libchess/Position.h"
+#include "libchess/Tuner.h"
 #include "UCI.h"
 
 std::array<libchess::Bitboard, 64> libchess::lookups::SQUARES;
@@ -30,6 +31,26 @@ libchess::Bitboard libchess::lookups::bishop_table[0x1480] = {Bitboard()};
 
 int threads;
 
+int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParameter> &parameters) {
+    std::unique_ptr<Anduril> evaluator = std::make_unique<Anduril>(0);
+
+    for (int i = -7; i < 0; i++) {
+        board.continuationHistory(i) = &evaluator->continuationHistory[0][0][15][0];
+    }
+    for (auto &parameter : parameters) {
+        if (parameter.name() == "BishopPairMiddlegame") {
+            evaluator->bpM = parameter.value();
+        }
+        if (parameter.name() == "BishopPairEndgame") {
+            evaluator->bpE = parameter.value();
+        }
+        if (parameter.name() == "Space") {
+            evaluator->spc = parameter.value();
+        }
+    }
+    return evaluator->quiescence<Anduril::PV>(board, -32000, 32000, 0);
+}
+
 int main() {
     libchess::lookups::SQUARES = libchess::lookups::init::squares();
 
@@ -55,8 +76,20 @@ int main() {
     libchess::lookups::init::init_magics(libchess::constants::ROOK, libchess::lookups::rook_table, libchess::lookups::rook_magics);
     libchess::lookups::init::init_magics(libchess::constants::BISHOP, libchess::lookups::bishop_table, libchess::lookups::bishop_magics);
 
-    threads = 1;
-    table.resize(256);
+    std::vector<libchess::TunableParameter> parameters;
+    parameters.emplace_back("BishopPairMiddlegame", 3);
+    parameters.emplace_back("BishopPairEndgame", 12);
+    parameters.emplace_back("Space", 5);
+
+    std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = tuneEval;
+    std::function<libchess::Position(const std::string&)> parseFen = [&](const std::string& fen) { return libchess::Position(fen); };
+    std::vector<libchess::NormalizedResult<libchess::Position>> epdResults = libchess::NormalizedResult<libchess::Position>::parse_epd(R"(C:\Users\kjhughes4\Desktop\cutechess-1.3.1-win64\TuningData\tune.epd)", parseFen);
+
+    libchess::Tuner<libchess::Position> tuner(epdResults, parameters, eval);
+    tuner.tune();
+
+    //threads = 1;
+    //table.resize(256);
 
     // for profiling
     /*
@@ -71,7 +104,7 @@ int main() {
     AI->go(board);
     */
     
-    UCI::loop();
+    //UCI::loop();
 
     return 0;
 }
