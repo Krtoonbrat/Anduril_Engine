@@ -190,6 +190,14 @@ inline void Position::unmake_move() {
         case Move::Type::NONE:
             break;
     }
+
+    if (piece_type_bb(constants::KING, constants::WHITE).popcount() != 1) {
+        std::cout << "FUCKKKK WHITE" << std::endl;
+    }
+
+    if (piece_type_bb(constants::KING, constants::BLACK).popcount() != 1) {
+        std::cout << "FUCKKKK BLACK" << std::endl;
+    }
 }
 
 inline Position::hash_type Position::hashAfter(Move move) {
@@ -609,6 +617,15 @@ inline void Position::make_move(Move move) {
     next_state.pawn_hash_ = phash;
     next_state.scoreMG = scoreMG;
     next_state.scoreEG = scoreEG;
+
+    if (piece_type_bb(constants::KING, constants::WHITE).popcount() != 1) {
+        std::cout << "FUCKKKK WHITE" << std::endl;
+    }
+
+    if (piece_type_bb(constants::KING, constants::BLACK).popcount() != 1) {
+        std::cout << "FUCKKKK BLACK" << std::endl;
+    }
+
 }
 
 inline void Position::make_null_move() {

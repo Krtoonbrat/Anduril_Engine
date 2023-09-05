@@ -23,9 +23,6 @@
 #include "libchess/Position.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {88, 337, 365, 477, 1025, 0};
-int libchess::Position::pieceValuesEG[6] = {138, 281, 297, 512, 936, 0};
-
 // all the UCI protocol stuff is going to be implemented
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
 // I am following is written in C
@@ -197,7 +194,7 @@ namespace UCI {
         // setoption name pMG value 100
         if ((ptr = strstr(line, "kMG"))) {
             AI->kMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[1] = AI->kMG;
+            //libchess::Position::pieceValuesMG[1] = AI->kMG;
             for (auto &thread : gondor) {
                 thread->kMG = AI->kMG;
             }
@@ -205,7 +202,7 @@ namespace UCI {
 
         if ((ptr = strstr(line, "kEG"))) {
             AI->kEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[1] = AI->kEG;
+            //libchess::Position::pieceValuesEG[1] = AI->kEG;
             for (auto &thread : gondor) {
                 thread->kEG = AI->kEG;
             }
@@ -213,7 +210,7 @@ namespace UCI {
 
         if ((ptr = strstr(line, "bMG"))) {
             AI->bMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[2] = AI->bMG;
+            //libchess::Position::pieceValuesMG[2] = AI->bMG;
             for (auto &thread : gondor) {
                 thread->bMG = AI->bMG;
             }
@@ -221,7 +218,7 @@ namespace UCI {
 
         if ((ptr = strstr(line, "bEG"))) {
             AI->bEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[2] = AI->bEG;
+            //libchess::Position::pieceValuesEG[2] = AI->bEG;
             for (auto &thread : gondor) {
                 thread->bEG = AI->bEG;
             }
@@ -229,7 +226,7 @@ namespace UCI {
 
         if ((ptr = strstr(line, "rMG"))) {
             AI->rMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[3] = AI->rMG;
+            //libchess::Position::pieceValuesMG[3] = AI->rMG;
             for (auto &thread : gondor) {
                 thread->rMG = AI->rMG;
             }
@@ -237,7 +234,7 @@ namespace UCI {
 
         if ((ptr = strstr(line, "rEG"))) {
             AI->rEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[3] = AI->rEG;
+            //libchess::Position::pieceValuesEG[3] = AI->rEG;
             for (auto &thread : gondor) {
                 thread->rEG = AI->rEG;
             }
@@ -245,7 +242,7 @@ namespace UCI {
 
         if ((ptr = strstr(line, "qMG"))) {
             AI->qMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[4] = AI->qMG;
+            //libchess::Position::pieceValuesMG[4] = AI->qMG;
             for (auto &thread : gondor) {
                 thread->qMG = AI->qMG;
             }
@@ -253,12 +250,12 @@ namespace UCI {
 
         if ((ptr = strstr(line, "qEG"))) {
             AI->qEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[4] = AI->qEG;
+            //libchess::Position::pieceValuesEG[4] = AI->qEG;
             for (auto &thread : gondor) {
                 thread->qEG = AI->qEG;
             }
         }
-
+        /*
         if ((ptr = strstr(line, "oMG"))) {
             AI->oMG = atoi(ptr + 10);
             for (auto &thread : gondor) {
@@ -286,10 +283,11 @@ namespace UCI {
                 thread->tEG = AI->tEG;
             }
         }
+         */
 
         if ((ptr = strstr(line, "pMG"))) {
             AI->pMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[0] = AI->pMG;
+            //libchess::Position::pieceValuesMG[0] = AI->pMG;
             for (auto &thread : gondor) {
                 thread->pMG = AI->pMG;
             }
@@ -297,12 +295,13 @@ namespace UCI {
 
         if ((ptr = strstr(line, "pEG"))) {
             AI->pEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[0] = AI->pEG;
+            //libchess::Position::pieceValuesEG[0] = AI->pEG;
             for (auto &thread : gondor) {
                 thread->pEG = AI->pEG;
             }
         }
 
+        /*
         if ((ptr = strstr(line, "Pph"))) {
             AI->Pph = atof(ptr + 10) / 1000;
             for (auto &thread : gondor) {
@@ -337,6 +336,7 @@ namespace UCI {
                 thread->Qph = AI->Qph;
             }
         }
+         */
 
         if ((ptr = strstr(line, "QOV"))) {
             queenOrderVal = atoi(ptr + 10);
@@ -350,6 +350,7 @@ namespace UCI {
             minorOrderVal = atoi(ptr + 10);
         }
 
+        /*
         if ((ptr = strstr(line, "bpM"))) {
             AI->bpM = atoi(ptr + 10);
             for (auto &thread : gondor) {
@@ -370,6 +371,7 @@ namespace UCI {
                 thread->spc = AI->spc;
             }
         }
+         */
     }
 
     void parseGo(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI, Book &openingBook, bool &bookOpen) {

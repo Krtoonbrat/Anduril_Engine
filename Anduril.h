@@ -150,9 +150,30 @@ public:
     double Rph = 2;
     double Qph = 4;
 
+    // number of pieces attacking the king zone
+    int attackCount[2] = {0};
+
+    // weight of the attackers on the king zone
+    int attackWeight[2] = {0};
+
+    // mobility scores
+    int whiteMobility[2] = {0};
+    int blackMobility[2] = {0};
+
+    // contains the squares that are the "king zone"
+    libchess::Bitboard kingZoneWBB;
+    libchess::Bitboard kingZoneBBB;
+
+    // contains the attack maps for each team
+    libchess::Bitboard wAttackMap[2];
+    libchess::Bitboard bAttackMap[2];
+
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
 
+    // endgame values used for qsearch
+    int pieceValues[16] = { pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0,
+                            pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0};
 
     // reduction table
     // its oversize just in case something weird happens
@@ -259,31 +280,13 @@ private:
     // history table
     ButterflyHistory moveHistory;
 
-    // number of pieces attacking the king zone
-    int attackCount[2] = {0};
-
-    // weight of the attackers on the king zone
-    int attackWeight[2] = {0};
-
-    // mobility scores
-    int whiteMobility[2] = {0};
-    int blackMobility[2] = {0};
-
-    // contains the squares that are the "king zone"
-    libchess::Bitboard kingZoneWBB;
-    libchess::Bitboard kingZoneBBB;
-
-    // contains the attack maps for each team
-    libchess::Bitboard wAttackMap[2];
-    libchess::Bitboard bAttackMap[2];
-
 };
 
 // number of threads to search with
 extern int threads;
 
 // each thread gets its own object
-static std::vector<std::unique_ptr<Anduril>> gondor;
+extern std::vector<std::unique_ptr<Anduril>> gondor;
 
 // total amount of cut nodes
 static std::atomic<uint64_t> cutNodes;

@@ -38,8 +38,7 @@ public:
     MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
                ButterflyHistory *his, const PieceHistory **contHis,
                std::array<int, 6> *see);
-    MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-               const PieceHistory **contHis, std::array<int, 6> *see, int d);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his, std::array<int, 6> *see, int d);
     MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see);
 
     libchess::Move nextMove(bool skipQuiet = false);
@@ -62,7 +61,6 @@ private:
     libchess::Move *cur, *endMoves, *endBadCaptures;
     libchess::Position& board;
     ButterflyHistory *moveHistory;
-    const PieceHistory **continuationHistory;
     libchess::Move transposition;
     libchess::Move refutations[3];
     int stage;

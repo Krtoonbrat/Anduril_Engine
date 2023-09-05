@@ -285,17 +285,34 @@ class Position {
 
     int getPSQTMG() { return state().scoreMG; }
     int getPSQTEG() { return state().scoreEG; }
-    Move getExcluded() { return state().excludedMove; }
-    void setExcluded(Move move) { state_mut_ref().excludedMove = move; }
-    int& staticEval() { return state_mut_ref().staticEval; }
-    int& moveCount() { return state_mut_ref().moveCount; }
-    int& staticEval(int ply) { return state_mut_ref(ply).staticEval; }
-    int& moveCount(int ply) { return state_mut_ref(ply).moveCount; }
     PieceHistory*& continuationHistory() { return state_mut_ref().continuationHistory; }
     PieceHistory*& continuationHistory(int ply) { return state_mut_ref(ply).continuationHistory; }
     Move::Type prevMoveType(int ply) { return state(ply).move_type_; }
-    bool found() { return state().found; }
-    bool found(int ply) { return state(ply).found; }
+
+    void setPSQTBoth() {
+        auto state = state_mut_ref();
+        state.scoreMG = 0;
+        state.scoreEG = 0;
+        for (PieceType pt : constants::PIECE_TYPES) {
+            if (pt == constants::KING) {
+                continue;
+            }
+            Bitboard bb = piece_type_bb(pt);
+            while (bb) {
+                Square current_square = bb.forward_bitscan();
+                if (*color_of(current_square) == constants::WHITE) {
+                    int tableCoords = ((7 - (current_square / 8)) * 8) + current_square % 8;
+                    state.scoreMG += pieceValuesMG[pt.value()] + pieceSquareTableMG[pt.value()][tableCoords];
+                    state.scoreEG += pieceValuesEG[pt.value()] + pieceSquareTableEG[pt.value()][tableCoords];
+                }
+                else {
+                    state.scoreMG -= pieceValuesMG[pt.value()] + pieceSquareTableMG[pt.value()][current_square];
+                    state.scoreEG -= pieceValuesEG[pt.value()] + pieceSquareTableEG[pt.value()][current_square];
+                }
+                bb.forward_popbit();
+            }
+        }
+    }
 
 
     [[nodiscard]] int ply() const {
@@ -303,8 +320,8 @@ class Position {
     }
 
     // values for the pieces
-    static int pieceValuesMG[6];
-    static int pieceValuesEG[6];
+    int pieceValuesMG[6] = {88, 337, 365, 477, 1025, 0};
+    int pieceValuesEG[6] = {138, 281, 297, 512, 936, 0};
 
 protected:
     // clang-format off
@@ -331,10 +348,6 @@ protected:
         int halfmoves_ = 0;
         int scoreMG = 0;
         int scoreEG = 0;
-        int moveCount = 0;
-        bool found = false;
-        Move excludedMove = Move(0);
-        int staticEval = 0;
         PieceHistory *continuationHistory;
     };
     State& state_mut_ref() {
@@ -422,7 +435,7 @@ protected:
     Color side_to_move_;
     int fullmoves_;
     int ply_;
-    State history_[1000];
+    State history_[40];
 
     std::string start_fen_;
 };

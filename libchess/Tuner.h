@@ -260,8 +260,8 @@ class Tuner {
     }
 
     void tune() noexcept {
-        simulated_annealing(1000);
         local_tune();
+        simulated_annealing(1000);
     }
 
     void display() const noexcept {

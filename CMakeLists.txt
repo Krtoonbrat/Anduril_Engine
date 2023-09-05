@@ -11,16 +11,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 # add debug flags if needed
-#if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Og -ginline-points")
-#endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fopenmp")
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -march=native -flto -fuse-linker-plugin -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Ofast -march=native -flto -fuse-linker-plugin -fopenmp -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2")
 endif()
 
 # add release flags
 # I am going to assume the processor is at least avx2 compatable and make BMI2(for PEXT) up to the user
+# AVX512 flags: march=skylake-avx512 -mavx512f -mavx512bw -mavx512cd -mavx512dq -mavx512vl
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -flto -fuse-linker-plugin -fopenmp -DNDEBUG -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2")
 endif()
@@ -30,4 +31,4 @@ if (DEFINED USE_PEXT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -DUSE_PEXT")
 endif()
 
-add_executable(Anduril_Engine main.cpp Anduril.cpp Anduril.h Node.h PolyglotBook.cpp PolyglotBook.h TranspositionTable.cpp TranspositionTable.h evaluation.cpp UCI.cpp UCI.h limit.h ZobristHasher.cpp ZobristHasher.h MovePicker.cpp MovePicker.h History.h)
+add_executable(Anduril_Engine_Tuner main.cpp Anduril.cpp Anduril.h Node.h PolyglotBook.cpp PolyglotBook.h TranspositionTable.cpp TranspositionTable.h evaluation.cpp UCI.cpp UCI.h limit.h ZobristHasher.cpp ZobristHasher.h MovePicker.cpp MovePicker.h History.h)

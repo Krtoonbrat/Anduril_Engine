@@ -9,14 +9,13 @@
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
                        ButterflyHistory *his, const PieceHistory **contHis,
                        std::array<int, 6> *see)
-                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), continuationHistory(contHis), seeValues(see) {
+                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), seeValues(see) {
     stage = (board.in_check() ? EVASION_TT : MAIN_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
 // constructor for qsearch
-MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-                       const PieceHistory **contHis, std::array<int, 6> *see, int d)
-                      : board(b), transposition(ttm), moveHistory(his), continuationHistory(contHis), seeValues(see), depth(d) {
+MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his, std::array<int, 6> *see, int d)
+                      : board(b), transposition(ttm), moveHistory(his), seeValues(see), depth(d) {
     stage = (board.in_check() ? EVASION_TT : QSEARCH_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
@@ -113,11 +112,7 @@ void MovePicker::score() {
                       :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? UCI::minorOrderVal
                       :                                                                                                                                    0)
                       :                                                                                                                                    0)
-                      +  moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())
-                      + (2 * (*continuationHistory[0])[board.piece_on(m.from_square())->value()][m.to_square()])
-                      + (*continuationHistory[1])[board.piece_on(m.from_square())->value()][m.to_square()]
-                      + (*continuationHistory[3])[board.piece_on(m.from_square())->value()][m.to_square()]
-                      + (*continuationHistory[5])[board.piece_on(m.from_square())->value()][m.to_square()];
+                      +  moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
         }
         else { // evasions
             if (board.is_capture_move(m)) {
@@ -125,8 +120,7 @@ void MovePicker::score() {
                 m.score = seeValues->at(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0) + (100000); // we add a large number to make sure captures are always searched first
             }
             else {
-                m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())
-                        + (*continuationHistory[0])[board.piece_on(m.from_square())->value()][m.to_square()];
+                m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square());
             }
         }
 
