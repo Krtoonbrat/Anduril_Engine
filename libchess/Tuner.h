@@ -235,11 +235,12 @@ class Tuner {
 
         double current_error = error();
         for (int step = 0; step < max_steps; ++step) {
-            double temperature = 1.0 / (1.667 * (1.0 + double(step)));
+            double temperature = 10.0 / (3.5 * (1.0 + double(step)));
 
             int increment = random_increment();
             TunableParameter& tunable_parameter = tunable_parameters_[parameter_distribution(rng)];
             tunable_parameter += increment;
+            std::cout << "Attempted change: " << tunable_parameter.to_str() << " by " << increment << std::endl;
 
             double new_error = error();
 
@@ -260,8 +261,8 @@ class Tuner {
     }
 
     void tune() noexcept {
+        simulated_annealing(10000);
         local_tune();
-        simulated_annealing(1000);
     }
 
     void display() const noexcept {
