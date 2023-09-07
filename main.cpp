@@ -36,7 +36,7 @@ std::vector<std::unique_ptr<Anduril>> gondor;
 int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParameter> &parameters) {
     std::unique_ptr<Anduril> *evaluator = &gondor[0];
     for (int i = 0; i < gondor.size() && !(*evaluator)->searching; i++) {
-        if (!(*evaluator)->searching) {
+        if (!gondor[i]->searching) {
             evaluator = &gondor[i];
             (*evaluator)->searching = true;
         }
