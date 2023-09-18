@@ -123,6 +123,7 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
             (*evaluator)->pieceValues[12] = parameter.value();
             board.pieceValuesEG[4] = parameter.value();
         }
+        /*
         else if (parameter.name() == "SafetyTable0") {
             (*evaluator)->SafetyTable[0] = parameter.value();
         }
@@ -423,6 +424,7 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
         else if (parameter.name() == "SafetyTable99") {
             (*evaluator)->SafetyTable[99] = parameter.value();
         }
+         */
     }
     board.setPSQTBoth();
 
@@ -479,6 +481,7 @@ int main() {
     parameters.emplace_back("RookEndgame", 512);
     parameters.emplace_back("QueenMiddlegame", 1025);
     parameters.emplace_back("QueenEndgame", 936);
+    /*
     parameters.emplace_back("SafetyTable0", 0);
     parameters.emplace_back("SafetyTable1", 0);
     parameters.emplace_back("SafetyTable2", 1);
@@ -579,6 +582,7 @@ int main() {
     parameters.emplace_back("SafetyTable97", 500);
     parameters.emplace_back("SafetyTable98", 500);
     parameters.emplace_back("SafetyTable99", 500);
+     */
 
     std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = tuneEval;
     std::function<libchess::Position(const std::string&)> parseFen = [&](const std::string& fen) { return libchess::Position(fen); };
