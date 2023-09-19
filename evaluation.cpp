@@ -237,16 +237,13 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     }
 
     // space advantages
-    // only relevant if not in an endgame.  3000 seems like a decent number.  It was totally pulled out of my ass
-    if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) > 3000) {
-        // white
-        libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap[0] & (~bAttackMap[1]);
-        scoreMG += spc * wCenterAttacks.popcount();
+    // white
+    libchess::Bitboard wCenterAttacks = centerWhite & wAttackMap[0] & (~bAttackMap[1]);
+    scoreMG += spc * wCenterAttacks.popcount();
 
-        // black
-        libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap[0] & (~wAttackMap[1]);
-        scoreMG -= spc * bCenterAttacks.popcount();
-    }
+    // black
+    libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap[0] & (~wAttackMap[1]);
+    scoreMG -= spc * bCenterAttacks.popcount();
 
     // get the phase for tapered eval
     int phase = getPhase(board);
