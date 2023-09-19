@@ -173,9 +173,13 @@ namespace UCI {
         // this is probably risky cuz a thread could be executing on an object we are deleting, YOLO
         if ((ptr = strstr(line, "Threads"))) {
             threads = atoi(ptr + 13);
-            gondor.clear();
-            for (int i = 1; i < threads; i++) {
-                gondor.emplace_back(std::make_unique<Anduril>(i));
+            while (threads != gondor.size() + 1) {
+                if (threads > gondor.size() + 1) {
+                    gondor.emplace_back(std::make_unique<Anduril>(gondor.size() + 1));
+                }
+                else {
+                    gondor.pop_back();
+                }
             }
         }
 
@@ -714,6 +718,8 @@ void Anduril::go(libchess::Position board) {
         }
 
         // expand search window in case we miss (will be reset anyway if we didn't)
+        // we can do it here because if we did not miss, we set alpha and beta for the next search above,
+        // if we did miss, delta was already modified before we searched, meaning the alpha and beta windows were expanded
         delta += delta * 3 / 4;
 
         if (!incomplete && found) {
