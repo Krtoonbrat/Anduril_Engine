@@ -75,7 +75,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     }
 
     // so that we dont go over our board's max state.
-    if (board.ply() >= 30) {
+    if (board.ply() >= 15) {
         return evaluateBoard(board);
     }
 

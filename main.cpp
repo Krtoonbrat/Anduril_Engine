@@ -50,79 +50,80 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
         if (parameter.name() == "BishopPairMiddlegame") {
             (*evaluator)->bpM = parameter.value();
         }
-        if (parameter.name() == "BishopPairEndgame") {
+        else if (parameter.name() == "BishopPairEndgame") {
             (*evaluator)->bpE = parameter.value();
         }
-        if (parameter.name() == "Space") {
+        else if (parameter.name() == "Space") {
             (*evaluator)->spc = parameter.value();
         }
-        if (parameter.name() == "OutpostMiddlegame") {
+        else if (parameter.name() == "OutpostMiddlegame") {
             (*evaluator)->oMG = parameter.value();
         }
-        if (parameter.name() == "OutpostEndgame") {
+        else if (parameter.name() == "OutpostEndgame") {
             (*evaluator)->oEG = parameter.value();
         }
-        if (parameter.name() == "TrappedKnightMiddlegame") {
+        else if (parameter.name() == "TrappedKnightMiddlegame") {
             (*evaluator)->tMG = parameter.value();
         }
-        if (parameter.name() == "TrappedKnightEndgame") {
+        else if (parameter.name() == "TrappedKnightEndgame") {
             (*evaluator)->tEG = parameter.value();
         }
-        if (parameter.name() == "PawnMiddlegame") {
+        else if (parameter.name() == "PawnMiddlegame") {
             (*evaluator)->pMG = parameter.value();
             (*evaluator)->seeValues[0] = parameter.value();
             board.pieceValuesMG[0] = parameter.value();
         }
-        if (parameter.name() == "PawnEndgame") {
+        else if (parameter.name() == "PawnEndgame") {
             (*evaluator)->pEG = parameter.value();
             (*evaluator)->pieceValues[0] = parameter.value();
             (*evaluator)->pieceValues[8] = parameter.value();
             board.pieceValuesEG[0] = parameter.value();
         }
-        if (parameter.name() == "KnightMiddlegame") {
+        else if (parameter.name() == "KnightMiddlegame") {
             (*evaluator)->kMG = parameter.value();
             (*evaluator)->seeValues[1] = parameter.value();
             board.pieceValuesMG[1] = parameter.value();
         }
-        if (parameter.name() == "KnightEndgame") {
+        else if (parameter.name() == "KnightEndgame") {
             (*evaluator)->kEG = parameter.value();
             (*evaluator)->pieceValues[1] = parameter.value();
             (*evaluator)->pieceValues[9] = parameter.value();
             board.pieceValuesEG[1] = parameter.value();
         }
-        if (parameter.name() == "BishopMiddlegame") {
+        else if (parameter.name() == "BishopMiddlegame") {
             (*evaluator)->bMG = parameter.value();
             (*evaluator)->seeValues[2] = parameter.value();
             board.pieceValuesMG[2] = parameter.value();
         }
-        if (parameter.name() == "BishopEndgame") {
+        else if (parameter.name() == "BishopEndgame") {
             (*evaluator)->bEG = parameter.value();
             (*evaluator)->pieceValues[2] = parameter.value();
             (*evaluator)->pieceValues[10] = parameter.value();
             board.pieceValuesEG[2] = parameter.value();
         }
-        if (parameter.name() == "RookMiddlegame") {
+        else if (parameter.name() == "RookMiddlegame") {
             (*evaluator)->rMG = parameter.value();
             (*evaluator)->seeValues[3] = parameter.value();
             board.pieceValuesMG[3] = parameter.value();
         }
-        if (parameter.name() == "RookEndgame") {
+        else if (parameter.name() == "RookEndgame") {
             (*evaluator)->rEG = parameter.value();
             (*evaluator)->pieceValues[3] = parameter.value();
             (*evaluator)->pieceValues[11] = parameter.value();
             board.pieceValuesEG[3] = parameter.value();
         }
-        if (parameter.name() == "QueenMiddlegame") {
+        else if (parameter.name() == "QueenMiddlegame") {
             (*evaluator)->qMG = parameter.value();
             (*evaluator)->seeValues[4] = parameter.value();
             board.pieceValuesMG[4] = parameter.value();
         }
-        if (parameter.name() == "QueenEndgame") {
+        else if (parameter.name() == "QueenEndgame") {
             (*evaluator)->qEG = parameter.value();
             (*evaluator)->pieceValues[4] = parameter.value();
             (*evaluator)->pieceValues[12] = parameter.value();
             board.pieceValuesEG[4] = parameter.value();
         }
+        /*
         if (parameter.name() == "SafetyTable0") {
             (*evaluator)->SafetyTable[0] = parameter.value();
         }
@@ -423,10 +424,12 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
         if (parameter.name() == "SafetyTable99") {
             (*evaluator)->SafetyTable[99] = parameter.value();
         }
+         */
     }
     board.setPSQTBoth();
 
-    int score = (*evaluator)->quiescence<Anduril::PV>(board, -32001, 32001);
+    //int score = (*evaluator)->quiescence<Anduril::PV>(board, -32001, 32001);
+    int score = (*evaluator)->evaluateBoard(board);
     (*evaluator)->searching = false;
 
     return board.side_to_move() == libchess::constants::WHITE ? score : -score;
@@ -479,6 +482,7 @@ int main() {
     parameters.emplace_back("RookEndgame", 512);
     parameters.emplace_back("QueenMiddlegame", 1025);
     parameters.emplace_back("QueenEndgame", 936);
+    /*
     parameters.emplace_back("SafetyTable0", 0);
     parameters.emplace_back("SafetyTable1", 0);
     parameters.emplace_back("SafetyTable2", 1);
@@ -579,6 +583,7 @@ int main() {
     parameters.emplace_back("SafetyTable97", 500);
     parameters.emplace_back("SafetyTable98", 500);
     parameters.emplace_back("SafetyTable99", 500);
+     */
 
     std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = tuneEval;
     std::function<libchess::Position(const std::string&)> parseFen = [&](const std::string& fen) { return libchess::Position(fen); };

@@ -222,7 +222,7 @@ class Tuner {
         std::random_device random_device;
         std::mt19937 rng{random_device()};
         const int tunable_parameters_size = tunable_parameters_.size() - 1;
-        std::uniform_int_distribution<> increment_distribution{0, increment_values.size() - 1};
+        std::uniform_int_distribution<> increment_distribution{1, 100};
         std::uniform_int_distribution<> parameter_distribution{0, tunable_parameters_size};
 
         auto random_bool = [&](double probability) {
@@ -230,12 +230,12 @@ class Tuner {
             return bool_distribution(rng);
         };
         auto random_increment = [&]() {
-            return (random_bool(0.5) ? 1 : -1) * increment_values[increment_distribution(rng)];
+            return (random_bool(0.5) ? 1 : -1) * increment_distribution(rng);
         };
 
         double current_error = error();
         for (int step = 0; step < max_steps; ++step) {
-            double temperature = 10.0 / (3.5 * (1.0 + double(step)));
+            double temperature = 7.5 / (3.5 * (1.0 + double(step)));
 
             int increment = random_increment();
             TunableParameter& tunable_parameter = tunable_parameters_[parameter_distribution(rng)];
