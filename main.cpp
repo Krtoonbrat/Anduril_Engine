@@ -428,7 +428,7 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
     }
     board.setPSQTBoth();
 
-    int score = (*evaluator)->quiescence<Anduril::PV>(board, -32001, 32001);
+    int score = (*evaluator)->evaluateBoard(board);
     (*evaluator)->searching = false;
 
     return board.side_to_move() == libchess::constants::WHITE ? score : -score;
