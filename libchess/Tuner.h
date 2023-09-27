@@ -272,7 +272,7 @@ class Tuner {
     }
 
    protected:
-    [[nodiscard]] static double sigmoid(int score, double k = 1.13) noexcept {
+    [[nodiscard]] static double sigmoid(int score, double k = 1.00) noexcept {
         return 1.0 / (1.0 + std::pow(10.0, -k * score / 400.0));
     }
 
