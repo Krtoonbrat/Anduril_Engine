@@ -33,6 +33,27 @@ int threads;
 
 std::vector<std::unique_ptr<Anduril>> gondor;
 
+int findKEval(libchess::Position &board, const std::vector<libchess::TunableParameter> &parameters) {
+    std::unique_ptr<Anduril> *evaluator = &gondor[0];
+    for (int i = 0; i < gondor.size() && !(*evaluator)->searching; i++) {
+        if (!gondor[i]->searching) {
+            evaluator = &gondor[i];
+            (*evaluator)->searching = true;
+        }
+    }
+
+    for (int i = -7; i < 0; i++) {
+        board.continuationHistory(i) = &(*evaluator)->continuationHistory[0][0][15][0];
+    }
+
+    board.setPSQTBoth();
+
+    int score = (*evaluator)->evaluateBoard(board);
+    (*evaluator)->searching = false;
+
+    return board.side_to_move() == libchess::constants::WHITE ? score : -score;
+}
+
 int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParameter> &parameters) {
     std::unique_ptr<Anduril> *evaluator = &gondor[0];
     for (int i = 0; i < gondor.size() && !(*evaluator)->searching; i++) {
@@ -584,7 +605,7 @@ int main() {
     parameters.emplace_back("SafetyTable99", 500);
      */
 
-    std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = tuneEval;
+    std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = findKEval;
     std::function<libchess::Position(const std::string&)> parseFen = [&](const std::string& fen) { return libchess::Position(fen); };
 
     std::cout << "size of normalized results: " << sizeof(libchess::NormalizedResult<libchess::Position>) << std::endl;
@@ -596,7 +617,9 @@ int main() {
 
     std::cout << "Starting tuner..." << std::endl;
     libchess::Tuner<libchess::Position> tuner(epdResults, parameters, eval);
-    tuner.tune();
+    double finalK = tuner.computeOptimalK();
+    std::cout << "Optimal K: " << finalK << std::endl;
+    //tuner.tune();
 
     //threads = 1;
     //table.resize(256);

@@ -150,12 +150,12 @@ class Tuner {
         return tunable_parameters_;
     }
 
-    [[nodiscard]] double error() noexcept {
+    [[nodiscard]] double error(double k = 1.13) noexcept {
         double sum = 0.0;
 #pragma omp parallel for reduction(+ : sum)
         for (unsigned i = 0; i < normalized_results_.size(); ++i) {
             auto& normalized_result = normalized_results_.at(i);
-            double normalized_eval = sigmoid(eval(normalized_result.position()));
+            double normalized_eval = sigmoid(eval(normalized_result.position()), k);
             double err = normalized_result.value() - normalized_eval;
             sum += err * err;
         }
@@ -271,9 +271,36 @@ class Tuner {
         }
     }
 
+    double computeOptimalK() {
+        double start = 0.0, end = 10, step = 1.0;
+        double curr = start, err;
+        double best = error(start);
+
+        std::cout << "Starting search for optimal k" << std::endl;
+        for (int i = 0; i < 10; i++) {
+            curr = start - step;
+
+            while (curr < end) {
+                curr = curr + step;
+                err = error(curr);
+                std::cout << "k: " << curr << " error: " << err << std::endl;
+                if (err <= best) {
+                    best = err, start = curr;
+                }
+            }
+
+            std::cout << "Best k: " << start << " with error: " << best << " after " << i << "iterations" << std::endl;
+            end = start + step;
+            start = start - step;
+            step = step / 10;
+        }
+
+        return start;
+    }
+
    protected:
-    [[nodiscard]] static double sigmoid(int score, double k = 1.00) noexcept {
-        return 1.0 / (1.0 + std::pow(10.0, -k * score / 400.0));
+    [[nodiscard]] static double sigmoid(int score, double k = 1.13) noexcept {
+        return 1.0 / (1.0 + std::exp(-k * score));
     }
 
     [[nodiscard]] int eval(Position& position) noexcept {
