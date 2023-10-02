@@ -1014,7 +1014,7 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
     node = table.probe(hash, found);
     while (found && node->bestMove != 0) {
         libchess::Move tmp(node->bestMove);
-        if (board.is_capture_move(tmp) && board.piece_type_on(tmp.to_square()) == std::nullopt) {
+        if (board.is_capture_move(tmp) && board.piece_type_on(tmp.to_square()) == std::nullopt && tmp.type() != libchess::Move::Type::ENPASSANT) {
             break;
         }
         // this will make sure we don't segfault
