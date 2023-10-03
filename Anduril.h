@@ -143,6 +143,9 @@ public:
 
     int spc = 5;
 
+    int ksh = 20;
+    int kst = 5;
+
     // phase values
     double Pph = 0.125;
     double Kph = 1;

@@ -75,11 +75,6 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreMG += wp.first - bp.first;
     scoreEG += wp.second - bp.second;
 
-    // get king safety bonus for the board
-    // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
-    int king = getKingSafety(board, wKingSquare, bKingSquare);
-    scoreMG += king;
-
     // evaluate positional themes and gather mobility and tropism data
     std::pair<int, int> positional = positionalMobilityTropism(board);
     scoreMG += positional.first;
@@ -89,18 +84,6 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     wAttackMap[1] = wAttackMap[0] | wAttackMap[1];
     bAttackMap[1] = bAttackMap[0] | bAttackMap[1];
 
-    // king tropism (black is index 0, white is index 1)
-    // white
-    if (attackCount[1] >= 2) {
-        scoreMG += SafetyTable[attackWeight[1]];
-        scoreEG += SafetyTable[attackWeight[1]];
-    }
-    // black
-    if (attackCount[0] >= 2) {
-        scoreMG -= SafetyTable[attackWeight[0]];
-        scoreEG -= SafetyTable[attackWeight[0]];
-    }
-
     // mobility
     scoreMG += whiteMobility[0];
     scoreMG -= blackMobility[0];
@@ -108,6 +91,7 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreEG -= blackMobility[1];
 
     // give the AI a slap for moving the queen too early
+    /*
     if (!(board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE)
         & libchess::lookups::square(libchess::constants::D1))) {
         if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE)
@@ -146,6 +130,7 @@ int Anduril::evaluateBoard(libchess::Position &board) {
             scoreMG += 2;
         }
     }
+     */
 
     // bishop pair
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() >= 2) {
@@ -212,9 +197,24 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
     // for negamax to work, we must return a non-adjusted score for white
     // and a negated score for black
-    int finalScore = !board.side_to_move() ? ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256 : -((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
+    int finalScore = ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
 
-    return finalScore;
+    // king tropism (black is index 0, white is index 1)
+    // white
+    if (attackCount[1] >= 2) {
+        finalScore += SafetyTable[attackWeight[1]];
+    }
+    // black
+    if (attackCount[0] >= 2) {
+        finalScore -= SafetyTable[attackWeight[0]];
+    }
+
+    // get king safety bonus for the board
+    // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
+    int king = getKingSafety(board, wKingSquare, bKingSquare);
+    finalScore += king;
+
+    return !board.side_to_move() ? finalScore : -finalScore;
 }
 
 // calculates all mobility scores and tropism
@@ -782,55 +782,55 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
         // queen side
         if (whiteKing == libchess::constants::A1 || whiteKing == libchess::constants::B1 || whiteKing == libchess::constants::C1) {
             // 'A' file
-            if (!(libchess::lookups::square(libchess::constants::A2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::A3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
-                    score -= 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::A2) & whitePawns)
+                || (libchess::lookups::square(libchess::constants::A3) & whitePawns)) {
+                score += ksh;
+            }
+            else if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
+                score -= ksh;
             }
             // 'B' file
-            if (!(libchess::lookups::square(libchess::constants::B2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::B3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
-                    score -= 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::B2) & whitePawns)
+                || (libchess::lookups::square(libchess::constants::B3) & whitePawns)) {
+                score += ksh;
+            }
+            else if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
+                score -= ksh;
             }
             // 'C' file
-            if (!(libchess::lookups::square(libchess::constants::C2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::C3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
-                    score -= 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::C2) & whitePawns)
+                || (libchess::lookups::square(libchess::constants::C3) & whitePawns)) {
+                score += ksh;
+            }
+            else if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
+                score -= ksh;
             }
         }
             // king side
         else {
             // 'F' file
-            if (!(libchess::lookups::square(libchess::constants::F2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::F3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
-                    score -= 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::F2) & whitePawns)
+                || (libchess::lookups::square(libchess::constants::F3) & whitePawns)) {
+                score += ksh;
+            }
+            else if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
+                score -= ksh;
             }
             // 'G' file
-            if (!(libchess::lookups::square(libchess::constants::G2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::G3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
-                    score -= 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::G2) & whitePawns)
+                || (libchess::lookups::square(libchess::constants::G3) & whitePawns)) {
+                score += ksh;
+            }
+            else if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
+                score -= ksh;
             }
             // 'H' file
-            if (!(libchess::lookups::square(libchess::constants::H2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::H3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
-                    score -= 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::H2) & whitePawns)
+                || (libchess::lookups::square(libchess::constants::H3) & whitePawns)) {
+                score += ksh;
+            }
+            else if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
+                score -= ksh;
             }
         }
 
@@ -866,13 +866,13 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
             case libchess::constants::RANK_1:
                 stormZone = (stormZoneFiles & libchess::lookups::RANK_1_MASK) | (stormZoneFiles & libchess::lookups::RANK_2_MASK) | (stormZoneFiles & libchess::lookups::RANK_3_MASK);
                 if (stormZone & blackPawns) {
-                    score -= 5 * (stormZone & blackPawns).popcount();
+                    score -= kst * (stormZone & blackPawns).popcount();
                 }
                 break;
             case libchess::constants::RANK_2:
                 stormZone = (stormZoneFiles & libchess::lookups::RANK_1_MASK) | (stormZoneFiles & libchess::lookups::RANK_2_MASK) | (stormZoneFiles & libchess::lookups::RANK_3_MASK) | (stormZoneFiles & libchess::lookups::RANK_4_MASK);
                 if (stormZone & blackPawns) {
-                    score -= 5 * (stormZone & blackPawns).popcount();
+                    score -= kst * (stormZone & blackPawns).popcount();
                 }
                 break;
         }
@@ -883,55 +883,55 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
         // queen side
         if (blackKing == libchess::constants::A8 || blackKing == libchess::constants::B8 || blackKing == libchess::constants::C8) {
             // 'A' file
-            if (!(libchess::lookups::square(libchess::constants::A7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::A6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
-                    score += 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::A7) & blackPawns)
+                || (libchess::lookups::square(libchess::constants::A6) & blackPawns)) {
+                score -= ksh;
+            }
+            else if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
+                score += ksh;
             }
             // 'B' file
-            if (!(libchess::lookups::square(libchess::constants::B7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::B6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
-                    score += 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::B7) & blackPawns)
+                || (libchess::lookups::square(libchess::constants::B6) & blackPawns)) {
+                score -= ksh;
+            }
+            else if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
+                score += ksh;
             }
             // 'C' file
             if (!(libchess::lookups::square(libchess::constants::C7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::C6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
-                    score += 20;
-                }
+                || !(libchess::lookups::square(libchess::constants::C6) & blackPawns)) {
+                score -= ksh;
+            }
+            else if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
+                score += ksh;
             }
         }
             // king side
         else {
             // 'F' file
-            if (!(libchess::lookups::square(libchess::constants::F7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::F6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
-                    score += 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::F7) & blackPawns)
+                || (libchess::lookups::square(libchess::constants::F6) & blackPawns)) {
+                score -= ksh;
+            }
+            else if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
+                score += ksh;
             }
             // 'G' file
-            if (!(libchess::lookups::square(libchess::constants::G7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::G6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
-                    score += 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::G7) & blackPawns)
+                || (libchess::lookups::square(libchess::constants::G6) & blackPawns)) {
+                score -= ksh;
+            }
+            else if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
+                score += ksh;
             }
             // 'H' file
-            if (!(libchess::lookups::square(libchess::constants::H7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::H6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
-                    score += 20;
-                }
+            if ((libchess::lookups::square(libchess::constants::H7) & blackPawns)
+                || (libchess::lookups::square(libchess::constants::H6) & blackPawns)) {
+                score -= ksh;
+            }
+            else if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
+                score += ksh;
             }
         }
 
@@ -969,7 +969,7 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
                             (stormZoneFiles & libchess::lookups::RANK_6_MASK) |
                             (stormZoneFiles & libchess::lookups::RANK_5_MASK);
                 if (stormZone & whitePawns) {
-                    score += 5 * (stormZone & whitePawns).popcount();
+                    score += kst * (stormZone & whitePawns).popcount();
                 }
                 break;
             case libchess::constants::RANK_8:
@@ -977,7 +977,7 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
                             (stormZoneFiles & libchess::lookups::RANK_7_MASK) |
                             (stormZoneFiles & libchess::lookups::RANK_6_MASK);
                 if (stormZone & whitePawns) {
-                    score += 5 * (stormZone & whitePawns).popcount();
+                    score += kst * (stormZone & whitePawns).popcount();
                 }
                 break;
         }
@@ -988,11 +988,10 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
 
 // gets the phase of the game for evalutation
 int Anduril::getPhase(libchess::Position &board) {
-    double pawn = Pph, knight = Kph, bishop = Bph, rook = Rph, queen = Qph;
-    double totalPhase = pawn*16 + knight*4 + bishop*4 + rook*4 + queen*2;
+    double knight = Kph, bishop = Bph, rook = Rph, queen = Qph;
+    double totalPhase = knight*4 + bishop*4 + rook*4 + queen*2;
 
     double phase = totalPhase;
-    phase -= board.piece_type_bb(libchess::constants::PAWN).popcount() * pawn;
     phase -= board.piece_type_bb(libchess::constants::KNIGHT).popcount() * knight;
     phase -= board.piece_type_bb(libchess::constants::BISHOP).popcount() * bishop;
     phase -= board.piece_type_bb(libchess::constants::ROOK).popcount() * rook;

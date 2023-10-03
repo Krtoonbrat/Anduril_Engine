@@ -294,9 +294,6 @@ class Position {
         state.scoreMG = 0;
         state.scoreEG = 0;
         for (PieceType pt : constants::PIECE_TYPES) {
-            if (pt == constants::KING) {
-                continue;
-            }
             Bitboard bb = piece_type_bb(pt);
             while (bb) {
                 Square current_square = bb.forward_bitscan();
@@ -435,7 +432,7 @@ protected:
     Color side_to_move_;
     int fullmoves_;
     int ply_;
-    State history_[10];
+    State history_[30];
 
     std::string start_fen_;
 };

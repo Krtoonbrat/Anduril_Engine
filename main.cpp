@@ -51,7 +51,7 @@ int findKEval(libchess::Position &board, const std::vector<libchess::TunablePara
     int score = (*evaluator)->evaluateBoard(board);
     (*evaluator)->searching = false;
 
-    return board.side_to_move() == libchess::constants::WHITE ? score : -score;
+    return !board.side_to_move() ? score : -score;
 }
 
 int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParameter> &parameters) {
@@ -143,6 +143,12 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
             (*evaluator)->pieceValues[4] = parameter.value();
             (*evaluator)->pieceValues[12] = parameter.value();
             board.pieceValuesEG[4] = parameter.value();
+        }
+        else if (parameter.name() == "KingShield") {
+            (*evaluator)->ksh = parameter.value();
+        }
+        else if (parameter.name() == "KingStorm") {
+            (*evaluator)->kst = parameter.value();
         }
         /*
         else if (parameter.name() == "SafetyTable0") {
@@ -449,10 +455,10 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
     }
     board.setPSQTBoth();
 
-    int score = (*evaluator)->evaluateBoard(board);
+    int score = (*evaluator)->quiescence<Anduril::PV>(board, -32001, 32001);
     (*evaluator)->searching = false;
 
-    return board.side_to_move() == libchess::constants::WHITE ? score : -score;
+    return !board.side_to_move() ? score : -score;
 }
 
 int main() {
@@ -502,6 +508,8 @@ int main() {
     parameters.emplace_back("RookEndgame", 512);
     parameters.emplace_back("QueenMiddlegame", 1025);
     parameters.emplace_back("QueenEndgame", 936);
+    parameters.emplace_back("KingShield", 20);
+    parameters.emplace_back("KingStorm", 5);
     /*
     parameters.emplace_back("SafetyTable0", 0);
     parameters.emplace_back("SafetyTable1", 0);
@@ -605,7 +613,7 @@ int main() {
     parameters.emplace_back("SafetyTable99", 500);
      */
 
-    std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = findKEval;
+    std::function<int(libchess::Position &, const std::vector<libchess::TunableParameter> &)> eval = tuneEval;
     std::function<libchess::Position(const std::string&)> parseFen = [&](const std::string& fen) { return libchess::Position(fen); };
 
     std::cout << "size of normalized results: " << sizeof(libchess::NormalizedResult<libchess::Position>) << std::endl;
@@ -617,9 +625,9 @@ int main() {
 
     std::cout << "Starting tuner..." << std::endl;
     libchess::Tuner<libchess::Position> tuner(epdResults, parameters, eval);
-    double finalK = tuner.computeOptimalK();
-    std::cout << "Optimal K: " << finalK << std::endl;
-    //tuner.tune();
+    //double finalK = tuner.computeOptimalK();
+    //std::cout << "Optimal K: " << finalK << std::endl;
+    tuner.tune();
 
     //threads = 1;
     //table.resize(256);

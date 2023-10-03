@@ -619,11 +619,12 @@ inline void Position::make_move(Move move) {
     next_state.scoreEG = scoreEG;
 
     if (piece_type_bb(constants::KING, constants::WHITE).popcount() != 1) {
-        std::cout << "FUCKKKK WHITE" << std::endl;
+        std::cout << "FUCKKKK WHITE make" << std::endl;
+
     }
 
     if (piece_type_bb(constants::KING, constants::BLACK).popcount() != 1) {
-        std::cout << "FUCKKKK BLACK" << std::endl;
+        std::cout << "FUCKKKK BLACK make" << std::endl;
     }
 
 }

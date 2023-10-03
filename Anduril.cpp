@@ -66,17 +66,17 @@ template <Anduril::NodeType nodeType>
 int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int depth) {
     constexpr bool PvNode = nodeType != NonPV;
 
+    // so that we dont go over our board's max state.
+    if (depth <= -20) {
+        return evaluateBoard(board);
+    }
+
     // are we in check?
     bool check = board.in_check();
 
     // check for a draw, add variance to draw score to avoid 3-fold blindness
     if (board.halfmoves() >= 100 || board.is_repeat(2)) {
         return 0;
-    }
-
-    // so that we dont go over our board's max state.
-    if (board.ply() >= 15) {
-        return evaluateBoard(board);
     }
 
     // represents the best score we have found so far
@@ -132,6 +132,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     libchess::Move bestMove;
 
     bool isCapture = false;
+    bool givesCheck = false;
 
     int moveCounter = 0;
     int quietCheckCounter = 0;
@@ -144,14 +145,56 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         }
 
         isCapture = board.is_capture_move(move);
+        givesCheck = board.gives_check(move);
 
         moveCounter++;
 
         // pruning steps
         if (bestScore > -30000) { // if we are in check, bestScore will by default be -32001, this makes sure we at least search the first value when in check
+            // futility pruning
+            if (!givesCheck
+                && move.to_square() != prevMoveSq
+                && futility > -30000
+                && !board.is_promotion_move(move)) {
+                if (moveCounter > 2) {
+                    continue;
+                }
+
+                if (board.piece_on(move.to_square())) {
+                    futilityValue = futility + pieceValues[board.piece_on(move.to_square())->value()];
+                } else {
+                    futilityValue = futility;
+                }
+
+                if (futilityValue <= alpha) {
+                    bestScore = std::max(bestScore, futilityValue);
+                    continue;
+                }
+
+                if (futility <= alpha && !board.see_ge(move, 1)) {
+                    bestScore = std::max(bestScore, futility);
+                    continue;
+                }
+            }
+
+            // prune quiet check evasions after the second move
+            if (quietCheckCounter > 1) {
+                break;
+            }
+
+            // delta pruning
+            // the extra check at the beginning is to get rid of seg faults when enpassant is the capture
+            // we can just skip delta pruning there and it shouldn't cost too much
+            if (board.piece_type_on(move.to_square())
+                && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
+                && nonPawnMaterial(board.side_to_move(), board) -
+                   seeValues[board.piece_type_on(move.to_square())->value()] > 1600
+                && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
+                continue;
+            }
 
             // see pruning
-            if (!board.see_ge(move, -28)) {
+            if (!board.see_ge(move, kMG - bMG)) {
                 continue;
             }
         }

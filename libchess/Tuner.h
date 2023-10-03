@@ -138,8 +138,8 @@ class NormalizedResult {
 template <class Position>
 class Tuner {
    public:
-    Tuner(std::vector<NormalizedResult<Position>> normalized_results,
-          std::vector<TunableParameter> tunable_parameters,
+    Tuner(std::vector<NormalizedResult<Position>> &normalized_results,
+          std::vector<TunableParameter> &tunable_parameters,
           std::function<int(Position&, const std::vector<TunableParameter>&)> eval_function)
         : normalized_results_(std::move(normalized_results)),
           tunable_parameters_(std::move(tunable_parameters)),
@@ -150,7 +150,7 @@ class Tuner {
         return tunable_parameters_;
     }
 
-    [[nodiscard]] double error(double k = 1.13) noexcept {
+    [[nodiscard]] double error(double k = 0.388890220000000) noexcept {
         double sum = 0.0;
 #pragma omp parallel for reduction(+ : sum)
         for (unsigned i = 0; i < normalized_results_.size(); ++i) {
@@ -218,11 +218,11 @@ class Tuner {
         }
     }
 
-    void simulated_annealing(int max_steps) noexcept {
+    void simulated_annealing(int max_steps, int n) noexcept {
         std::random_device random_device;
         std::mt19937 rng{random_device()};
         const int tunable_parameters_size = tunable_parameters_.size() - 1;
-        std::uniform_int_distribution<> increment_distribution{1, 100};
+        std::uniform_int_distribution<> increment_distribution{1, 50};
         std::uniform_int_distribution<> parameter_distribution{0, tunable_parameters_size};
 
         auto random_bool = [&](double probability) {
@@ -234,34 +234,37 @@ class Tuner {
         };
 
         double current_error = error();
+        std::cout << "Initial error: " << current_error << std::endl;
         for (int step = 0; step < max_steps; ++step) {
-            double temperature = 7.5 / (3.5 * (1.0 + double(step)));
+            double temperature = 0.1 / (3.5 * (1.0 + double(step)));
 
-            int increment = random_increment();
-            TunableParameter& tunable_parameter = tunable_parameters_[parameter_distribution(rng)];
-            tunable_parameter += increment;
-            std::cout << "Attempted change: " << tunable_parameter.to_str() << " by " << increment << std::endl;
+            for (int i = 0; i < n; i++) {
+                int increment = random_increment();
+                TunableParameter &tunable_parameter = tunable_parameters_[parameter_distribution(rng)];
+                tunable_parameter += increment;
+                std::cout << "Attempted change: " << tunable_parameter.to_str() << " by " << increment << std::endl;
 
-            double new_error = error();
+                double new_error = error();
 
-            double acceptance_probability =
-                new_error < current_error
-                    ? 1.0
-                    : std::exp(-(new_error - current_error) / double(temperature));
-            if (random_bool(acceptance_probability)) {
-                current_error = new_error;
-            } else {
-                tunable_parameter -= increment;
+                double acceptance_probability =
+                        new_error < current_error
+                        ? 1.0
+                        : std::exp(-(new_error - current_error) / double(temperature));
+                if (random_bool(acceptance_probability)) {
+                    current_error = new_error;
+                } else {
+                    tunable_parameter -= increment;
+                }
+
+                display();
+                std::cout << "acceptance prob: " << acceptance_probability << " step: " << step << " iteration: " << i
+                          << " temperature: " << temperature << " error: " << current_error << "\n";
             }
-
-            display();
-            std::cout << "acceptance prob: " << acceptance_probability << " step: " << step
-                      << " temperature: " << temperature << " error: " << current_error << "\n";
         }
     }
 
     void tune() noexcept {
-        simulated_annealing(10000);
+        simulated_annealing(200, 15);
         local_tune();
     }
 
@@ -276,6 +279,11 @@ class Tuner {
         double curr = start, err;
         double best = error(start);
 
+        std::ofstream csv("k_csv.txt");
+        csv << std::fixed << std::setprecision(15);
+        csv << "k,error" << std::endl;
+
+        std::cout << std::fixed << std::setprecision(15);
         std::cout << "Starting search for optimal k" << std::endl;
         for (int i = 0; i < 10; i++) {
             curr = start - step;
@@ -283,13 +291,14 @@ class Tuner {
             while (curr < end) {
                 curr = curr + step;
                 err = error(curr);
+                csv << curr << "," << err << std::endl;
                 std::cout << "k: " << curr << " error: " << err << std::endl;
                 if (err <= best) {
                     best = err, start = curr;
                 }
             }
 
-            std::cout << "Best k: " << start << " with error: " << best << " after " << i << "iterations" << std::endl;
+            std::cout << "Best k: " << start << " with error: " << best << " after " << i << " iterations" << std::endl;
             end = start + step;
             start = start - step;
             step = step / 10;
@@ -300,7 +309,7 @@ class Tuner {
 
    protected:
     [[nodiscard]] static double sigmoid(int score, double k = 1.13) noexcept {
-        return 1.0 / (1.0 + std::exp(-k * score));
+        return 1.0 / (1.0 + std::exp(-k * score / 400.0));
     }
 
     [[nodiscard]] int eval(Position& position) noexcept {
