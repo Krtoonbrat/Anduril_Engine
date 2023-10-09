@@ -80,7 +80,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 
     // check for a draw, add variance to draw score to avoid 3-fold blindness
     if (board.halfmoves() >= 100 || board.is_repeat(2)) {
-        return 1 - (movesExplored.load() & 2);
+        return 0;
     }
 
     // represents the best score we have found so far
@@ -89,6 +89,9 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     // threshold for futility pruning
     int futility = -32001;
     int futilityValue;
+
+    // tDepth will be 0 when searching evasions or when we include checks and promotions, -1 otherwise
+    int tDepth = check || depth >= 0 ? 0 : -1;
 
     // transposition lookup
     uint64_t hash = board.hash();
@@ -100,7 +103,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 	if (!PvNode
 		&& found
         && nScore != -32001
-		&& node->nodeDepth >= -1
+		&& node->nodeDepth >= tDepth
         && (node->nodeType == 1 || (nScore >= beta ? node->nodeType == 2 : node->nodeType == 3))) {
 		movesTransposed++;
 		return nScore;
@@ -274,7 +277,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 3, -1, bestMove.value(), standPat);
+    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 3, tDepth, bestMove.value(), standPat);
     return bestScore;
 
 }
@@ -589,6 +592,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
     libchess::Move counterMove = board.previous_move() ? counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] : libchess::Move(0);
+
+    // if we are at root and not main thread, don't use transposition move
+    if constexpr (rootNode) {
+        if (id != 0) {
+            nMove = libchess::Move(0);
+        }
+    }
 
     // get a move picker
     MovePicker picker(board, nMove, killers[ply - rootPly],
@@ -1030,7 +1040,7 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
         node = table.probe(hash, found);
         // in case of infinite loops of repeating moves
         // also check to see if the pv is still in the main search
-        if (PV.size() > depth || node->nodeDepth == -1) {
+        if (PV.size() > depth || node->nodeDepth <= 0) {
             break;
         }
     }
