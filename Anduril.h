@@ -143,13 +143,6 @@ public:
 
     int spc = 5;
 
-    // phase values
-    double Pph = 0.125;
-    double Kph = 1;
-    double Bph = 1;
-    double Rph = 2;
-    double Qph = 4;
-
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
 

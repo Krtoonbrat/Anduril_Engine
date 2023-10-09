@@ -48,6 +48,8 @@ public:
     // age tracker for transposition table
     int age = 0;
 
+    size_t sizeMB = 0;
+
 private:
     Cluster *tPtr = nullptr;
 

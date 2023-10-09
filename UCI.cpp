@@ -120,6 +120,7 @@ namespace UCI {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
 
+                std::cout << "option name ClearHash type button" << std::endl;
                 std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
@@ -146,15 +147,9 @@ namespace UCI {
                 std::cout << "option name qMG type spin default 1025 min -40000 max 40000" << std::endl;
                 std::cout << "option name qEG type spin default 936 min -40000 max 40000" << std::endl;
 
-                std::cout << "option name Pph type spin default 125 min 0 max 10000" << std::endl;
-                std::cout << "option name Kph type spin default 1000 min 0 max 10000" << std::endl;
-                std::cout << "option name Bph type spin default 1000 min 0 max 10000" << std::endl;
-                std::cout << "option name Rph type spin default 2000 min 0 max 10000" << std::endl;
-                std::cout << "option name Qph type spin default 4000 min 0 max 10000" << std::endl;
-
-                std::cout << "option name QOV type spin default 500000 min 0 max 1000000" << std::endl;
-                std::cout << "option name ROV type spin default 250000 min 0 max 1000000" << std::endl;
-                std::cout << "option name MOV type spin default 150000 min 0 max 1000000" << std::endl;
+                std::cout << "option name QOV type spin default 50000 min 0 max 1000000" << std::endl;
+                std::cout << "option name ROV type spin default 25000 min 0 max 1000000" << std::endl;
+                std::cout << "option name MOV type spin default 15000 min 0 max 1000000" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -185,7 +180,18 @@ namespace UCI {
 
         // set hash size
         if ((ptr = strstr(line, "Hash"))) {
-            table.resize(atoi(ptr + 10));
+            int hashSize = atoi(ptr + 10);
+            if (hashSize == table.sizeMB) {
+                std::cout << "info string Hash size already set to " << hashSize << " MB" << std::endl;
+            }
+            else {
+                table.resize(hashSize >= 16 ? hashSize : 16);
+            }
+        }
+
+        if ((ptr = strstr(line, "ClearHash"))) {
+            table.clear();
+            std::cout << "info string Hash table cleared" << std::endl;
         }
 
         // set book open or closed
@@ -304,41 +310,6 @@ namespace UCI {
             libchess::Position::pieceValuesEG[0] = AI->pEG;
             for (auto &thread : gondor) {
                 thread->pEG = AI->pEG;
-            }
-        }
-
-        if ((ptr = strstr(line, "Pph"))) {
-            AI->Pph = atof(ptr + 10) / 1000;
-            for (auto &thread : gondor) {
-                thread->Pph = AI->Pph;
-            }
-        }
-
-        if ((ptr = strstr(line, "Kph"))) {
-            AI->Kph = atof(ptr + 10) / 1000;
-            for (auto &thread : gondor) {
-                thread->Kph = AI->Kph;
-            }
-        }
-
-        if ((ptr = strstr(line, "Bph"))) {
-            AI->Bph = atof(ptr + 10) / 1000;
-            for (auto &thread : gondor) {
-                thread->Bph = AI->Bph;
-            }
-        }
-
-        if ((ptr = strstr(line, "Rph"))) {
-            AI->Rph = atof(ptr + 10) / 1000;
-            for (auto &thread : gondor) {
-                thread->Rph = AI->Rph;
-            }
-        }
-
-        if ((ptr = strstr(line, "Qph"))) {
-            AI->Qph = atof(ptr + 10) / 1000;
-            for (auto &thread : gondor) {
-                thread->Qph = AI->Qph;
             }
         }
 

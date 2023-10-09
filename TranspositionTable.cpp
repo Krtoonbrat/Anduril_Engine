@@ -42,6 +42,8 @@ void TranspositionTable::resize(size_t tSize) {
 
     std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
 
+    sizeMB = tSize;
+
     _aligned_free(tPtr);
 
     clusterCount = (tSize * 1024 * 1024) / sizeof(Cluster);

@@ -146,46 +146,6 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreEG += whiteMobility[1];
     scoreEG -= blackMobility[1];
 
-    // give the AI a slap for moving the queen too early
-    if (!(board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE)
-        & libchess::lookups::square(libchess::constants::D1))) {
-        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE)
-            & libchess::lookups::square(libchess::constants::B1)) {
-            scoreMG -= 2;
-        }
-        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE)
-            & libchess::lookups::square(libchess::constants::G1)) {
-            scoreMG -= 2;
-        }
-        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE)
-            & libchess::lookups::square(libchess::constants::C1)) {
-            scoreMG -= 2;
-        }
-        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE)
-            & libchess::lookups::square(libchess::constants::F1)) {
-            scoreMG -= 2;
-        }
-    }
-    if (!(board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK)
-          & libchess::lookups::square(libchess::constants::D8))) {
-        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK)
-            & libchess::lookups::square(libchess::constants::B8)) {
-            scoreMG += 2;
-        }
-        if (board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK)
-            & libchess::lookups::square(libchess::constants::G8)) {
-            scoreMG += 2;
-        }
-        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK)
-            & libchess::lookups::square(libchess::constants::C8)) {
-            scoreMG += 2;
-        }
-        if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK)
-            & libchess::lookups::square(libchess::constants::F8)) {
-            scoreMG += 2;
-        }
-    }
-
     // bishop pair
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() >= 2) {
         scoreMG += bpM;
@@ -1030,15 +990,14 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
 
 // gets the phase of the game for evalutation
 int Anduril::getPhase(libchess::Position &board) {
-    double pawn = Pph, knight = Kph, bishop = Bph, rook = Rph, queen = Qph;
-    double totalPhase = pawn*16 + knight*4 + bishop*4 + rook*4 + queen*2;
+    int knight = 1, bishop = 1, rook = 2, queen = 4;
+    int totalPhase = knight*4 + bishop*4 + rook*4 + queen*2;
 
-    double phase = totalPhase;
-    phase -= board.piece_type_bb(libchess::constants::PAWN).popcount() * pawn;
+    int phase = totalPhase;
     phase -= board.piece_type_bb(libchess::constants::KNIGHT).popcount() * knight;
     phase -= board.piece_type_bb(libchess::constants::BISHOP).popcount() * bishop;
     phase -= board.piece_type_bb(libchess::constants::ROOK).popcount() * rook;
     phase -= board.piece_type_bb(libchess::constants::QUEEN).popcount() * queen;
 
-    return (int)((phase * 256 + (totalPhase / 2)) / totalPhase);
+    return ((phase * 256 + (totalPhase / 2)) / totalPhase);
 }

@@ -25,9 +25,9 @@ namespace UCI {
     // parks thread waiting for a search
     void waitForSearch(std::unique_ptr<Anduril> &AI, libchess::Position &board);
 
-    static int queenOrderVal = 500000;
-    static int rookOrderVal =  250000;
-    static int minorOrderVal = 150000;
+    static int queenOrderVal = 50000;
+    static int rookOrderVal =  25000;
+    static int minorOrderVal = 15000;
     static int maxHistoryVal = 16384;
     static int maxContinuationVal = 16384;
 }
