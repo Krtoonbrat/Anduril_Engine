@@ -168,9 +168,11 @@ public:
     std::atomic<bool> quit;
 
     // did the GUI tell us to stop the search?
+    // used for stopping search threads
     std::atomic<bool> stopped;
 
     // should we be searching?
+    // used for starting threads
     std::atomic<bool> searching;
 
 private:
