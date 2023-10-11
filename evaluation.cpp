@@ -192,27 +192,29 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     libchess::Bitboard bCenterAttacks = centerBlack & bAttackMap[0] & (~wAttackMap[1]);
     scoreMG -= spc * bCenterAttacks.popcount();
 
+    // king tropism (black is index 0, white is index 1)
+    // white
+    if (attackCount[1] >= 2) {
+        scoreMG += SafetyTable[attackWeight[1]];
+        scoreEG += SafetyTable[attackWeight[1]];
+    }
+    // black
+    if (attackCount[0] >= 2) {
+        scoreMG -= SafetyTable[attackWeight[0]];
+        scoreEG -= SafetyTable[attackWeight[0]];
+    }
+
+    // get king safety bonus for the board
+    // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
+    int king = getKingSafety(board, wKingSquare, bKingSquare);
+    scoreMG += king;
+
     // get the phase for tapered eval
     int phase = getPhase(board);
 
     // for negamax to work, we must return a non-adjusted score for white
     // and a negated score for black
     int finalScore = ((scoreMG * (256 - phase)) + (scoreEG * phase)) / 256;
-
-    // king tropism (black is index 0, white is index 1)
-    // white
-    if (attackCount[1] >= 2) {
-        finalScore += SafetyTable[attackWeight[1]];
-    }
-    // black
-    if (attackCount[0] >= 2) {
-        finalScore -= SafetyTable[attackWeight[0]];
-    }
-
-    // get king safety bonus for the board
-    // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
-    int king = getKingSafety(board, wKingSquare, bKingSquare);
-    finalScore += king;
 
     return !board.side_to_move() ? finalScore : -finalScore;
 }

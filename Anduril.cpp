@@ -67,7 +67,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     constexpr bool PvNode = nodeType != NonPV;
 
     // so that we dont go over our board's max state.
-    if (depth <= -20) {
+    if (depth <= -2) {
         return evaluateBoard(board);
     }
 

@@ -432,7 +432,7 @@ protected:
     Color side_to_move_;
     int fullmoves_;
     int ply_;
-    State history_[30];
+    State history_[10];
 
     std::string start_fen_;
 };

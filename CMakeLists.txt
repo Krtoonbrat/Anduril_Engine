@@ -23,7 +23,7 @@ endif()
 # I am going to assume the processor is at least avx2 compatable and make BMI2(for PEXT) up to the user
 # AVX512 flags: march=skylake-avx512 -mavx512f -mavx512bw -mavx512cd -mavx512dq -mavx512vl
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast -march=native -flto -fuse-linker-plugin -fopenmp -DNDEBUG -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -flto -fuse-linker-plugin -fopenmp -DNDEBUG -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2")
 endif()
 
 # add pext if defined

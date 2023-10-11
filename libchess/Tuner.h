@@ -62,18 +62,8 @@ enum class Result
 template <class Position>
 class NormalizedResult {
    public:
-    NormalizedResult(Position position, Result result) noexcept : position_(std::move(position)) {
-        switch (result) {
-            case Result::BLACK_WIN:
-                value_ = 0.0;
-                break;
-            case Result::DRAW:
-                value_ = 0.5;
-                break;
-            case Result::WHITE_WIN:
-                value_ = 1.0;
-                break;
-        }
+    NormalizedResult(Position position, double result) noexcept : position_(std::move(position)), value_(result) {
+
     }
 
     [[nodiscard]] Position& position() noexcept {
@@ -102,27 +92,21 @@ class NormalizedResult {
             }
             std::string fen{line_view.begin(), curr_pos};
             std::string post_fen{curr_pos + 1, line_view.end()};
-            Result result = [&result_opcode, &post_fen] {
+            double result = [&result_opcode, &post_fen] {
                 std::istringstream post_fen_stream{post_fen};
                 std::string opcode;
                 while (post_fen_stream >> opcode) {
                     if (opcode == ";") {
                         break;
                     }
-                    std::string value;
-                    post_fen_stream >> std::quoted(value);
+                    double value;
+                    post_fen_stream >> value;
                     if (opcode != result_opcode) {
                         continue;
                     }
-                    if (value == "1-0") {
-                        return Result::WHITE_WIN;
-                    } else if (value == "0-1") {
-                        return Result::BLACK_WIN;
-                    } else {
-                        return Result::DRAW;
-                    }
+                    return value;
                 }
-                return Result::DRAW;
+                return 0.00;
             }();
 
             normalized_results.push_back(NormalizedResult{fen_parser(fen), result});
@@ -150,14 +134,15 @@ class Tuner {
         return tunable_parameters_;
     }
 
-    [[nodiscard]] double error(double k = 0.388890220000000) noexcept {
+    [[nodiscard]] double error(double k = 1) noexcept {
         double sum = 0.0;
 #pragma omp parallel for reduction(+ : sum)
         for (unsigned i = 0; i < normalized_results_.size(); ++i) {
             auto& normalized_result = normalized_results_.at(i);
-            double normalized_eval = sigmoid(eval(normalized_result.position()), k);
-            double err = normalized_result.value() - normalized_eval;
-            sum += err * err;
+            double err = std::pow(sigmoid(normalized_result.value(), k) - sigmoid(eval(normalized_result.position()) / 100.0, k), 2.0);
+            //double normalized_eval = sigmoid(eval(normalized_result.position()), k);
+            //double err = normalized_result.value() - normalized_eval;
+            sum += err;
         }
         return sum / double(normalized_results_.size());
     }
@@ -234,9 +219,10 @@ class Tuner {
         };
 
         double current_error = error();
+        display();
         std::cout << "Initial error: " << current_error << std::endl;
         for (int step = 0; step < max_steps; ++step) {
-            double temperature = 0.1 / (3.5 * (1.0 + double(step)));
+            double temperature = 0.2 / (3.5 * (1.0 + double(step)));
 
             for (int i = 0; i < n; i++) {
                 int increment = random_increment();
@@ -308,8 +294,8 @@ class Tuner {
     }
 
    protected:
-    [[nodiscard]] static double sigmoid(int score, double k = 1.13) noexcept {
-        return 1.0 / (1.0 + std::exp(-k * score / 400.0));
+    [[nodiscard]] static double sigmoid(double score, double k = 1.13) noexcept {
+        return 1.0 / (1.0 + std::exp(-k * score));
     }
 
     [[nodiscard]] int eval(Position& position) noexcept {

@@ -51,7 +51,7 @@ int findKEval(libchess::Position &board, const std::vector<libchess::TunablePara
     int score = (*evaluator)->evaluateBoard(board);
     (*evaluator)->searching = false;
 
-    return !board.side_to_move() ? score : -score;
+    return score;
 }
 
 int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParameter> &parameters) {
@@ -458,7 +458,7 @@ int tuneEval(libchess::Position &board, const std::vector<libchess::TunableParam
     int score = (*evaluator)->quiescence<Anduril::PV>(board, -32001, 32001);
     (*evaluator)->searching = false;
 
-    return !board.side_to_move() ? score : -score;
+    return score;
 }
 
 int main() {
