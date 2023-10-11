@@ -127,8 +127,8 @@ namespace UCI {
 
                 std::cout << "option name kMG type spin default 337 min -40000 max 40000" << std::endl;
                 std::cout << "option name kEG type spin default 281 min -40000 max 40000" << std::endl;
-                std::cout << "option name oMG type spin default 10  min -1000 max 1000" << std::endl;
-                std::cout << "option name oEG type spin default 10  min -1000 max 1000" << std::endl;
+                std::cout << "option name oMG type spin default 20  min -1000 max 1000" << std::endl;
+                std::cout << "option name oEG type spin default 5   min -1000 max 1000" << std::endl;
                 std::cout << "option name tMG type spin default 150 min -1000 max 1000" << std::endl;
                 std::cout << "option name tEG type spin default 150 min -1000 max 1000" << std::endl;
                 std::cout << "option name bpM type spin default 3   min -1000 max 1000" << std::endl;

@@ -88,6 +88,7 @@ inline bool Position::in_check() const {
 inline bool Position::is_repeat(int times) const {
     hash_type curr_hash = hash();
     int num_keys = 0 > (ply() - halfmoves()) ? 0 : ply() - halfmoves();
+    num_keys = std::min(num_keys, state().pliesSinceNull);
     int count = 0;
     for (int i = ply() - 2; i >= num_keys; i -= 2) {
         if (state(i).hash_ == curr_hash) {

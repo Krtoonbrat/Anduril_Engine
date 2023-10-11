@@ -308,6 +308,7 @@ inline void Position::make_move(Move move) {
     State& prev_state = state_mut_ref(ply_ - 1);
     State& next_state = state_mut_ref();
     next_state.halfmoves_ = prev_state.halfmoves_ + 1;
+    next_state.pliesSinceNull = prev_state.pliesSinceNull + 1;
     next_state.previous_move_ = move;
     next_state.enpassant_square_ = {};
 
@@ -621,6 +622,7 @@ inline void Position::make_null_move() {
     reverse_side_to_move();
     next.previous_move_ = {};
     next.halfmoves_ = prev.halfmoves_ + 1;
+    next.pliesSinceNull = 0;
     next.enpassant_square_ = {};
     next.castling_rights_ = prev.castling_rights_;
     next.captured_pt_ = {};

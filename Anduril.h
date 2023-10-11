@@ -214,7 +214,7 @@ private:
     void updateQuietStats(libchess::Position &board, libchess::Move bestMove, int bonus);
 
     // updates the continuation history
-    void updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus);
+    void updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, int start = 0);
 
     // gets the phase of the game for evaluation
     int getPhase(libchess::Position &board);

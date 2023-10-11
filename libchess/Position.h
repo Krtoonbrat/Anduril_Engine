@@ -336,6 +336,7 @@ protected:
         Move excludedMove = Move(0);
         int staticEval = 0;
         PieceHistory *continuationHistory;
+        int pliesSinceNull = 0;
     };
     State& state_mut_ref() {
         return *(history_ + ply() + 7);

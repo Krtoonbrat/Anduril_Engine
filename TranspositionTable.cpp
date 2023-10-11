@@ -11,23 +11,23 @@
 
 TranspositionTable table;
 
-// saves the information passed to the node, possibly overwrting the old position
+// saves the information passed to the node, possibly overwriting the old position
 void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int ev) {
     // keep the move the same for the same position
-    if (m != 0 || (uint16_t)k != key) {
+    if (m != 0 || uint16_t(k) != key) {
         bestMove = m;
     }
 
     // overwrite less valuable entries
     if (t == 1
-        || (uint16_t)k != key
-        || (int8_t)d > nodeDepth) {
-        key = (uint16_t)k;
-        nodeScore = (int16_t)s;
-        nodeEval = (int16_t)ev;
-        age = (int16_t)table.age;
-        nodeDepth = (int8_t)d;
-        nodeType = (int8_t)t;
+        || uint16_t(k) != key
+        || int8_t(d) > nodeDepth) {
+        key = uint16_t(k);
+        nodeScore = int16_t(s);
+        nodeEval = int16_t(ev);
+        age = int16_t(table.age);
+        nodeDepth = int8_t(d);
+        nodeType = int8_t(t);
 
     }
 
