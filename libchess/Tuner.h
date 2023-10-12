@@ -139,7 +139,7 @@ class Tuner {
 #pragma omp parallel for reduction(+ : sum)
         for (unsigned i = 0; i < normalized_results_.size(); ++i) {
             auto& normalized_result = normalized_results_.at(i);
-            double err = std::pow(sigmoid(normalized_result.value(), k) - sigmoid(eval(normalized_result.position()) / 100.0, k), 2.0);
+            double err = std::pow(sigmoid(-normalized_result.value(), k) - sigmoid(eval(normalized_result.position()) / 100.0, k), 2.0);
             //double normalized_eval = sigmoid(eval(normalized_result.position()), k);
             //double err = normalized_result.value() - normalized_eval;
             sum += err;
