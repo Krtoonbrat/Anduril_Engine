@@ -228,7 +228,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                     && standPat + seeValues[board.piece_type_on(move.to_square())->value()] + 200 < alpha
                     && nonPawnMaterial(board.side_to_move(), board) - seeValues[board.piece_type_on(move.to_square())->value()] > 1600
                     && move.type() != libchess::Move::Type::CAPTURE_PROMOTION) {
-                continue;
+                    continue;
             }
 
                 // see pruning
@@ -473,7 +473,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // null move pruning
     if (!PvNode
         && !check
-        && abs(beta) < 31000
+        && beta > -30000
         && board.prevMoveType(ply) != libchess::Move::Type::NONE
         && staticEval >= beta
         && staticEval >= board.staticEval()
@@ -521,7 +521,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // the position would most likely cut at a full depth search as well
     int probCutBeta = beta + pEG - 44 * improving;
     if (!PvNode
-        && depth > 4
+        && depth > 3
         && !check
         && abs(beta) < 31000
         && !(found
@@ -675,7 +675,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         // quiet move pruning and move count pruning
         if (!rootNode
             && nonPawnMaterial(!board.side_to_move(), board)
-            && bestScore > -31000) {
+            && bestScore > -30000) {
 
             // move count pruning
             // this doesn't require that the move we are searching is quiet so we do it here
@@ -683,7 +683,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             // quiet move pruning
             if (!capture
-                && !promotion
                 && !givesCheck) {
 
                 int lmrDepth = depth - 1 - reductions[depth] + (int)(reductions[moveCounter] * 2 / 3.0);
@@ -769,7 +768,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
 
             // check extension
-            if (givesCheck && depth > 12) {
+            else if (givesCheck && depth > 12) {
+                extension = 1;
+            }
+
+            // quiet transposition extension
+            else if (PvNode
+                     && move == nMove
+                     && move == killers[ply - rootPly][0]
+                     && (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()] >= 4500) {
                 extension = 1;
             }
 
@@ -797,8 +804,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if (depth >= 2
             && moveCounter > 2
             && (!PvNode     // at PV nodes, we want to make sure we don't reduce tactical moves.  At non-PV nodes, we don't care
-            || (!capture
-            && !check))) {
+            || !capture)) {
             // find our reduction
             int reduction = reductions[depth] + (int)(reductions[moveCounter] * 2 / 3.0);
 
