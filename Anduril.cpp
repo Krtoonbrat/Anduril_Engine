@@ -999,8 +999,7 @@ void Anduril::updateQuietStats(libchess::Position &board, libchess::Move bestMov
 }
 
 // updates continuation history
-void
-Anduril::updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, int start) {
+void Anduril::updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, int start) {
     for (int i : {1, 2, 4, 6}) {
         // only update first 2 if we are in check
         if (i > 2 && board.in_check()) {

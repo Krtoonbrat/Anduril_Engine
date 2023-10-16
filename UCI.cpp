@@ -583,7 +583,7 @@ void Anduril::go(libchess::Position board) {
     rootPly = ply;
 
     // initialize the oversize state array
-    for (int i = 0; i < 7; i++) {
+    for (int i = 7; i > 0; i--) {
         board.continuationHistory(ply - i) = &continuationHistory[0][0][15][0];
     }
 
