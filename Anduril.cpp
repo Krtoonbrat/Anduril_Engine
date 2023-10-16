@@ -385,7 +385,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 // extra penalty for early quiet moves on the previous ply
                 if (board.prevMoveType(ply) != libchess::Move::Type::NONE && board.moveCount(ply - 1) <= 2 && !board.previously_captured_piece()) {
                     int bonus = -stat_bonus(depth + 1);
-                    updateContinuationHistory(board,*board.piece_on(board.previous_move()->to_square()),board.previous_move()->to_square(), bonus,-1);
+                    updateContinuationHistory(board,*board.piece_on(board.previous_move()->to_square()),board.previous_move()->to_square(), bonus,1);
                 }
 
             }
@@ -922,7 +922,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // bonus for prior move that caused fail low
     else if (!board.previously_captured_piece() && board.previous_move()) {
         int bonus = (depth > 5) + (PvNode || cutNode) + (bestScore < alpha - 25 * depth) + (board.moveCount(ply - 1) > 10);
-        updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), stat_bonus(depth) * bonus, -1);
+        updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), stat_bonus(depth) * bonus, 1);
     }
 
     if (excludedMove.value() == 0) {
