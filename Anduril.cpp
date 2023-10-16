@@ -69,18 +69,13 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     // are we in check?
     bool check = board.in_check();
 
-    // is the time up?
-    if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
-        return 0;
-    }
-
     if ((ply - rootPly) >= 100) {
         return !check ? evaluateBoard(board) : 0;
     }
 
     // check for a draw, add variance to draw score to avoid 3-fold blindness
     if (board.halfmoves() >= 100 || board.is_repeat(2)) {
-        return 0 - 1 + (movesExplored.load() & 0x2);
+        return 0;
     }
 
     // represents the best score we have found so far
@@ -288,6 +283,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     constexpr bool PvNode = nodeType != NonPV;
     constexpr bool rootNode = nodeType == Root;
 
+    // if we are at max depth, start a quiescence search
+    if (depth <= 0){
+        return quiescence<PvNode ? PV : NonPV>(board, alpha, beta);
+    }
+
     // are we in check?
     int check = board.in_check();
 
@@ -302,29 +302,24 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             return !check ? evaluateBoard(board) : 0;
         }
 
+        // check for a draw, add variance to draw score to avoid 3-fold blindness
+        if (board.halfmoves() >= 100 || board.is_repeat(2)) {
+            return 0 - 1 + (movesExplored.load() & 0x2);
+        }
+
         // Mate distance pruning.  If we mate at the next move, our score would be mate in current ply + 1.  If alpha
         // is already bigger because we found a shorter mate further up, there is no need to search because we will
         // never beat the current alpha.  Same logic but reversed applies to beta.  If the mate distance is higher
         // than a line that we have found, we return a fail-high score.
         alpha = std::max(-32000 + (ply - rootPly), alpha);
-        beta = std::min(32000 - (ply - rootPly), beta);
+        beta = std::min(32000 - (ply - rootPly + 1), beta);
         if (alpha >= beta) {
             return alpha;
         }
     }
 
-    // check for a draw, add variance to draw score to avoid 3-fold blindness
-    if (board.halfmoves() >= 100 || board.is_repeat(2)) {
-        return 0 - 1 + (movesExplored.load() & 0x2);
-    }
-
     // did alpha change?
     bool alphaChange = false;
-
-    // if we are at max depth, start a quiescence search
-    if (depth <= 0){
-        return quiescence<PvNode ? PV : NonPV>(board, alpha, beta);
-    }
 
     if (PvNode && selDepth < (ply - rootPly) + 1) {
         selDepth = (ply - rootPly) + 1;
@@ -489,6 +484,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         movesExplored++;
         board.make_null_move();
+        // prefetch after null move
+        prefetch(table.firstEntry(board.hash()));
         incPly();
         int nullScore = -negamax<NonPV>(board, depth - R, -beta, -beta + 1, !cutNode);
         decPly();
