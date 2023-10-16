@@ -146,13 +146,6 @@ public:
     int ksh = 20;
     int kst = 5;
 
-    // phase values
-    double Pph = 0.125;
-    double Kph = 1;
-    double Bph = 1;
-    double Rph = 2;
-    double Qph = 4;
-
     // number of pieces attacking the king zone
     int attackCount[2] = {0};
 

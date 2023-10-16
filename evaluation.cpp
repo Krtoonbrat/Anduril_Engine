@@ -990,14 +990,14 @@ int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing
 
 // gets the phase of the game for evalutation
 int Anduril::getPhase(libchess::Position &board) {
-    double knight = Kph, bishop = Bph, rook = Rph, queen = Qph;
-    double totalPhase = knight*4 + bishop*4 + rook*4 + queen*2;
+    int knight = 1, bishop = 1, rook = 2, queen = 4;
+    int totalPhase = knight*4 + bishop*4 + rook*4 + queen*2;
 
-    double phase = totalPhase;
+    int phase = totalPhase;
     phase -= board.piece_type_bb(libchess::constants::KNIGHT).popcount() * knight;
     phase -= board.piece_type_bb(libchess::constants::BISHOP).popcount() * bishop;
     phase -= board.piece_type_bb(libchess::constants::ROOK).popcount() * rook;
     phase -= board.piece_type_bb(libchess::constants::QUEEN).popcount() * queen;
 
-    return (int)((phase * 256 + (totalPhase / 2)) / totalPhase);
+    return (phase * 256 + (totalPhase / 2)) / totalPhase;
 }

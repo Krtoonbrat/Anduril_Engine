@@ -139,6 +139,7 @@ class Tuner {
 #pragma omp parallel for reduction(+ : sum)
         for (unsigned i = 0; i < normalized_results_.size(); ++i) {
             auto& normalized_result = normalized_results_.at(i);
+            // values from the results file are color flipped, not a problem, we just need to invert it here
             double err = std::pow(sigmoid(-normalized_result.value(), k) - sigmoid(eval(normalized_result.position()) / 100.0, k), 2.0);
             //double normalized_eval = sigmoid(eval(normalized_result.position()), k);
             //double err = normalized_result.value() - normalized_eval;
@@ -207,7 +208,7 @@ class Tuner {
         std::random_device random_device;
         std::mt19937 rng{random_device()};
         const int tunable_parameters_size = tunable_parameters_.size() - 1;
-        std::uniform_int_distribution<> increment_distribution{1, 50};
+        std::uniform_int_distribution<> increment_distribution{1, 75};
         std::uniform_int_distribution<> parameter_distribution{0, tunable_parameters_size};
 
         auto random_bool = [&](double probability) {
@@ -222,7 +223,7 @@ class Tuner {
         display();
         std::cout << "Initial error: " << current_error << std::endl;
         for (int step = 0; step < max_steps; ++step) {
-            double temperature = 0.2 / (3.5 * (1.0 + double(step)));
+            double temperature = (0.2 / (8 * (1.0 + double(step)))) + 0.0003;
 
             for (int i = 0; i < n; i++) {
                 int increment = random_increment();
