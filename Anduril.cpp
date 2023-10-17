@@ -123,7 +123,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
             }
         }
         else {
-            bestScore = standPat = board.prevMoveType(ply - rootPly - 1) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - rootPly - 1);
+            bestScore = standPat = board.prevMoveType(ply) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply);
         }
 
         // adjust alpha and beta based on the stand pat
@@ -146,7 +146,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                                          nullptr                               , board.continuationHistory(ply - 4),
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
-    libchess::Square prevMoveSq = board.prevMoveType(ply - rootPly - 1) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
+    libchess::Square prevMoveSq = board.prevMoveType(ply) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
     MovePicker picker(board, nMove, &moveHistory, contHistory, &seeValues, depth);
 
     // arbitrarily low score to make sure its replaced
