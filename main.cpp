@@ -27,6 +27,7 @@ libchess::lookups::Magic libchess::lookups::rook_magics[64] = {Magic()};
 libchess::lookups::Magic libchess::lookups::bishop_magics[64] = {Magic()};
 libchess::Bitboard libchess::lookups::rook_table[0x19000] = {Bitboard()};
 libchess::Bitboard libchess::lookups::bishop_table[0x1480] = {Bitboard()};
+std::array<std::array<uint8_t, 64>, 64> libchess::lookups::squareDistance;
 
 int threads;
 
@@ -42,6 +43,7 @@ int main() {
     libchess::lookups::NORTHEAST = libchess::lookups::init::northeast();
     libchess::lookups::SOUTHEAST = libchess::lookups::init::southeast();
     libchess::lookups::INTERVENING = libchess::lookups::init::intervening();
+    libchess::lookups::squareDistance = libchess::lookups::square_distance();
 
     libchess::lookups::PAWN_ATTACKS = libchess::lookups::init::pawn_attacks();
     libchess::lookups::KNIGHT_ATTACKS = libchess::lookups::init::knight_attacks();

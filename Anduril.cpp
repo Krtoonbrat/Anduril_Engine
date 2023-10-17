@@ -446,7 +446,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     // razoring
     if (!check
-        && staticEval < alpha - pMG * 3 - pMG * depth) {
+        && staticEval < alpha - pMG * 3 - pMG * depth * depth) {
         // verification that the value is indeed less than alpha
         score = quiescence<NonPV>(board, alpha - 1, alpha);
         if (score < alpha) {

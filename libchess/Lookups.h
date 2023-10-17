@@ -242,6 +242,7 @@ extern std::array<Bitboard, 64> SOUTHWEST;
 extern std::array<Bitboard, 64> NORTHEAST;
 extern std::array<Bitboard, 64> SOUTHEAST;
 extern std::array<std::array<Bitboard, 64>, 64> INTERVENING;
+extern std::array<std::array<uint8_t, 64>, 64> squareDistance;
 
 // added by krtoonbrat
 static Bitboard square(Square square) {
@@ -428,8 +429,8 @@ inline Bitboard relative_rank_mask(Rank rank, Color c) {
 
 // everything from here down to least significant square function is inspired/taken from stockfish
 inline Bitboard forward_ranks_mask(Square square, Color color) {
-    return color == constants::WHITE ? RANK_1_MASK << 8 * relative_rank(Rank(square.value() / 8), constants::WHITE)
-                                     : RANK_8_MASK >> 8 * relative_rank(Rank(square.value() / 8), constants::BLACK);
+    return color == constants::WHITE ? ~RANK_1_MASK << 8 * relative_rank(Rank(square.value() / 8), constants::WHITE)
+                                     : ~RANK_8_MASK >> 8 * relative_rank(Rank(square.value() / 8), constants::BLACK);
 }
 
 inline Bitboard forward_file_mask(Square square, Color color) {
@@ -451,6 +452,32 @@ inline Bitboard passed_pawn_span(Color color, Square square) {
 inline Bitboard pawn_double_attacks(Color color, Bitboard pawns) {
     return color == constants::WHITE ? ((pawns & ~FILE_H_MASK) << 9) | ((pawns & ~FILE_A_MASK) << 7)
                                      : ((pawns & ~FILE_H_MASK) >> 7) | ((pawns & ~FILE_A_MASK) >> 9);
+}
+
+inline Square frontmost_square(Color color, Bitboard b) {
+    return color == constants::WHITE ? Square{b.reverse_bitscan()} : Square{b.forward_bitscan()};
+}
+
+inline int edge_distance(File f) { return std::min(f.value(), constants::FILE_H.value() - f.value()); }
+
+constexpr Square relative_square(Color c, Square s) {
+    return Square{ s ^ (c * 56) };
+}
+
+template<typename T1 = Square> inline int distance(Square x, Square y);
+template<> inline int distance<File>(Square x, Square y) { return std::abs(x.file().value() - y.file().value()); }
+template<> inline int distance<Rank>(Square x, Square y) { return std::abs(x.rank().value() - y.rank().value()); }
+template<> inline int distance<Square>(Square x, Square y) { return squareDistance[x][y]; }
+
+inline std::array<std::array<uint8_t, 64>, 64> square_distance() {
+    std::array<std::array<uint8_t, 64>, 64> d{};
+    for (Square s1 = constants::A1; s1 <= constants::H8; ++s1) {
+        for (Square s2 = constants::A1; s2 <= constants::H8; ++s2) {
+            d[s1][s2] = std::max(distance<File>(s1, s2), distance<Rank>(s1, s2));
+        }
+    }
+
+    return d;
 }
 
 inline Bitboard least_significant_square_bb(Bitboard b) {

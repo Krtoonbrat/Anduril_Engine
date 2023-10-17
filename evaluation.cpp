@@ -27,6 +27,31 @@ constexpr int Connected[7] = { 0, 1, 3, 3, 6, 21, 34 };
 constexpr int BlockedPawnMG[2] = { 6, 2 };
 constexpr int BlockedPawnEG[2] = { 2, 1 };
 
+// strength of pawn shelter for our king by [distance from edge][rank]
+constexpr int shelterStrength[4][8] = {
+        { -1, 22, 25,  14,   9,   6,   7},
+        {-12, 17,  9, -13,  -8,  -3, -17},
+        { -3, 21,  6,  -1,   8,   2, -12},
+        {-10, -3, -8, -13, -11, -18, -45},
+};
+
+constexpr int unblockedStorm[4][8] = {
+        {24, -79, -46, 26, 13, 12, 16},
+        {11,  -7,  33, 12,  9, -2,  6},
+        {-2,  14,  46,  9, -1, -4, -3},
+        {-4,  -3,  28,  1,  9, -4, -8},
+};
+
+constexpr int blockedStorm[2][8] = {
+        {0, 0, 20, -2, -1, -1, 0},
+        {0, 0, 21,  4,  2,  1, 1}
+};
+
+constexpr int kingOnFile[2][2][2] = {
+        {{-6, 3}, {-2, 1}},
+        {{0, -1}, {2, -1}}
+};
+
 // mask for the central squares we are looking for in space evaluations
 libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
                                  & (libchess::lookups::RANK_2_MASK | libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_4_MASK);
@@ -75,6 +100,8 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     wAttackMap[1] = libchess::Bitboard();
     bAttackMap[0] = libchess::Bitboard();
     bAttackMap[1] = libchess::Bitboard();
+    pawnAttacks[0] = libchess::Bitboard();
+    pawnAttacks[1] = libchess::Bitboard();
 
     // fill the king zone
     kingZoneWBB |= libchess::lookups::king_attacks(*libchess::Square::from(std::clamp(wKingSquare.file(), libchess::constants::FILE_B, libchess::constants::FILE_G), std::clamp(wKingSquare.rank(), libchess::constants::RANK_2, libchess::constants::RANK_7)));
@@ -116,8 +143,10 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
     // get king safety bonus for the board
     // this function only relates to castled kings, therefore its only necessary to add it to the middle game score
-    int king = getKingSafety(board, wKingSquare, bKingSquare);
-    scoreMG += king;
+    std::pair<int, int> Wking = getKingSafety<true>(board);
+    std::pair<int, int> Bking = getKingSafety<false>(board);
+    scoreMG += Wking.first - Bking.first;
+    scoreEG += Wking.second - Bking.second;
 
     // evaluate positional themes and gather mobility and tropism data
     std::pair<int, int> positional = positionalMobilityTropism(board);
@@ -672,9 +701,11 @@ std::pair<int16_t, int16_t> Anduril::getPawnScore(libchess::Position &board) {
         // add to the attack map
         if constexpr (color) {
             wAttackMap[1] |= libchess::lookups::pawn_attacks(s, us);
+            pawnAttacks[color] |= libchess::lookups::pawn_attacks(s, us);
         }
         else {
             bAttackMap[1] |= libchess::lookups::pawn_attacks(s, us);
+            pawnAttacks[color] |= libchess::lookups::pawn_attacks(s, us);
         }
 
         libchess::Rank r = libchess::lookups::relative_rank(s.rank(), us);
@@ -760,230 +791,75 @@ std::pair<int16_t, int16_t> Anduril::getPawnScore(libchess::Position &board) {
 }
 
 // finds the king safety bonus for the position
-int Anduril::getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing) {
-    libchess::Bitboard whitePawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE);
-    libchess::Bitboard blackPawns = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK);
+// based on the stockfish 14 code
+template<bool color>
+std::pair<int, int> Anduril::getKingSafety(libchess::Position &board) {
+    constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
 
-    libchess::Bitboard wKBB = libchess::lookups::square(whiteKing);
-    libchess::Bitboard bKBB = libchess::lookups::square(blackKing);
+    libchess::Square kingSquare = board.king_square(us);
+    std::pair<int, int> shelter = evaluateShelter<color>(board, kingSquare);
+    auto compare = [](std::pair<int, int> a, std::pair<int, int> b) { return a.first < b.first; };
 
-    libchess::Bitboard wCastleQueen = (libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK)
-                                      & (libchess::lookups::RANK_1_MASK | libchess::lookups::RANK_2_MASK);
-    libchess::Bitboard wCastleKing = (libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK)
-                                      & (libchess::lookups::RANK_1_MASK | libchess::lookups::RANK_2_MASK);
+    // use bonus after castling if its bigger
+    if (board.castling_rights().is_allowed(libchess::CastlingRight(1 + (!color * 3)))) {
+        shelter = std::max(shelter, evaluateShelter<color>(board, libchess::lookups::relative_square(us, libchess::constants::G1)), compare);
+    }
 
-    libchess::Bitboard bCastleQueen = (libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK |  libchess::lookups::FILE_C_MASK)
-                                      & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_8_MASK);
-    libchess::Bitboard bCastleKing = (libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK)
-                                     & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_8_MASK);
+    if (board.castling_rights().is_allowed(libchess::CastlingRight(2 + (!color * 6)))) {
+        shelter = std::max(shelter, evaluateShelter<color>(board, libchess::lookups::relative_square(us, libchess::constants::C1)), compare);
+    }
 
-    int score = 0;
+    // in endgames we like to bring our king near our closest pawn
+    libchess::Bitboard pawns = board.piece_type_bb(libchess::constants::PAWN, us);
+    int minPawnDistance = 6;
 
-    // white shield
-    if (wKBB & wCastleKing || wKBB & wCastleQueen) {
-        // queen side
-        if (whiteKing == libchess::constants::A1 || whiteKing == libchess::constants::B1 || whiteKing == libchess::constants::C1) {
-            // 'A' file
-            if (!(libchess::lookups::square(libchess::constants::A2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::A3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
-                    score -= 20;
-                }
-            }
-            // 'B' file
-            if (!(libchess::lookups::square(libchess::constants::B2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::B3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
-                    score -= 20;
-                }
-            }
-            // 'C' file
-            if (!(libchess::lookups::square(libchess::constants::C2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::C3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
-                    score -= 20;
-                }
-            }
+    if (pawns & libchess::lookups::king_attacks(kingSquare)) {
+        minPawnDistance = 1;
+    }
+    else while (pawns) {
+        libchess::Square square = pawns.forward_bitscan();
+        pawns.forward_popbit();
+        minPawnDistance = std::min(minPawnDistance, libchess::lookups::distance(kingSquare, square));
+    }
+    shelter.second -= 4 * minPawnDistance;
+
+    return shelter;
+}
+
+// calculates shelter bonus and storm penalty for a king
+template<bool color>
+std::pair<int, int> Anduril::evaluateShelter(libchess::Position &board, libchess::Square ksq) {
+    constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
+    constexpr libchess::Color them = color ? libchess::constants::BLACK : libchess::constants::WHITE;
+
+    std::pair<int, int> score = {1, 1};
+
+    libchess::Bitboard b = board.piece_type_bb(libchess::constants::PAWN) & ~libchess::lookups::forward_ranks_mask(ksq, us);
+    libchess::Bitboard ourPawns = b & board.color_bb(us) & ~pawnAttacks[!color];
+    libchess::Bitboard theirPawns = b & board.color_bb(them);
+
+    libchess::File center = std::clamp(ksq.file(), libchess::constants::FILE_B, libchess::constants::FILE_G);
+    for (auto f = libchess::File(center - 1); f <= center + 1; f++) {
+        b = ourPawns & libchess::lookups::file_mask(f);
+        int ourRank = b ? libchess::lookups::relative_rank(libchess::lookups::frontmost_square(them, b).rank(), us).value() : 0;
+
+        b = theirPawns & libchess::lookups::file_mask(f);
+        int theirRank = b ? libchess::lookups::relative_rank(libchess::lookups::frontmost_square(them, b).rank(), us).value() : 0;
+
+        int d = libchess::lookups::edge_distance(f);
+        score.first += shelterStrength[d][ourRank];
+
+        if (ourRank && (ourRank == theirRank - 1)) {
+            score.first -= blockedStorm[0][theirRank];
+            score.second-= blockedStorm[1][theirRank];
         }
-            // king side
         else {
-            // 'F' file
-            if (!(libchess::lookups::square(libchess::constants::F2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::F3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
-                    score -= 20;
-                }
-            }
-            // 'G' file
-            if (!(libchess::lookups::square(libchess::constants::G2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::G3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
-                    score -= 20;
-                }
-            }
-            // 'H' file
-            if (!(libchess::lookups::square(libchess::constants::H2) & whitePawns)
-                && !(libchess::lookups::square(libchess::constants::H3) & whitePawns)) {
-                score -= 20;
-                if (!(whitePawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
-                    score -= 20;
-                }
-            }
-        }
-
-        // pawn storms
-        // white
-        libchess::Bitboard stormZone = libchess::Bitboard();
-        // first make the storm zone files
-        libchess::Bitboard stormZoneFiles = libchess::Bitboard();
-        switch (whiteKing.file()) {
-            case libchess::constants::FILE_A:
-                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK;
-                break;
-            case libchess::constants::FILE_B:
-                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK;
-                break;
-            case libchess::constants::FILE_G:
-                stormZoneFiles |= libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
-                break;
-            case libchess::constants::FILE_H:
-                stormZoneFiles |= libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
-                break;
-            default:
-                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() - 2];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() - 1];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value()];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() + 1];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[whiteKing.file().value() + 2];
-                break;
-        }
-
-        // we now look for opposing pawns
-        switch (whiteKing.rank()) {
-            case libchess::constants::RANK_1:
-                stormZone = (stormZoneFiles & libchess::lookups::RANK_1_MASK) | (stormZoneFiles & libchess::lookups::RANK_2_MASK) | (stormZoneFiles & libchess::lookups::RANK_3_MASK);
-                if (stormZone & blackPawns) {
-                    score -= 5 * (stormZone & blackPawns).popcount();
-                }
-                break;
-            case libchess::constants::RANK_2:
-                stormZone = (stormZoneFiles & libchess::lookups::RANK_1_MASK) | (stormZoneFiles & libchess::lookups::RANK_2_MASK) | (stormZoneFiles & libchess::lookups::RANK_3_MASK) | (stormZoneFiles & libchess::lookups::RANK_4_MASK);
-                if (stormZone & blackPawns) {
-                    score -= 5 * (stormZone & blackPawns).popcount();
-                }
-                break;
+            score.first -= unblockedStorm[d][theirRank];
         }
     }
 
-    // black shield
-    if (bKBB & bCastleKing || bKBB & bCastleQueen) {
-        // queen side
-        if (blackKing == libchess::constants::A8 || blackKing == libchess::constants::B8 || blackKing == libchess::constants::C8) {
-            // 'A' file
-            if (!(libchess::lookups::square(libchess::constants::A7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::A6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_A))) {
-                    score += 20;
-                }
-            }
-            // 'B' file
-            if (!(libchess::lookups::square(libchess::constants::B7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::B6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_B))) {
-                    score += 20;
-                }
-            }
-            // 'C' file
-            if (!(libchess::lookups::square(libchess::constants::C7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::C6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_C))) {
-                    score += 20;
-                }
-            }
-        }
-            // king side
-        else {
-            // 'F' file
-            if (!(libchess::lookups::square(libchess::constants::F7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::F6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_F))) {
-                    score += 20;
-                }
-            }
-            // 'G' file
-            if (!(libchess::lookups::square(libchess::constants::G7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::G6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_G))) {
-                    score += 20;
-                }
-            }
-            // 'H' file
-            if (!(libchess::lookups::square(libchess::constants::H7) & blackPawns)
-                && !(libchess::lookups::square(libchess::constants::H6) & blackPawns)) {
-                score += 20;
-                if (!(blackPawns & libchess::lookups::file_mask(libchess::constants::FILE_H))) {
-                    score += 20;
-                }
-            }
-        }
-
-        // black
-        libchess::Bitboard stormZone = libchess::Bitboard();
-        // first make the storm zone files
-        libchess::Bitboard stormZoneFiles = libchess::Bitboard();
-        switch (blackKing.file()) {
-            case libchess::constants::FILE_A:
-                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK;
-                break;
-            case libchess::constants::FILE_B:
-                stormZoneFiles |= libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_B_MASK | libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK;
-                break;
-            case libchess::constants::FILE_G:
-                stormZoneFiles |= libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
-                break;
-            case libchess::constants::FILE_H:
-                stormZoneFiles |= libchess::lookups::FILE_F_MASK | libchess::lookups::FILE_G_MASK | libchess::lookups::FILE_H_MASK;
-                break;
-            default:
-                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() - 2];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() - 1];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value()];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() + 1];
-                stormZoneFiles |= libchess::lookups::FILE_MASK[blackKing.file().value() + 2];
-                break;
-        }
-
-        // we now look for opposing pawns
-        switch (blackKing.rank()) {
-            case libchess::constants::RANK_7:
-                stormZone = (stormZoneFiles & libchess::lookups::RANK_8_MASK) |
-                            (stormZoneFiles & libchess::lookups::RANK_7_MASK) |
-                            (stormZoneFiles & libchess::lookups::RANK_6_MASK) |
-                            (stormZoneFiles & libchess::lookups::RANK_5_MASK);
-                if (stormZone & whitePawns) {
-                    score += 5 * (stormZone & whitePawns).popcount();
-                }
-                break;
-            case libchess::constants::RANK_8:
-                stormZone = (stormZoneFiles & libchess::lookups::RANK_8_MASK) |
-                            (stormZoneFiles & libchess::lookups::RANK_7_MASK) |
-                            (stormZoneFiles & libchess::lookups::RANK_6_MASK);
-                if (stormZone & whitePawns) {
-                    score += 5 * (stormZone & whitePawns).popcount();
-                }
-                break;
-        }
-    }
+    score.first -= kingOnFile[board.is_on_semiopen_file(us, ksq)][board.is_on_semiopen_file(them, ksq)][0];
+    score.second -= kingOnFile[board.is_on_semiopen_file(us, ksq)][board.is_on_semiopen_file(them, ksq)][1];
 
     return score;
 }

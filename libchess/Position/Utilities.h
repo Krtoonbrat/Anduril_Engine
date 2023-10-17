@@ -271,6 +271,10 @@ inline bool Position::see_ge(Move move, int threshold) {
 
 }
 
+inline bool Position::is_on_semiopen_file(libchess::Color c, libchess::Square s) const {
+    return !(piece_type_bb(constants::PAWN, c) & lookups::file_mask(s.file()));
+}
+
 // modified by Krtoonbrat
 inline int Position::see_to(Square square, std::array<int, 6> piece_values) {
     auto smallest_capture_move = smallest_capture_move_to(square);

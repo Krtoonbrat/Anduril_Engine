@@ -226,7 +226,12 @@ private:
     std::pair<int16_t, int16_t> getPawnScore(libchess::Position &board);
 
     // finds the king safety bonus for the position
-    int getKingSafety(libchess::Position &board, libchess::Square whiteKing, libchess::Square blackKing);
+    template<bool color>
+    std::pair<int, int> getKingSafety(libchess::Position &board);
+
+    // calculates shelter bonus and storm penalty for a king
+    template<bool color>
+    std::pair<int, int> evaluateShelter(libchess::Position &board, libchess::Square ksq);
 
     // evaluates knights for tropism and calculates mobility
     template<bool white>
@@ -274,6 +279,7 @@ private:
     // contains the attack maps for each team
     libchess::Bitboard wAttackMap[2];
     libchess::Bitboard bAttackMap[2];
+    libchess::Bitboard pawnAttacks[2];
 
 };
 

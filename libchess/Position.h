@@ -236,6 +236,7 @@ class Position {
 
     // added by Krtoonbrat
     [[nodiscard]] Bitboard pinners(Color c) const;
+    [[nodiscard]] bool is_on_semiopen_file(Color c, Square s) const;
 
     // Move Generation
     void generate_quiet_promotions(MoveList& move_list, Color stm) const;
