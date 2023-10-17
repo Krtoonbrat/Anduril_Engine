@@ -123,7 +123,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
             }
         }
         else {
-            bestScore = standPat = board.prevMoveType(ply) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply);
+            bestScore = standPat = board.prevMoveType(ply) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - 1);
         }
 
         // adjust alpha and beta based on the stand pat
