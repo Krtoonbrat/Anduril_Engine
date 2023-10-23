@@ -199,7 +199,11 @@ namespace UCI {
         }
 
         // set hash size
-        if ((ptr = strstr(line, "Hash"))) {
+        if ((ptr = strstr(line, "ClearHash"))) {
+            table.clear();
+            std::cout << "info string Hash table cleared" << std::endl;
+        }
+        else if ((ptr = strstr(line, "Hash"))) {
             int hashSize = atoi(ptr + 10);
             if (hashSize == table.sizeMB) {
                 std::cout << "info string Hash size already set to " << hashSize << " MB" << std::endl;
@@ -207,11 +211,6 @@ namespace UCI {
             else {
                 table.resize(hashSize >= 16 ? hashSize : 16);
             }
-        }
-
-        if ((ptr = strstr(line, "ClearHash"))) {
-            table.clear();
-            std::cout << "info string Hash table cleared" << std::endl;
         }
 
         // set book open or closed

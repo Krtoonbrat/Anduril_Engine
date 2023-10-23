@@ -465,7 +465,9 @@ inline Square frontmost_square(Color color, Bitboard b) {
     return color == constants::WHITE ? Square{b.reverse_bitscan()} : Square{b.forward_bitscan()};
 }
 
-inline int edge_distance(File f) { return std::min(f.value(), constants::FILE_H.value() - f.value()); }
+inline int edge_distance(File f) {
+    return std::min(f.value(), constants::FILE_H.value() - f.value());
+}
 
 constexpr Square relative_square(Color c, Square s) {
     return Square{ s ^ (c * 56) };
