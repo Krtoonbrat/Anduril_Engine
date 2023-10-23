@@ -495,12 +495,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         decPly();
         board.unmake_move();
 
-        if (nullScore >= beta) {
+        if (nullScore >= beta && nullScore < 31507) {
 
-            // dont return unproven mate
-            nullScore = std::min(nullScore, 31507);  // It doesn't have to be this number but this is what stockfish uses and I thought that was fun that it was such a random number but picked with a purpose
-
-            if (nullScore != 31507 && (minNullPly || depth < 12)) {
+            if (minNullPly || depth < 12) {
                 return nullScore;
             }
 
