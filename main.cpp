@@ -31,7 +31,7 @@ std::array<std::array<uint8_t, 64>, 64> libchess::lookups::squareDistance;
 
 int threads;
 
-int main() {
+int main(int argc, char* argv[]) {
     libchess::lookups::SQUARES = libchess::lookups::init::squares();
 
     libchess::lookups::NORTH = libchess::lookups::init::north();
@@ -72,8 +72,8 @@ int main() {
     AI->startTime = std::chrono::steady_clock::now();
     AI->go(board);
     */
-    
-    UCI::loop();
+
+    UCI::loop(argc, argv);
 
     return 0;
 }

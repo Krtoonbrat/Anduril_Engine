@@ -22,22 +22,22 @@ constexpr bool has_pext = false;
 
 namespace libchess::lookups {
 
-static Bitboard RANK_1_MASK{std::uint64_t(0xff)};
-static Bitboard RANK_2_MASK{std::uint64_t(0xff00)};
-static Bitboard RANK_3_MASK{std::uint64_t(0xff0000)};
-static Bitboard RANK_4_MASK{std::uint64_t(0xff000000)};
-static Bitboard RANK_5_MASK{std::uint64_t(0xff00000000)};
-static Bitboard RANK_6_MASK{std::uint64_t(0xff0000000000)};
-static Bitboard RANK_7_MASK{std::uint64_t(0xff000000000000)};
-static Bitboard RANK_8_MASK{std::uint64_t(0xff00000000000000)};
-static Bitboard FILE_A_MASK{std::uint64_t(0x0101010101010101)};
-static Bitboard FILE_B_MASK{std::uint64_t(0x0202020202020202)};
-static Bitboard FILE_C_MASK{std::uint64_t(0x0404040404040404)};
-static Bitboard FILE_D_MASK{std::uint64_t(0x0808080808080808)};
-static Bitboard FILE_E_MASK{std::uint64_t(0x1010101010101010)};
-static Bitboard FILE_F_MASK{std::uint64_t(0x2020202020202020)};
-static Bitboard FILE_G_MASK{std::uint64_t(0x4040404040404040)};
-static Bitboard FILE_H_MASK{std::uint64_t(0x8080808080808080)};
+constexpr static Bitboard RANK_1_MASK{std::uint64_t(0xff)};
+constexpr static Bitboard RANK_2_MASK{std::uint64_t(0xff00)};
+constexpr static Bitboard RANK_3_MASK{std::uint64_t(0xff0000)};
+constexpr static Bitboard RANK_4_MASK{std::uint64_t(0xff000000)};
+constexpr static Bitboard RANK_5_MASK{std::uint64_t(0xff00000000)};
+constexpr static Bitboard RANK_6_MASK{std::uint64_t(0xff0000000000)};
+constexpr static Bitboard RANK_7_MASK{std::uint64_t(0xff000000000000)};
+constexpr static Bitboard RANK_8_MASK{std::uint64_t(0xff00000000000000)};
+constexpr static Bitboard FILE_A_MASK{std::uint64_t(0x0101010101010101)};
+constexpr static Bitboard FILE_B_MASK{std::uint64_t(0x0202020202020202)};
+constexpr static Bitboard FILE_C_MASK{std::uint64_t(0x0404040404040404)};
+constexpr static Bitboard FILE_D_MASK{std::uint64_t(0x0808080808080808)};
+constexpr static Bitboard FILE_E_MASK{std::uint64_t(0x1010101010101010)};
+constexpr static Bitboard FILE_F_MASK{std::uint64_t(0x2020202020202020)};
+constexpr static Bitboard FILE_G_MASK{std::uint64_t(0x4040404040404040)};
+constexpr static Bitboard FILE_H_MASK{std::uint64_t(0x8080808080808080)};
 
 static std::array<Bitboard, 8> RANK_MASK = {RANK_1_MASK,
                                             RANK_2_MASK,
@@ -429,8 +429,8 @@ inline Bitboard relative_rank_mask(Rank rank, Color c) {
 
 // everything from here down to least significant square function is inspired/taken from stockfish
 inline Bitboard forward_ranks_mask(Square square, Color color) {
-    return color == constants::WHITE ? ~RANK_1_MASK << 8 * relative_rank(Rank(square.value() / 8), constants::WHITE)
-                                     : ~RANK_8_MASK >> 8 * relative_rank(Rank(square.value() / 8), constants::BLACK);
+    return color == constants::WHITE ? ~RANK_1_MASK << 8 * relative_rank(square.rank(), constants::WHITE)
+                                     : ~RANK_8_MASK >> 8 * relative_rank(square.rank(), constants::BLACK);
 }
 
 inline Bitboard forward_file_mask(Square square, Color color) {
@@ -449,9 +449,16 @@ inline Bitboard passed_pawn_span(Color color, Square square) {
     return pawn_attack_span(color, square) | forward_file_mask(square, color);
 }
 
-inline Bitboard pawn_double_attacks(Color color, Bitboard pawns) {
-    return color == constants::WHITE ? ((pawns & ~FILE_H_MASK) << 9) | ((pawns & ~FILE_A_MASK) << 7)
-                                     : ((pawns & ~FILE_H_MASK) >> 7) | ((pawns & ~FILE_A_MASK) >> 9);
+template<bool color>
+constexpr inline Bitboard pawn_double_attacks(Bitboard b) {
+    return color ? ((b & ~FILE_A_MASK) << 7) & ((b & ~FILE_H_MASK) << 9)
+                 : ((b & ~FILE_A_MASK) >> 9) & ((b & ~FILE_H_MASK) >> 7);
+}
+
+template<bool color>
+constexpr inline Bitboard pawn_attacks(Bitboard b) {
+    return color ? ((b & ~FILE_H_MASK) << 9) | ((b & ~FILE_A_MASK) << 7)
+                 : ((b & ~FILE_H_MASK) >> 7) | ((b & ~FILE_A_MASK) >> 9);
 }
 
 inline Square frontmost_square(Color color, Bitboard b) {

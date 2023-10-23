@@ -36,7 +36,7 @@ namespace UCI {
     // FEN for the start position
     const char* StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    void loop() {
+    void loop(int argc, char* argv[]) {
         // first we turn off the stdin and stdout buffers
         //setbuf(stdin, NULL);
         //setbuf(stdout, NULL);
@@ -56,6 +56,26 @@ namespace UCI {
         // initialize the oversize state array
         for (int i = -7; i < 0; i++) {
             board.continuationHistory(i) = &AI->continuationHistory[0][0][15][0];
+        }
+
+        if (argc > 1) {
+            std::string in = std::string(argv[1]);
+            if (in == "bench") {
+                std::vector<libchess::Position> positions;
+                positions.reserve(Defaults.size());
+                for (auto &i : Defaults) {
+                    positions.emplace_back(i);
+                }
+                AI->limits.timeSet = false;
+                AI->limits.depth = 12;
+                table.age++;
+                AI->stopped = false;
+                AI->searching = true;
+                for (auto &i : positions) {
+                    AI->go(i);
+                }
+                return;
+            }
         }
 
         // start the search thread and park it until we need it
@@ -351,7 +371,7 @@ namespace UCI {
         // reset all the limit
         int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
-        int increment = -1;
+        int increment = 0;
         AI->limits.timeSet = false;
         char *ptr = NULL;
 
@@ -776,7 +796,7 @@ void Anduril::go(libchess::Position board) {
                 } else {
                     std::cout << "info "
                               << "score cp " << prevBestScore
-                              << " depth " << completedDepth - 1
+                              << " depth " << completedDepth
                               << " seldepth " << selDepth
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()

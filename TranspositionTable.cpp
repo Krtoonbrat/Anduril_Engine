@@ -61,7 +61,7 @@ void TranspositionTable::resize(size_t tSize) {
     clear();
 }
 
-// based on the stockfish multi-threaded implementation
+// based on the stockfish multithreaded implementation
 void TranspositionTable::clear() {
     std::vector<std::thread> threadPool;
 
@@ -69,9 +69,9 @@ void TranspositionTable::clear() {
         threadPool.emplace_back([this, idx]() {
 
             const size_t stride = size_t(clusterCount / threads),
-                    start  = size_t(stride * idx),
-                    len    = idx != size_t(threads) - 1 ?
-                             stride : clusterCount - start;
+                         start  = size_t(stride * idx),
+                         len    = idx != size_t(threads) - 1 ?
+                                  stride : clusterCount - start;
 
             std::memset(&tPtr[start], 0, len * sizeof(Cluster));
         });

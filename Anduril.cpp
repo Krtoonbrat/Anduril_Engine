@@ -29,7 +29,7 @@ constexpr int stat_bonus(int depth) {
 
 // changes mate scores from being relative to the root to being relative to the current ply
 int tableScore(int score, int ply) {
-    return score > 31900 ? score + ply : score < -31900 ? score - ply : score;
+    return score >= 31508 ? score + ply : score <= -31508 ? score - ply : score;
 }
 
 int scoreFromTable(int score, int ply, int rule50) {
@@ -39,18 +39,18 @@ int scoreFromTable(int score, int ply, int rule50) {
     }
 
     // if a mate score is stored, we need to adjust it to be relative to the current ply
-    if (score > 31900) {
+    if (score >= 31508) {
         // don't return a mate score if we are going to hit the 50 move rule
-        if (32000 - score > 99 - rule50) {
+        if (score >= 31754 && 32000 - score > 99 - rule50) {
             return 31753; // this is below what checkmate in maximum search would be
         }
         
         return score - ply;
     }
 
-    if (score < -31900) {
+    if (score < -31508) {
         // don't return a mate score if we are going to hit the 50 move rule
-        if (32000 + score > 99 - rule50) {
+        if (score <= -31754 && 32000 + score > 99 - rule50) {
             return -31753; // this is below what checkmate in maximum search would be
         }
 
@@ -85,8 +85,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     int futility = -32001;
     int futilityValue;
 
-    // tDepth will be 0 when searching evasions or when we include checks and promotions, -1 otherwise
-    int tDepth = check || depth >= 0 ? 0 : -1;
+    // tDepth will be -1 when searching evasions or when we include checks and promotions, -2 otherwise
+    int tDepth = check || depth >= 0 ? -1 : -2;
 
     // transposition lookup
     uint64_t hash = board.hash();
@@ -129,7 +129,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         // adjust alpha and beta based on the stand pat
         if (bestScore >= beta) {
 			if (!found) {
-                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -1, 0, standPat);
+                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, standPat);
 			}
             return standPat;
         }
@@ -411,6 +411,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         improving = false;
         improvement = 0;
     }
+    else if (excludedMove.value() != 0) {
+        // if there is an excluded move, its the same position so the static eval is already saved
+        staticEval = board.staticEval();
+    }
     else if (found) {
         // little check in case something gets messed up
         if (node->nodeEval == -32001) {
@@ -561,13 +565,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             board.unmake_move();
 
             if (score >= probCutBeta) {
-                // write to the node if we have better information
-                if (!(found
-                    && nDepth >= depth - 3
-                    && nScore != -32001)) {
-                    node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.value(), board.staticEval());
-
-                }
+                // write to the node
+                node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.value(), board.staticEval());
                 cutNodes++;
                 return score;
             }
@@ -589,13 +588,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
     libchess::Move counterMove = board.previous_move() ? counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] : libchess::Move(0);
-
-    // if we are at root and not main thread, don't use transposition move
-    if constexpr (rootNode) {
-        if (id != 0) {
-            nMove = libchess::Move(0);
-        }
-    }
 
     // get a move picker
     MovePicker picker(board, nMove, killers[ply - rootPly],

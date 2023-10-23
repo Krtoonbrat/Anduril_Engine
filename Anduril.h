@@ -233,6 +233,10 @@ private:
     template<bool color>
     std::pair<int, int> evaluateShelter(libchess::Position &board, libchess::Square ksq);
 
+    // calculates bonuses according to attacking and attacked pieces
+    template<bool color>
+    std::pair<int, int> threats(libchess::Position &board);
+
     // evaluates knights for tropism and calculates mobility
     template<bool white>
     void evaluateKnights(libchess::Position &board, libchess::Square square);
@@ -277,9 +281,11 @@ private:
     libchess::Bitboard kingZoneBBB;
 
     // contains the attack maps for each team
-    libchess::Bitboard wAttackMap[2];
-    libchess::Bitboard bAttackMap[2];
-    libchess::Bitboard pawnAttacks[2];
+    libchess::Bitboard attackMap[2][7];
+    libchess::Bitboard attackByTwo[2];
+
+    // mobility area
+    libchess::Bitboard mobilityArea[2];
 
 };
 
