@@ -51,7 +51,7 @@ namespace UCI {
         AI->searching = false;
         threads = 1;
         Book openingBook = Book(R"(..\book\Performance.bin)");
-        bool bookOpen = true;
+        bool bookOpen = openingBook.getBookOpen();
 
         // initialize the oversize state array
         for (int i = -7; i < 0; i++) {
