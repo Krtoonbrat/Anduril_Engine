@@ -25,9 +25,8 @@ void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int ev) {
         key = uint16_t(k);
         nodeScore = int16_t(s);
         nodeEval = int16_t(ev);
-        age = int16_t(table.age);
         nodeDepth = int8_t(d);
-        nodeType = int8_t(t);
+        nodeTypeGenBound = uint8_t(table.generation8 | t);
 
     }
 
@@ -84,25 +83,25 @@ void TranspositionTable::clear() {
 
 Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
     Node *entry = firstEntry(key);
-
     uint16_t k = (uint16_t)key;
 
-    // look for a matching node or one that needs to be filled
-    if (entry[0].key == k || entry[0].key  == 0) {
-        entry[0].key == k ? foundNode = true : foundNode = false;
-        return &entry[0];
-    }
-    else if (entry[1].key == k || entry[1].key  == 0) {
-        entry[1].key == k ? foundNode = true : foundNode = false;
-        return &entry[1];
+    for (int i = 0; i < 2; i++) {
+        if (entry[i].key == k || entry[i].key == 0) {
+            foundNode = entry[i].key == k;
+            entry[i].nodeTypeGenBound = uint8_t(generation8 | (entry[i].nodeTypeGenBound & (GEN_DELTA - 1)));
+            return &entry[i];
+        }
     }
 
-    // no nodes matched, determine which gets replaced
+    // find an entry to be replaced
     Node *replace = entry;
-    if (replace->age > entry[1].age || (replace->age == entry[1].age && replace->nodeDepth > entry[1].nodeDepth)) {
-        replace = &entry[1];
+    for (int i = 1; i < 2; i++) {
+        if (replace->nodeDepth - ((GEN_CYCLE + generation8 - replace->nodeTypeGenBound) & GEN_MASK) > entry[i].nodeDepth - ((GEN_CYCLE + generation8 - entry[i].nodeTypeGenBound) & GEN_MASK)) {
+            replace = &entry[i];
+        }
     }
 
+    foundNode = false;
     return replace;
 
 }
@@ -112,7 +111,7 @@ int TranspositionTable::hashFull() {
     int count = 0;
     for (int i = 0; i < 1000; i++) {
         for (int j = 0; j < 2; j++) {
-            count += tPtr[i].entry[j].nodeDepth && tPtr[i].entry[j].age == age;
+            count += tPtr[i].entry[j].nodeDepth && (tPtr[i].entry[j].nodeTypeGenBound & GEN_MASK) == generation8;
         }
     }
     return count / 2;

@@ -71,9 +71,6 @@ public:
 
     // reset the move and counter move tables
     inline void resetHistories() {
-        if (id == 0) {
-            table.age = 0;
-        }
         for (int i = 0; i < 64; i++) {
             for (int j = 0; j < 64; j++) {
                 counterMoves[i][j] = libchess::Move(0);

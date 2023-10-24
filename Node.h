@@ -7,7 +7,7 @@
 
 #include "libchess/Position.h"
 
-// 16 bytes
+// 12 bytes
 struct Node {
     // saves the information passed in to the node
     void save(uint64_t k, int s, int t, int d, uint32_t m, int ev);
@@ -21,14 +21,11 @@ struct Node {
     // the depth the node has been searched to
     int8_t nodeDepth;
 
-    // type of node
-    // 1 if the node is a PV node
+    // type of node and age
+    // 3 if the node is a PV node
     // 2 if the node is a cut node
-    // 3 if the node is an all node
-    int8_t nodeType;
-
-    // age of the node
-    uint16_t age;
+    // 1 if the node is an all node
+    uint8_t nodeTypeGenBound;
 
     // the key used to look up the node
     uint16_t key;

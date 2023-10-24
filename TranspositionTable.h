@@ -29,9 +29,19 @@ inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
 #endif
 }
 
+// mostly based on the stockfish implementation
 class TranspositionTable {
+
+    // constants used to refresh the hash table
+    static constexpr unsigned GEN_BITS = 3;
+    static constexpr int GEN_DELTA = (1 << GEN_BITS); // increment for generation field
+    static constexpr int GEN_CYCLE = 255 + (1 << GEN_BITS); // cycle length
+    static constexpr int GEN_MASK = (0xFF << GEN_BITS) & 0xFF; // mask to pull out generation number
+
 public:
     ~TranspositionTable();
+
+    void newSearch() { generation8 += GEN_DELTA; }
 
     void resize(size_t tSize);
 
@@ -45,10 +55,9 @@ public:
 
     int hashFull();
 
-    // age tracker for transposition table
-    int age = 0;
-
     size_t sizeMB = 0;
+
+    uint8_t generation8;
 
 private:
     Cluster *tPtr = nullptr;

@@ -297,6 +297,7 @@ class Position {
     Move::Type prevMoveType(int ply) { return state(ply).move_type_; }
     bool found() { return state().found; }
     bool found(int ply) { return state(ply).found; }
+    std::optional<Move> previousMove(int ply) { return state(ply).previous_move_; }
 
 
     [[nodiscard]] int ply() const {
