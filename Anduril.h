@@ -138,7 +138,7 @@ public:
     int bpM = 3;
     int bpE = 12;
 
-    int spc = 64;
+    int spc = 16;
 
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};

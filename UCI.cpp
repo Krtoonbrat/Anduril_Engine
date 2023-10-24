@@ -153,7 +153,7 @@ namespace UCI {
                 std::cout << "option name tEG type spin default 150 min -1000 max 1000" << std::endl;
                 std::cout << "option name bpM type spin default 3   min -1000 max 1000" << std::endl;
                 std::cout << "option name bpE type spin default 12  min -1000 max 1000" << std::endl;
-                std::cout << "option name spc type spin default 64   min -1000 max 1000" << std::endl;
+                std::cout << "option name spc type spin default 16   min -1000 max 1000" << std::endl;
 
                 std::cout << "option name pMG type spin default 88 min -40000 max 40000" << std::endl;
                 std::cout << "option name pEG type spin default 138 min -40000 max 40000" << std::endl;
