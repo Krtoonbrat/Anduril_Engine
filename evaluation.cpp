@@ -88,9 +88,9 @@ constexpr int knightOnQueen[2] = {4, 3};
 constexpr int sliderOnQueen[2] = {17, 5};
 
 // mask for the central squares we are looking for in space evaluations
-libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
+constexpr libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
                                  & (libchess::lookups::RANK_2_MASK | libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_4_MASK);
-libchess::Bitboard centerBlack = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
+constexpr libchess::Bitboard centerBlack = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
                                  & (libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_6_MASK | libchess::lookups::RANK_5_MASK);
 
 // point bonus that increases the value of knights with more pawns on the board
@@ -150,11 +150,11 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
     // setup mobility area
     libchess::Bitboard lowRanks = libchess::lookups::RANK_3_MASK | libchess::lookups::RANK_2_MASK;
-    // find pawns blocked on first two ranks
+    // find pawns blockedPawnsCount on first two ranks
     libchess::Bitboard b = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::WHITE) & (libchess::lookups::pawn_shift(board.occupancy_bb(), libchess::constants::BLACK) | lowRanks);
     mobilityArea[0] = ~(b | (board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE) | board.piece_type_bb(libchess::constants::KING, libchess::constants::WHITE)) | board.pinned_pieces_of(libchess::constants::WHITE) | attackMap[1][0]);
     lowRanks = libchess::lookups::RANK_7_MASK | libchess::lookups::RANK_6_MASK;
-    // find pawns blocked on first two ranks
+    // find pawns blockedPawnsCount on first two ranks
     b = board.piece_type_bb(libchess::constants::PAWN, libchess::constants::BLACK) & (libchess::lookups::pawn_shift(board.occupancy_bb(), libchess::constants::WHITE) | lowRanks);
     mobilityArea[1] = ~(b | (board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK) | board.piece_type_bb(libchess::constants::KING, libchess::constants::BLACK)) | board.pinned_pieces_of(libchess::constants::BLACK) | attackMap[0][0]);
 
@@ -282,16 +282,8 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     scoreMG += wThreats.first  - bThreats.first;
     scoreEG += wThreats.second - bThreats.second;
 
-    // space advantages
-    // white
-    b = attackMap[0][1] | attackMap[0][2] | attackMap[0][3] | attackMap[0][4];
-    libchess::Bitboard wCenterAttacks = centerWhite & b & (~attackMap[1][6]);
-    scoreMG += spc * wCenterAttacks.popcount();
-
-    // black
-    b = attackMap[1][1] | attackMap[1][2] | attackMap[1][3] | attackMap[1][4];
-    libchess::Bitboard bCenterAttacks = centerBlack & b & (~attackMap[0][6]);
-    scoreMG -= spc * bCenterAttacks.popcount();
+    // space
+    scoreMG += space<true>(board) - space<false>(board);
 
     // get the phase for tapered eval
     int phase = getPhase(board);
@@ -768,6 +760,9 @@ std::pair<int16_t, int16_t> Anduril::getPawnScore(libchess::Position &board) {
 
     libchess::Bitboard ourPawns = board.piece_type_bb(libchess::constants::PAWN, us);
     libchess::Bitboard theirPawns = board.piece_type_bb(libchess::constants::PAWN, them);
+    libchess::Bitboard theirDoubleAttack = libchess::lookups::pawn_double_attacks<!color>(theirPawns);
+
+    blockedPawnsCount[us] = (libchess::lookups::pawn_shift(ourPawns, us) & (theirPawns | theirDoubleAttack)).popcount();
 
     while (pawns) {
         s = pawns.forward_bitscan();
@@ -796,7 +791,7 @@ std::pair<int16_t, int16_t> Anduril::getPawnScore(libchess::Position &board) {
                  || (!(stoppers ^ leverPush)
                      && phalanx.popcount() >= leverPush.popcount())
                  || (stoppers == blocked && r.value() >= 5
-                     && (libchess::lookups::pawn_shift(support, us) & ~(theirPawns | libchess::lookups::pawn_double_attacks<!color>(theirPawns))));
+                     && (libchess::lookups::pawn_shift(support, us) & ~(theirPawns | theirDoubleAttack)));
 
         passed &= !(libchess::lookups::forward_file_mask(s, us) & ourPawns);
 
@@ -1028,6 +1023,27 @@ std::pair<int, int> Anduril::threats(libchess::Position &board) {
     }
 
     return score;
+}
+
+// calculates the space score for the position
+template<bool color>
+int Anduril::space(libchess::Position &board) {
+    constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
+    constexpr libchess::Color them = color ? libchess::constants::BLACK : libchess::constants::WHITE;
+    constexpr libchess::Bitboard center = color ? centerWhite : centerBlack;
+
+    // find the safe squares to move to
+    libchess::Bitboard safeSquares = center & ~board.piece_type_bb(libchess::constants::PAWN, us) & ~attackMap[them][0];
+
+    // find squares at least 3 spaces behind our pawns
+    libchess::Bitboard behindPawn = board.piece_type_bb(libchess::constants::PAWN, us);
+    behindPawn |= libchess::lookups::pawn_shift(behindPawn, them);
+    behindPawn |= libchess::lookups::pawn_shift(behindPawn, them, 2);
+
+    int bonus = safeSquares.popcount() + (behindPawn & safeSquares & ~attackMap[them][6]).popcount();
+    int weight = board.color_bb(us).popcount() - 3 + std::min(blockedPawnsCount[us], 9);
+
+    return bonus * weight * weight / spc;
 }
 
 // gets the phase of the game for evalutation

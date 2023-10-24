@@ -141,7 +141,7 @@ public:
     int bpM = 3;
     int bpE = 12;
 
-    int spc = 5;
+    int spc = 64;
 
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
@@ -225,6 +225,11 @@ private:
     template<bool color>
     std::pair<int16_t, int16_t> getPawnScore(libchess::Position &board);
 
+    // calculates the space score for the position
+    // only needs to be int because we don't return an endgame score
+    template<bool color>
+    int space(libchess::Position &board);
+
     // finds the king safety bonus for the position
     template<bool color>
     std::pair<int, int> getKingSafety(libchess::Position &board);
@@ -275,6 +280,9 @@ private:
     // mobility scores
     int whiteMobility[2] = {0};
     int blackMobility[2] = {0};
+
+    // blockedPawnsCount pawn
+    int blockedPawnsCount[2] = {0};
 
     // contains the squares that are the "king zone"
     libchess::Bitboard kingZoneWBB;
