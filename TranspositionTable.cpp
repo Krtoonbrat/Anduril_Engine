@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "Anduril.h"
+#include "misc.h"
 #include "TranspositionTable.h"
 
 TranspositionTable table;
@@ -33,23 +34,21 @@ void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int ev) {
 }
 
 TranspositionTable::~TranspositionTable() {
-    _aligned_free(tPtr);
+    aligned_large_pages_free(tPtr);
 }
 
 void TranspositionTable::resize(size_t tSize) {
-    constexpr size_t alignment = 4096;
 
     std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
 
     sizeMB = tSize;
 
-    _aligned_free(tPtr);
+    aligned_large_pages_free(tPtr);
 
     clusterCount = (tSize * 1024 * 1024) / sizeof(Cluster);
     size_t bytes = clusterCount * sizeof(Cluster);
 
-    size_t size = ((bytes + alignment - 1) / alignment) * alignment;
-    tPtr = static_cast<Cluster*>(_aligned_malloc(size, alignment));
+    tPtr = static_cast<Cluster*>(aligned_large_pages_alloc(bytes));
 
     if (!tPtr) {
         std::cerr << "Failed to allocate " << tSize
