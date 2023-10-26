@@ -92,7 +92,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     uint64_t hash = board.hash();
     bool found = false;
     Node *node = table.probe(hash, found);
-    int nType = found ? node->nodeTypeGenBound & 0x3 : -1;
+    int nType = found ? node->nodeTypeGenBound & 0x3 : 0;
     int nScore = found ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
 	if (!PvNode
@@ -356,7 +356,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     bool found = false;
     Node *node = table.probe(hash, found);
     int nDepth = found ? node->nodeDepth : -99;
-    int nType = found ? node->nodeTypeGenBound & 0x3 : -1;
+    int nType = found ? node->nodeTypeGenBound & 0x3 : 0;
     int nScore = found ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
     bool transpositionCapture = found && board.is_capture_move(nMove);
