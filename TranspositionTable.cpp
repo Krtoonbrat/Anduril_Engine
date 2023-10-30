@@ -20,7 +20,7 @@ void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int ev) {
     }
 
     // overwrite less valuable entries
-    if (t == 1
+    if (t == 3
         || uint16_t(k) != key
         || int8_t(d) > nodeDepth) {
         key = uint16_t(k);
@@ -39,7 +39,7 @@ TranspositionTable::~TranspositionTable() {
 
 void TranspositionTable::resize(size_t tSize) {
 
-    std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
+    //std::cout << "info string resizing Transposition Table to " << tSize << "MB" << std::endl;
 
     sizeMB = tSize;
 
