@@ -48,7 +48,7 @@ int scoreFromTable(int score, int ply, int rule50) {
         return score - ply;
     }
 
-    if (score < -31508) {
+    if (score <= -31508) {
         // don't return a mate score if we are going to hit the 50 move rule
         if (score <= -31754 && 32000 + score > 99 - rule50) {
             return -31753; // this is below what checkmate in maximum search would be
@@ -118,7 +118,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 
             // previously saved transposition score can be used as a better position evaluation
             if (nScore != -32001
-                && (nType & (standPat > beta ? 2 : 1))) {
+                && (nType & (nScore > standPat ? 2 : 1))) {
                 bestScore = nScore;
             }
         }
@@ -681,8 +681,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 }
 
                 // continuation history pruning
-                if (picker.getStage() > 3 // value of 3 == refutations
-                    && lmrDepth <= 5
+                if (lmrDepth <= 5
                     && hist < -3500 * depth) {
                         continue;
                     }
