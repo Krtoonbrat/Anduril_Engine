@@ -1028,6 +1028,18 @@ std::pair<int, int> Anduril::threats(libchess::Position &board) {
 // calculates the space score for the position
 template<bool color>
 int Anduril::space(libchess::Position &board) {
+
+    // early exit if there isn't much material left
+    // The magic number comes from this:
+    // total non-pawn material = 4 * (kMG + bMG + rMG) + 2 * qMG = 6766
+    // threshold should be about 3 minor pieces exchanged.  I just split them up evenly between knights and bishops
+    // delta = 3 * (kMG + bMG) = 2106
+    // Find the difference and add one.  We have to add one because we want it to stop when 6 pieces have been exchanged, not 6 + something else
+    // threshold = 6766 - 2106 + 1 = 4661
+    if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) < 4661) {
+        return 0;
+    }
+
     constexpr libchess::Color us = color ? libchess::constants::WHITE : libchess::constants::BLACK;
     constexpr libchess::Color them = color ? libchess::constants::BLACK : libchess::constants::WHITE;
     constexpr libchess::Bitboard center = color ? centerWhite : centerBlack;
