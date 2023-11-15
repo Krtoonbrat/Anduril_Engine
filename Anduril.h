@@ -147,10 +147,6 @@ public:
     int pieceValues[16] = { pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0,
                             pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0};
 
-    // reduction table
-    // its oversize just in case something weird happens
-    int reductions[150];
-
     // continuation history table
     // 2x2 because we separate check and capture moves
     // this makes the actual structure 2x2x13x64x13x64.  Yikes.
@@ -317,6 +313,9 @@ inline uint64_t Anduril::getMovesExplored() {
     total += movesExplored.load();
     return total;
 }
+
+// initialize the reduction table
+void initReductions();
 
 // prefetches an address in memory to CPU cache that doesn't block execution
 // this should speed up the program by reducing the amount of time we wait for transposition table probes

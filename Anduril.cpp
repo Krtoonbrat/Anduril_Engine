@@ -11,6 +11,18 @@
 #include "MovePicker.h"
 #include "UCI.h"
 
+// reduction table
+// its oversize just in case something weird happens
+int reductions[150];
+
+// initialize the reduction table
+void initReductions() {
+    reductions[0] = 0;
+    for (int i = 1; i < 150; i++) {
+        reductions[i] = int(std::log(i));
+    }
+}
+
 // returns the amount of moves we need to search before we can use move count based pruning
 constexpr int moveCountPruningThreshold(bool improving, int depth) {
     return improving ? (3 + depth * depth) : (3 + depth * depth) / 2;
@@ -227,7 +239,8 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
             }
 
                 // see pruning
-                if (!board.see_ge(move, -28)) {
+                // TODO: change after CLOP tuning
+                if (!board.see_ge(move, kMG - bMG)) {
                     continue;
                 }
         }
@@ -449,8 +462,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     improving = improvement > 0;
 
     // razoring
+    // TODO: change after CLOP tuning
     if (!check
-        && staticEval < alpha - pMG * 4 - pEG * depth * depth) {
+        && staticEval < alpha - 88 * 4 - 138 * depth * depth) {
         // verification that the value is indeed less than alpha
         score = quiescence<NonPV>(board, alpha - 1, alpha);
         if (score < alpha) {
@@ -517,7 +531,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // probcut
     // if we find a position that returns a cutoff when beta is padded a little, we can assume
     // the position would most likely cut at a full depth search as well
-    int probCutBeta = beta + pEG - 44 * improving;
+    // TODO: change after CLOP tuning
+    int probCutBeta = beta + 138 - 44 * improving;
     if (!PvNode
         && depth > 3
         && !check
@@ -676,7 +691,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 // futility pruning
                 if (lmrDepth <= 8
                     && !check
-                    && board.staticEval() + pEG + lmrDepth * 60 <= alpha) {
+                    && board.staticEval() + 138 + lmrDepth * 60 <= alpha) {
                         continue;
                 }
 

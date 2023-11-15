@@ -695,14 +695,14 @@ void Anduril::go(libchess::Position board) {
             else {
                 rDepth++;
                 upper = lower = false;
-                delta = 18 + bestScore * bestScore / 10000;
+                delta = std::min(18 + bestScore * bestScore / 10000, 100);
                 alpha = std::max(bestScore - delta, -32001);
                 beta = std::min(bestScore + delta, 32001);
             }
         }
         // for depths less than 5
         else {
-            delta = 18 + bestScore * bestScore / 10000;
+            delta = std::min(18 + bestScore * bestScore / 10000, 100);
             rDepth++;
             sDepth = rDepth;
         }

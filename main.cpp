@@ -1,4 +1,5 @@
 #include <bitset>
+#include "Anduril.h"
 #include "libchess/Position.h"
 #include "UCI.h"
 
@@ -56,6 +57,8 @@ int main(int argc, char* argv[]) {
 
     libchess::lookups::init::init_magics(libchess::constants::ROOK, libchess::lookups::rook_table, libchess::lookups::rook_magics);
     libchess::lookups::init::init_magics(libchess::constants::BISHOP, libchess::lookups::bishop_table, libchess::lookups::bishop_magics);
+
+    initReductions();
 
     threads = 1;
     table.resize(256);
