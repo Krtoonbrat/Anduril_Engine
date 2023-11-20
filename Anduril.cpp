@@ -19,7 +19,7 @@ int reductions[150];
 void initReductions() {
     reductions[0] = 0;
     for (int i = 1; i < 150; i++) {
-        reductions[i] = int(std::log(i));
+        reductions[i] = int((std::log(i) * 0.4));
     }
 }
 
