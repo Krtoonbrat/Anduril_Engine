@@ -23,8 +23,8 @@
 #include "libchess/Position.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {88, 337, 365, 477, 1025, 0};
-int libchess::Position::pieceValuesEG[6] = {138, 281, 297, 512, 936, 0};
+int libchess::Position::pieceValuesMG[6] = {137, 450, 509, 728, 1515, 0};
+int libchess::Position::pieceValuesEG[6] = {144, 568, 574, 920, 1795, 0};
 
 // all the UCI protocol stuff is going to be implemented
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial

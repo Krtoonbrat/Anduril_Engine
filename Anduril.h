@@ -115,30 +115,30 @@ public:
     std::condition_variable cv;
 
     // values for CLOP to tune
-    int kMG = 337;
-    int kEG = 281;
+    int kMG = 450;
+    int kEG = 568;
 
-    int pMG = 88;
-    int pEG = 138;
+    int pMG = 137;
+    int pEG = 144;
 
-    int bMG = 365;
-    int bEG = 297;
+    int bMG = 509;
+    int bEG = 574;
 
-    int rMG = 477;
-    int rEG = 512;
+    int rMG = 728;
+    int rEG = 920;
 
-    int qMG = 1025;
-    int qEG = 936;
+    int qMG = 1515;
+    int qEG = 1795;
 
     int oMG = 20;
     int oEG = 5;
     int tMG = 150;
     int tEG = 150;
 
-    int bpM = 3;
-    int bpE = 12;
+    int bpM = 20;
+    int bpE = 34;
 
-    int spc = 16;
+    int spc = 76;
 
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
