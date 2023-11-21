@@ -145,27 +145,27 @@ namespace UCI {
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
 
-                std::cout << "option name kMG type spin default 337 min -40000 max 40000" << std::endl;
-                std::cout << "option name kEG type spin default 281 min -40000 max 40000" << std::endl;
+                std::cout << "option name kMG type spin default 450 min -40000 max 40000" << std::endl;
+                std::cout << "option name kEG type spin default 568 min -40000 max 40000" << std::endl;
                 std::cout << "option name oMG type spin default 20  min -1000 max 1000" << std::endl;
                 std::cout << "option name oEG type spin default 5   min -1000 max 1000" << std::endl;
                 std::cout << "option name tMG type spin default 150 min -1000 max 1000" << std::endl;
                 std::cout << "option name tEG type spin default 150 min -1000 max 1000" << std::endl;
-                std::cout << "option name bpM type spin default 3   min -1000 max 1000" << std::endl;
-                std::cout << "option name bpE type spin default 12  min -1000 max 1000" << std::endl;
-                std::cout << "option name spc type spin default 16   min -1000 max 1000" << std::endl;
+                std::cout << "option name bpM type spin default 20   min -1000 max 1000" << std::endl;
+                std::cout << "option name bpE type spin default 34  min -1000 max 1000" << std::endl;
+                std::cout << "option name spc type spin default 76   min -1000 max 1000" << std::endl;
 
-                std::cout << "option name pMG type spin default 88 min -40000 max 40000" << std::endl;
-                std::cout << "option name pEG type spin default 138 min -40000 max 40000" << std::endl;
+                std::cout << "option name pMG type spin default 137 min -40000 max 40000" << std::endl;
+                std::cout << "option name pEG type spin default 144 min -40000 max 40000" << std::endl;
 
-                std::cout << "option name bMG type spin default 365 min -40000 max 40000" << std::endl;
-                std::cout << "option name bEG type spin default 297 min -40000 max 40000" << std::endl;
+                std::cout << "option name bMG type spin default 509 min -40000 max 40000" << std::endl;
+                std::cout << "option name bEG type spin default 574 min -40000 max 40000" << std::endl;
 
-                std::cout << "option name rMG type spin default 477 min -40000 max 40000" << std::endl;
-                std::cout << "option name rEG type spin default 512 min -40000 max 40000" << std::endl;
+                std::cout << "option name rMG type spin default 728 min -40000 max 40000" << std::endl;
+                std::cout << "option name rEG type spin default 920 min -40000 max 40000" << std::endl;
 
-                std::cout << "option name qMG type spin default 1025 min -40000 max 40000" << std::endl;
-                std::cout << "option name qEG type spin default 936 min -40000 max 40000" << std::endl;
+                std::cout << "option name qMG type spin default 1515 min -40000 max 40000" << std::endl;
+                std::cout << "option name qEG type spin default 1795 min -40000 max 40000" << std::endl;
 
                 std::cout << "option name QOV type spin default 50000 min 0 max 1000000" << std::endl;
                 std::cout << "option name ROV type spin default 25000 min 0 max 1000000" << std::endl;
