@@ -208,6 +208,7 @@ class Position {
     [[nodiscard]] int fullmoves() const;
     [[nodiscard]] bool in_check() const;
     [[nodiscard]] bool is_repeat(int times = 1) const;
+    [[nodiscard]] bool is_draw() const; // added by Krtoonbrat
     [[nodiscard]] int repeat_count() const;
     [[nodiscard]] const std::string& start_fen() const;
     [[nodiscard]] GameState game_state() const;

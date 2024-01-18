@@ -88,7 +88,7 @@ inline bool Position::in_check() const {
 inline bool Position::is_repeat(int times) const {
     hash_type curr_hash = hash();
     int num_keys = 0 > (ply() - halfmoves()) ? 0 : ply() - halfmoves();
-    num_keys = std::min(num_keys, state().pliesSinceNull);
+    num_keys = std::min(num_keys, ply() - state().pliesSinceNull);
     int count = 0;
     for (int i = ply() - 2; i >= num_keys; i -= 2) {
         if (state(i).hash_ == curr_hash) {
@@ -99,6 +99,35 @@ inline bool Position::is_repeat(int times) const {
         }
     }
     return false;
+}
+
+inline bool Position::is_draw() const {
+    // 3 fold repetition
+    if (is_repeat(2)) {
+        return true;
+    }
+
+    // 50 move rule
+    if (halfmoves() >= 100) {
+        return true;
+    }
+
+    // insufficient material
+    if (piece_type_bb(constants::PAWN) != 0
+        || piece_type_bb(constants::ROOK) != 0
+        || piece_type_bb(constants::QUEEN) != 0) {
+        return false;
+    }
+
+    if (piece_type_bb(constants::KNIGHT)) {
+        if (piece_type_bb(constants::BISHOP)) {
+            return false;
+        }
+
+        return piece_type_bb(constants::KNIGHT).popcount() < 3;
+    }
+
+    return piece_type_bb(constants::BISHOP, constants::WHITE).popcount() > 1 && piece_type_bb(constants::BISHOP, constants::BLACK).popcount() > 1;
 }
 
 inline int Position::repeat_count() const {
