@@ -25,12 +25,15 @@ public:
     enum NodeType {PV, NonPV, Root};
 
     // enumeration type for the pieces
-    enum PieceType { PAWN,
-                     KNIGHT,
-                     BISHOP,
-                     ROOK,
-                     QUEEN,
-                     KING };
+    enum PieceType : int
+            { PAWN,
+              KNIGHT,
+              BISHOP,
+              ROOK,
+              QUEEN,
+              KING,
+              ALL_PIECES
+            };
 
     Anduril(int id) : id(id) { resetHistories(); }
 
@@ -115,30 +118,52 @@ public:
     std::condition_variable cv;
 
     // values for CLOP to tune
-    int kMG = 450;
-    int kEG = 568;
+    int kMG = 446;
+    int kEG = 490;
 
-    int pMG = 137;
-    int pEG = 144;
+    int pMG = 115;
+    int pEG = 148;
 
-    int bMG = 509;
-    int bEG = 574;
+    int bMG = 502;
+    int bEG = 518;
 
-    int rMG = 728;
-    int rEG = 920;
+    int rMG = 649;
+    int rEG = 878;
 
-    int qMG = 1515;
-    int qEG = 1795;
+    int qMG = 1332;
+    int qEG = 1749;
 
-    int oMG = 20;
-    int oEG = 5;
     int tMG = 150;
     int tEG = 150;
 
-    int bpM = 20;
-    int bpE = 34;
+    int bpM = 10;
+    int bpE = 30;
 
-    int spc = 76;
+    int spc = 47;
+
+    int svq = -171;
+    int rvc = 460;
+    int rvs = 148;
+    int pcc = 148;
+    int pci = 68;
+    int fpc = 148;
+    int fpm = 78;
+    int hpv = -5928;
+    int smq = -112;
+    int smt = -48;
+    int sec = 22;
+    int sem = 18;
+    int sed = 20;
+
+    int sbc = 101;
+    int sbm = 201;
+    int msb = 4296;
+
+    int stat_bonus(int depth) {
+        return std::min(sbm * depth - sbc, msb);
+        //return 2 * depth * depth;
+    }
+
 
     // piece values used for see
     std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
@@ -315,7 +340,7 @@ inline uint64_t Anduril::getMovesExplored() {
 }
 
 // initialize the reduction table
-void initReductions();
+void initReductions(double nem, double neb);
 
 // prefetches an address in memory to CPU cache that doesn't block execution
 // this should speed up the program by reducing the amount of time we wait for transposition table probes

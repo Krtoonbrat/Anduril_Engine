@@ -427,7 +427,7 @@ inline Bitboard relative_rank_mask(Rank rank, Color c) {
     return rank_mask(relative_rank(rank, c));
 }
 
-// everything from here down to least significant square function is inspired/taken from stockfish
+// everything from here down to least significant square function is from stockfish
 inline Bitboard forward_ranks_mask(Square square, Color color) {
     return color == constants::WHITE ? ~RANK_1_MASK << 8 * relative_rank(square.rank(), constants::WHITE)
                                      : ~RANK_8_MASK >> 8 * relative_rank(square.rank(), constants::BLACK);

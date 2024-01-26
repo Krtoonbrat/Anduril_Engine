@@ -2,17 +2,6 @@
 // Created by 80hugkev on 7/6/2022.
 //
 
-// these includes are for finding/reading input only
-#ifdef WIN32
-#include <io.h>
-#include "windows.h"
-#else
-#include "sys/time.h"
-#include "sys/select.h"
-#include "unistd.h"
-#include "string.h"
-#endif
-
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -23,8 +12,14 @@
 #include "libchess/Position.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {137, 450, 509, 728, 1515, 0};
-int libchess::Position::pieceValuesEG[6] = {144, 568, 574, 920, 1795, 0};
+int libchess::Position::pieceValuesMG[6] = {115, 446, 502, 649, 1332, 0};
+int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
+
+extern int BlockedPawnMG[2];
+extern int BlockedPawnEG[2];
+
+extern int knightPawnBonus[9];
+extern int outpost[2];
 
 // all the UCI protocol stuff is going to be implemented
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
@@ -145,31 +140,66 @@ namespace UCI {
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
 
-                std::cout << "option name kMG type spin default 450 min -40000 max 40000" << std::endl;
-                std::cout << "option name kEG type spin default 568 min -40000 max 40000" << std::endl;
-                std::cout << "option name oMG type spin default 20  min -1000 max 1000" << std::endl;
-                std::cout << "option name oEG type spin default 5   min -1000 max 1000" << std::endl;
-                std::cout << "option name tMG type spin default 150 min -1000 max 1000" << std::endl;
-                std::cout << "option name tEG type spin default 150 min -1000 max 1000" << std::endl;
-                std::cout << "option name bpM type spin default 20   min -1000 max 1000" << std::endl;
-                std::cout << "option name bpE type spin default 34  min -1000 max 1000" << std::endl;
-                std::cout << "option name spc type spin default 76   min -1000 max 1000" << std::endl;
+                /*
+                std::cout << "option name kMG type spin default 446 min -40000 max 40000" << std::endl;
+                std::cout << "option name kEG type spin default 490 min -40000 max 40000" << std::endl;
+                std::cout << "option name tMG type spin default 150 min -10000 max 10000" << std::endl;
+                std::cout << "option name tEG type spin default 150 min -10000 max 10000" << std::endl;
+                std::cout << "option name bpM type spin default 10  min -1000  max 1000"  << std::endl;
+                std::cout << "option name bpE type spin default 30  min -1000  max 1000"  << std::endl;
+                std::cout << "option name spc type spin default 47  min -1000  max 1000"  << std::endl;
 
-                std::cout << "option name pMG type spin default 137 min -40000 max 40000" << std::endl;
-                std::cout << "option name pEG type spin default 144 min -40000 max 40000" << std::endl;
+                std::cout << "option name bMG type spin default 502 min -40000 max 40000" << std::endl;
+                std::cout << "option name bEG type spin default 518 min -40000 max 40000" << std::endl;
 
-                std::cout << "option name bMG type spin default 509 min -40000 max 40000" << std::endl;
-                std::cout << "option name bEG type spin default 574 min -40000 max 40000" << std::endl;
-
-                std::cout << "option name rMG type spin default 728 min -40000 max 40000" << std::endl;
-                std::cout << "option name rEG type spin default 920 min -40000 max 40000" << std::endl;
-
-                std::cout << "option name qMG type spin default 1515 min -40000 max 40000" << std::endl;
-                std::cout << "option name qEG type spin default 1795 min -40000 max 40000" << std::endl;
+                std::cout << "option name rMG type spin default 649 min -40000 max 40000" << std::endl;
+                std::cout << "option name rEG type spin default 878 min -40000 max 40000" << std::endl;
 
                 std::cout << "option name QOV type spin default 50000 min 0 max 1000000" << std::endl;
                 std::cout << "option name ROV type spin default 25000 min 0 max 1000000" << std::endl;
                 std::cout << "option name MOV type spin default 15000 min 0 max 1000000" << std::endl;
+                 */
+
+                std::cout << "option name neb type string default -0.319991" << std::endl;
+                std::cout << "option name nem type string default 2.27108" << std::endl;
+
+                std::cout << "option name bm5 type string default 20" << std::endl;
+                std::cout << "option name bm6 type string default 63" << std::endl;
+                std::cout << "option name be5 type string default 13" << std::endl;
+                std::cout << "option name be6 type string default 94" << std::endl;
+
+                std::cout << "option name kp0 type string default -20" << std::endl;
+                std::cout << "option name kp1 type string default -16" << std::endl;
+                std::cout << "option name kp2 type string default -12" << std::endl;
+                std::cout << "option name kp3 type string default -8" << std::endl;
+                std::cout << "option name kp4 type string default -4" << std::endl;
+                std::cout << "option name kp5 type string default 0" << std::endl;
+                std::cout << "option name kp6 type string default 4" << std::endl;
+                std::cout << "option name kp7 type string default 8" << std::endl;
+                std::cout << "option name kp8 type string default 12" << std::endl;
+
+                std::cout << "option name oMG type string default 24" << std::endl;
+                std::cout << "option name oEG type string default -9" << std::endl;
+
+                /*
+                std::cout << "option name svq type spin default -171 min -10000 max 10000" << std::endl;
+                std::cout << "option name rvc type spin default 460 min -10000 max 10000" << std::endl;
+                std::cout << "option name rvs type spin default 115 min -10000 max 10000" << std::endl;
+                std::cout << "option name pcc type spin default 148 min -10000 max 10000" << std::endl;
+                std::cout << "option name pci type spin default 68 min -10000 max 10000" << std::endl;
+                std::cout << "option name fpc type spin default 148 min -10000 max 10000" << std::endl;
+                std::cout << "option name fpm type spin default 78 min -10000 max 10000" << std::endl;
+                std::cout << "option name hpv type spin default -5928 min -50000 max 50000" << std::endl;
+                std::cout << "option name smq type spin default -112 min -10000 max 10000" << std::endl;
+                std::cout << "option name smt type spin default -48 min -10000 max 10000" << std::endl;
+                std::cout << "option name sec type spin default 22 min -10000 max 10000" << std::endl;
+                std::cout << "option name sem type spin default 18 min -10000 max 10000" << std::endl;
+                std::cout << "option name sed type spin default 20 min -10000 max 10000" << std::endl;
+
+                std::cout << "option name sbc type spin default 101 min -10000 max 10000" << std::endl;
+                std::cout << "option name sbm type spin default 201 min -10000 max 10000" << std::endl;
+                std::cout << "option name msb type spin default 4296 min -10000 max 10000" << std::endl;
+                */
 
                 std::cout << "uciok" << std::endl;
 
@@ -224,6 +254,7 @@ namespace UCI {
         }
 
         // setoption name pMG value 100
+        /*
         if ((ptr = strstr(line, "kMG"))) {
             AI->kMG = atoi(ptr + 10);
             libchess::Position::pieceValuesMG[1] = AI->kMG;
@@ -272,36 +303,6 @@ namespace UCI {
             }
         }
 
-        if ((ptr = strstr(line, "qMG"))) {
-            AI->qMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[4] = AI->qMG;
-            for (auto &thread : gondor) {
-                thread->qMG = AI->qMG;
-            }
-        }
-
-        if ((ptr = strstr(line, "qEG"))) {
-            AI->qEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[4] = AI->qEG;
-            for (auto &thread : gondor) {
-                thread->qEG = AI->qEG;
-            }
-        }
-
-        if ((ptr = strstr(line, "oMG"))) {
-            AI->oMG = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->oMG = AI->oMG;
-            }
-        }
-
-        if ((ptr = strstr(line, "oEG"))) {
-            AI->oEG = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->oEG = AI->oEG;
-            }
-        }
-
         if ((ptr = strstr(line, "tMG"))) {
             AI->tMG = atoi(ptr + 10);
             for (auto &thread : gondor) {
@@ -313,22 +314,6 @@ namespace UCI {
             AI->tEG = atoi(ptr + 10);
             for (auto &thread : gondor) {
                 thread->tEG = AI->tEG;
-            }
-        }
-
-        if ((ptr = strstr(line, "pMG"))) {
-            AI->pMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[0] = AI->pMG;
-            for (auto &thread : gondor) {
-                thread->pMG = AI->pMG;
-            }
-        }
-
-        if ((ptr = strstr(line, "pEG"))) {
-            AI->pEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[0] = AI->pEG;
-            for (auto &thread : gondor) {
-                thread->pEG = AI->pEG;
             }
         }
 
@@ -364,6 +349,191 @@ namespace UCI {
                 thread->spc = AI->spc;
             }
         }
+         */
+
+        if ((ptr = strstr(line, "neb"))) {
+            neb = atof(ptr + 10);
+            initReductions(nem, neb);
+        }
+
+        if ((ptr = strstr(line, "nem"))) {
+            nem = atof(ptr + 10);
+            initReductions(nem, neb);
+        }
+
+        if ((ptr = strstr(line, "bm5"))) {
+            BlockedPawnMG[0] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "bm6"))) {
+            BlockedPawnMG[1] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "be5"))) {
+            BlockedPawnEG[0] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "be6"))) {
+            BlockedPawnEG[1] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp0"))) {
+            knightPawnBonus[0] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp1"))) {
+            knightPawnBonus[1] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp2"))) {
+            knightPawnBonus[2] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp3"))) {
+            knightPawnBonus[3] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp4"))) {
+            knightPawnBonus[4] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp5"))) {
+            knightPawnBonus[5] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp6"))) {
+            knightPawnBonus[6] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp7"))) {
+            knightPawnBonus[7] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "kp8"))) {
+            knightPawnBonus[8] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "oMG"))) {
+            outpost[0] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "oEG"))) {
+            outpost[1] = atoi(ptr + 10);
+        }
+
+        /*
+        if ((ptr = strstr(line, "svq"))) {
+            AI->svq = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->svq = AI->svq;
+            }
+        }
+
+        if ((ptr = strstr(line, "rvc"))) {
+            AI->rvc = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->rvc = AI->rvc;
+            }
+        }
+
+        if ((ptr = strstr(line, "rvs"))) {
+            AI->rvs = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->rvs = AI->rvs;
+            }
+        }
+
+        if ((ptr = strstr(line, "pcc"))) {
+            AI->pcc = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->pcc = AI->pcc;
+            }
+        }
+
+        if ((ptr = strstr(line, "pci"))) {
+            AI->pci = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->pci = AI->pci;
+            }
+        }
+
+        if ((ptr = strstr(line, "fpc"))) {
+            AI->fpc = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->fpc = AI->fpc;
+            }
+        }
+
+        if ((ptr = strstr(line, "fpm"))) {
+            AI->fpm = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->fpm = AI->fpm;
+            }
+        }
+
+        if ((ptr = strstr(line, "hpv"))) {
+            AI->hpv = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->hpv = AI->hpv;
+            }
+        }
+
+        if ((ptr = strstr(line, "smq"))) {
+            AI->smq = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->smq = AI->smq;
+            }
+        }
+
+        if ((ptr = strstr(line, "smt"))) {
+            AI->smt = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->smt = AI->smt;
+            }
+        }
+
+        if ((ptr = strstr(line, "sec"))) {
+            AI->sec = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->sec = AI->sec;
+            }
+        }
+
+        if ((ptr = strstr(line, "sem"))) {
+            AI->sem = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->sem = AI->sem;
+            }
+        }
+
+        if ((ptr = strstr(line, "sed"))) {
+            AI->sed = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->sed = AI->sed;
+            }
+        }
+
+        if ((ptr = strstr(line, "sbc"))) {
+            AI->sbc = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->sbc = AI->sbc;
+            }
+        }
+
+        if ((ptr = strstr(line, "sbm"))) {
+            AI->sbm = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->sbm = AI->sbm;
+            }
+        }
+
+        if ((ptr = strstr(line, "msb"))) {
+            AI->msb = atoi(ptr + 10);
+            for (auto &thread : gondor) {
+                thread->msb = AI->msb;
+            }
+        }
+         */
     }
 
     void parseGo(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI, Book &openingBook, bool &bookOpen) {
@@ -561,12 +731,14 @@ void Anduril::go(libchess::Position board) {
     //std::cout << board.fen() << std::endl;
     libchess::Move bestMove(0);
     libchess::Move prevBestMove = bestMove;
+    std::vector<std::thread> pool;
 
     if (id == 0) {
         movesExplored = 0;
         cutNodes = 0;
         movesTransposed = 0;
         quiesceExplored = 0;
+        pool.reserve(threads - 1);
         //threads = 4;   // for profiling
         for (int i = 1; i < threads; i++) {
             // more profiling stuff
@@ -577,7 +749,7 @@ void Anduril::go(libchess::Position board) {
             gondor[i - 1]->searching = true;
             gondor[i - 1]->startTime = std::chrono::steady_clock::now();
             */
-            std::thread(&Anduril::go, gondor[i - 1].get(), board).detach();
+            pool.emplace_back(&Anduril::go, gondor[i - 1].get(), board);
         }
     }
 
@@ -641,12 +813,12 @@ void Anduril::go(libchess::Position board) {
         // reset selDepth
         if (!incomplete) {
             selDepth = 0;
-            sDepth = rDepth;
+            sDepth = std::clamp(rDepth, 1, 100);
         }
 
         incomplete = false;
 
-        sDepth = sDepth < rDepth - 3 ? rDepth - 3 : sDepth;
+        sDepth = std::clamp(sDepth < rDepth - 3 ? rDepth - 3 : sDepth, 1, 100);
 
         // search for the best score
         bestScore = negamax<Root>(board, sDepth, alpha, beta, false);
@@ -694,6 +866,7 @@ void Anduril::go(libchess::Position board) {
             // the search didn't fall outside the window, we can move to the next depth
             else {
                 rDepth++;
+                rDepth = std::clamp(rDepth, 1, 100);
                 upper = lower = false;
                 delta = std::min(18 + bestScore * bestScore / 10000, 100);
                 alpha = std::max(bestScore - delta, -32001);
@@ -704,6 +877,7 @@ void Anduril::go(libchess::Position board) {
         else {
             delta = std::min(18 + bestScore * bestScore / 10000, 100);
             rDepth++;
+            rDepth = std::clamp(rDepth, 1, 100);
             sDepth = rDepth;
         }
 
@@ -720,7 +894,6 @@ void Anduril::go(libchess::Position board) {
         }
 
         if (id == 0) {
-
             // send info to the GUI
             end = std::chrono::steady_clock::now();
             timeElapsed = end - startTime;
@@ -833,20 +1006,21 @@ void Anduril::go(libchess::Position board) {
     }
 
     if (id == 0) {
-        // tell the GUI what move we want to make
-        std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
-
         setMovesExplored(0);
         cutNodes = 0;
         movesTransposed = 0;
         quiesceExplored = 0;
 
         // stop the other threads
-        for (auto &i : gondor) {
-            i->stopped = true;
-            i->searching = false;
-            i->setMovesExplored(0);
+        for (int i = 0; i < threads - 1; i++) {
+            gondor[i]->stopped = true;
+            gondor[i]->searching = false;
+            gondor[i]->setMovesExplored(0);
+            pool[i].join();
         }
+
+        // tell the GUI what move we want to make
+        std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
     }
 
     //std::cout << board.fen() << std::endl;

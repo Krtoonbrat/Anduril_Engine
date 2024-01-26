@@ -19,7 +19,7 @@ namespace UCI {
     // parses position commands from the GUI
     void parsePosition(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI);
 
-    // parses setoptions
+    // parses options
     void parseOption(char* line, std::unique_ptr<Anduril> &AI, bool &bookOpen);
 
     // parks thread waiting for a search
@@ -30,6 +30,9 @@ namespace UCI {
     static int minorOrderVal = 15000;
     static int maxHistoryVal = 16384;
     static int maxContinuationVal = 16384;
+
+    static double nem = 2.27108;
+    static double neb = -0.319991;
 
     // strings for benchmarking used by stockfish
     const std::vector<std::string> Defaults = {
