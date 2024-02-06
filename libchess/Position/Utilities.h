@@ -1,6 +1,8 @@
 #ifndef LIBCHESS_UTILITIES_H
 #define LIBCHESS_UTILITIES_H
 
+#include "../../misc.h"
+
 namespace libchess {
 
 inline void Position::display_raw(std::ostream& ostream) const {
@@ -101,11 +103,11 @@ inline std::string Position::uci_line() const {
 inline void Position::vflip() {
     for (auto& pt : constants::PIECE_TYPES) {
         Bitboard* bb = piece_type_bb_ + pt;
-        *bb = Bitboard{_byteswap_uint64(*bb)};
+        *bb = Bitboard{byteSwap(*bb)};
     }
     for (auto& c : constants::COLORS) {
         Bitboard* bb = color_bb_ + c;
-        *bb = Bitboard{_byteswap_uint64(*bb)};
+        *bb = Bitboard{byteSwap(*bb)};
     }
 
     Bitboard tmp = color_bb_[0];

@@ -192,3 +192,11 @@ void aligned_large_pages_free(void* mem) {
 void aligned_large_pages_free(void* mem) { std_aligned_free(mem); }
 
 #endif
+
+inline uint64_t byteSwap(uint64_t value) {
+#if defined(_MSC_VER)
+    return _byteswap_uint64(value);
+#else
+    return __builtin_bswap64(value);
+#endif
+}
