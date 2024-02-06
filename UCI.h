@@ -1,11 +1,12 @@
 //
 // Created by 80hugkev on 7/6/2022.
 //
-#include "Anduril.h"
-#include "PolyglotBook.h"
 
 #ifndef ANDURIL_ENGINE_UCI_H
 #define ANDURIL_ENGINE_UCI_H
+
+#include "Anduril.h"
+#include "PolyglotBook.h"
 
 // all the UCI protocol stuff is going to be implemented
 // with C code because the tutorial I am following is written in C
@@ -28,8 +29,6 @@ namespace UCI {
     static int queenOrderVal = 50000;
     static int rookOrderVal =  25000;
     static int minorOrderVal = 15000;
-    static int maxHistoryVal = 16384;
-    static int maxContinuationVal = 16384;
 
     static double nem = 2.27108;
     static double neb = -0.319991;

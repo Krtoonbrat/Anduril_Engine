@@ -79,15 +79,21 @@ constexpr int weakQueenProtection = 4;
 
 constexpr int restrictedPiece = 2;
 
-constexpr int threatBySafePawn[2] = {48, 26};
+int threatBySafePawn[2] = {48, 26};
 
-constexpr int threatByPawnPush[2] = {13, 11};
+int threatByPawnPush[2] = {13, 11};
 
 constexpr int knightOnQueen[2] = {4, 3};
 
 constexpr int sliderOnQueen[2] = {17, 5};
 
-int outpost[2] = {24, -9};
+constexpr int outpost[2] = {19, 14};
+
+constexpr int bishopPair[2] = {10, 30};
+
+constexpr int spaceDividend = 47;
+
+constexpr int trappedKnight[2] = {150, 150};
 
 // mask for the central squares we are looking for in space evaluations
 constexpr libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
@@ -232,12 +238,12 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
     // bishop pair
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() >= 2) {
-        scoreMG += bpM;
-        scoreEG += bpE;
+        scoreMG += bishopPair[0];
+        scoreEG += bishopPair[1];
     }
     if (board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() >= 2) {
-        scoreMG -= bpM;
-        scoreEG -= bpE;
+        scoreMG -= bishopPair[0];
+        scoreEG -= bishopPair[1];
     }
 
     // rook on (semi)open files
@@ -344,16 +350,16 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
             if (square == libchess::constants::H8) {
                 if ((libchess::lookups::square(libchess::constants::H7) & blackPawns)
                     || (libchess::lookups::square(libchess::constants::F7) & blackPawns)) {
-                    score.first  -= tMG;
-                    score.second -= tEG;
+                    score.first  -= trappedKnight[0];
+                    score.second -= trappedKnight[1];
                 }
             }
                 // Knight on A8 with black pawns on either A7 or C7
             else if (square == libchess::constants::A8) {
                 if ((libchess::lookups::square(libchess::constants::A7) & blackPawns)
                     || (libchess::lookups::square(libchess::constants::C7) & blackPawns)) {
-                    score.first  -= tMG;
-                    score.second -= tEG;
+                    score.first  -= trappedKnight[0];
+                    score.second -= trappedKnight[1];
                 }
             }
                 // Knight on H7 with black pawns on G7 and either H6 or F6
@@ -361,8 +367,8 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
                 if ((libchess::lookups::square(libchess::constants::G7) & blackPawns)
                     && ((libchess::lookups::square(libchess::constants::H6) & blackPawns)
                         || (libchess::lookups::square(libchess::constants::F6) & blackPawns))) {
-                    score.first  -= tMG;
-                    score.second -= tEG;
+                    score.first  -= trappedKnight[0];
+                    score.second -= trappedKnight[1];
                 }
             }
                 // Knight on A7 with black pawns on B7 and either A6 or C6
@@ -370,8 +376,8 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
                 if ((libchess::lookups::square(libchess::constants::B7) & blackPawns)
                     && ((libchess::lookups::square(libchess::constants::A6) & blackPawns)
                         || (libchess::lookups::square(libchess::constants::C6) & blackPawns))) {
-                    score.first  -= tMG;
-                    score.second -= tEG;
+                    score.first  -= trappedKnight[0];
+                    score.second -= trappedKnight[1];
                 }
             }
 
@@ -395,16 +401,16 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
             if (square == libchess::constants::H1) {
                 if ((libchess::lookups::square(libchess::constants::H2) & whitePawns)
                     || (libchess::lookups::square(libchess::constants::F2) & whitePawns)) {
-                    score.first  += tMG;
-                    score.second += tEG;
+                    score.first  += trappedKnight[0];
+                    score.second += trappedKnight[1];
                 }
             }
                 // Knight on A1 with white pawns on either A2 or C2
             else if (square == libchess::constants::A1) {
                 if ((libchess::lookups::square(libchess::constants::A2) & whitePawns)
                     || (libchess::lookups::square(libchess::constants::C2) & whitePawns)) {
-                    score.first  += tMG;
-                    score.second += tEG;
+                    score.first  += trappedKnight[0];
+                    score.second += trappedKnight[1];
                 }
             }
                 // Knight on H2 with white pawns on G2 and either H3 or F3
@@ -412,8 +418,8 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
                 if ((libchess::lookups::square(libchess::constants::G2) & whitePawns)
                     && ((libchess::lookups::square(libchess::constants::H3) & whitePawns)
                         || (libchess::lookups::square(libchess::constants::F3) & whitePawns))) {
-                    score.first  += tMG;
-                    score.second += tEG;
+                    score.first  += trappedKnight[0];
+                    score.second += trappedKnight[1];
                 }
             }
                 // Knight on A2 with white pawns on B2 and either A3 or C3
@@ -421,8 +427,8 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
                 if ((libchess::lookups::square(libchess::constants::B2) & whitePawns)
                     && ((libchess::lookups::square(libchess::constants::A3) & whitePawns)
                         || (libchess::lookups::square(libchess::constants::C3) & whitePawns))) {
-                    score.first  += tMG;
-                    score.second += tEG;
+                    score.first  += trappedKnight[0];
+                    score.second += trappedKnight[1];
                 }
             }
 
@@ -1067,7 +1073,7 @@ int Anduril::space(libchess::Position &board) {
     int bonus = safeSquares.popcount() + (behindPawn & safeSquares & ~attackMap[them][ALL_PIECES]).popcount();
     int weight = board.color_bb(us).popcount() - 3 + std::min(blockedPawnsCount[us], 9);
 
-    return bonus * weight * weight / spc;
+    return bonus * weight * weight / spaceDividend;
 }
 
 // gets the phase of the game for evalutation

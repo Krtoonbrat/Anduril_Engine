@@ -3,6 +3,7 @@
 //
 
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <mutex>
@@ -15,11 +16,21 @@
 int libchess::Position::pieceValuesMG[6] = {115, 446, 502, 649, 1332, 0};
 int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
 
+int maxHistoryVal = 16384;
+int maxContinuationVal = 16384;
+
 extern int BlockedPawnMG[2];
 extern int BlockedPawnEG[2];
 
-extern int knightPawnBonus[9];
-extern int outpost[2];
+extern int threatBySafePawn[2];
+extern int threatByPawnPush[2];
+
+extern int sbc;
+extern int sbm;
+extern int msb;
+
+extern int rvc;
+extern int rvs;
 
 // all the UCI protocol stuff is going to be implemented
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
@@ -168,18 +179,19 @@ namespace UCI {
                 std::cout << "option name be5 type string default 13" << std::endl;
                 std::cout << "option name be6 type string default 94" << std::endl;
 
-                std::cout << "option name kp0 type string default -20" << std::endl;
-                std::cout << "option name kp1 type string default -16" << std::endl;
-                std::cout << "option name kp2 type string default -12" << std::endl;
-                std::cout << "option name kp3 type string default -8" << std::endl;
-                std::cout << "option name kp4 type string default -4" << std::endl;
-                std::cout << "option name kp5 type string default 0" << std::endl;
-                std::cout << "option name kp6 type string default 4" << std::endl;
-                std::cout << "option name kp7 type string default 8" << std::endl;
-                std::cout << "option name kp8 type string default 12" << std::endl;
+                std::cout << "option name spm type string default 48" << std::endl;
+                std::cout << "option name spe type string default 26" << std::endl;
+                std::cout << "option name ppm type string default 13" << std::endl;
+                std::cout << "option name ppe type string default 11" << std::endl;
 
-                std::cout << "option name oMG type string default 24" << std::endl;
-                std::cout << "option name oEG type string default -9" << std::endl;
+                std::cout << "option name sbc type string default 101" << std::endl;
+                std::cout << "option name sbm type string default 201" << std::endl;
+                std::cout << "option name msb type string default 4296" << std::endl;
+                std::cout << "option name mhv type string default 16384" << std::endl;
+                std::cout << "option name mcv type string default 16384" << std::endl;
+
+                std::cout << "option name rvc type string default 460" << std::endl;
+                std::cout << "option name rvs type string default 148" << std::endl;
 
                 /*
                 std::cout << "option name svq type spin default -171 min -10000 max 10000" << std::endl;
@@ -195,10 +207,6 @@ namespace UCI {
                 std::cout << "option name sec type spin default 22 min -10000 max 10000" << std::endl;
                 std::cout << "option name sem type spin default 18 min -10000 max 10000" << std::endl;
                 std::cout << "option name sed type spin default 20 min -10000 max 10000" << std::endl;
-
-                std::cout << "option name sbc type spin default 101 min -10000 max 10000" << std::endl;
-                std::cout << "option name sbm type spin default 201 min -10000 max 10000" << std::endl;
-                std::cout << "option name msb type spin default 4296 min -10000 max 10000" << std::endl;
                 */
 
                 std::cout << "uciok" << std::endl;
@@ -377,48 +385,48 @@ namespace UCI {
             BlockedPawnEG[1] = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp0"))) {
-            knightPawnBonus[0] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "sbc"))) {
+            sbc = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp1"))) {
-            knightPawnBonus[1] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "sbm"))) {
+            sbm = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp2"))) {
-            knightPawnBonus[2] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "msb"))) {
+            msb = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp3"))) {
-            knightPawnBonus[3] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "rvc"))) {
+            rvc = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp4"))) {
-            knightPawnBonus[4] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "rvs"))) {
+            rvs = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp5"))) {
-            knightPawnBonus[5] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "mhv"))) {
+            maxHistoryVal = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp6"))) {
-            knightPawnBonus[6] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "mcv"))) {
+            maxContinuationVal = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp7"))) {
-            knightPawnBonus[7] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "spm"))) {
+            threatBySafePawn[0] = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "kp8"))) {
-            knightPawnBonus[8] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "spe"))) {
+            threatBySafePawn[1] = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "oMG"))) {
-            outpost[0] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "ppm"))) {
+            threatByPawnPush[0] = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "oEG"))) {
-            outpost[1] = atoi(ptr + 10);
+        if ((ptr = strstr(line, "ppe"))) {
+            threatByPawnPush[1] = atoi(ptr + 10);
         }
 
         /*
@@ -510,27 +518,6 @@ namespace UCI {
             AI->sed = atoi(ptr + 10);
             for (auto &thread : gondor) {
                 thread->sed = AI->sed;
-            }
-        }
-
-        if ((ptr = strstr(line, "sbc"))) {
-            AI->sbc = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->sbc = AI->sbc;
-            }
-        }
-
-        if ((ptr = strstr(line, "sbm"))) {
-            AI->sbm = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->sbm = AI->sbm;
-            }
-        }
-
-        if ((ptr = strstr(line, "msb"))) {
-            AI->msb = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->msb = AI->msb;
             }
         }
          */

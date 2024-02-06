@@ -15,6 +15,18 @@
 // its oversize just in case something weird happens
 int reductions[150][150];
 
+// stat bonus values
+int sbc = 101;
+int sbm = 201;
+int msb = 4296;
+
+// razoring values
+int rvc = 460;
+int rvs = 148;
+
+extern int maxHistoryVal;
+extern int maxContinuationVal;
+
 // the other formula simplifies down to this.  This should be easier to tune than 4 separate variables
 void initReductions(double nem, double neb) {
     for (int i = 0; i < 150; i++) {
@@ -22,6 +34,11 @@ void initReductions(double nem, double neb) {
             reductions[i][j] = int(neb + (log(i) * log(j) / nem));
         }
     }
+}
+
+int stat_bonus(int depth) {
+    return std::min(sbm * depth - sbc, msb);
+    //return 2 * depth * depth;
 }
 
 // returns the amount of moves we need to search before we can use move count based pruning
@@ -392,7 +409,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 int bonus = -stat_bonus(depth);
 
                 // update move history and continuation history for best move
-                moveHistory[board.side_to_move()][nMove.from_square()][nMove.to_square()] += bonus - moveHistory[board.side_to_move()][nMove.from_square()][nMove.to_square()] * abs(bonus) / UCI::maxHistoryVal;
+                moveHistory[board.side_to_move()][nMove.from_square()][nMove.to_square()] += bonus - moveHistory[board.side_to_move()][nMove.from_square()][nMove.to_square()] * abs(bonus) / maxHistoryVal;
                 updateContinuationHistory(board,*board.piece_on(nMove.from_square()),nMove.to_square(), bonus);
             }
         }
@@ -484,7 +501,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nonPawnMaterial(!board.side_to_move(), board)
         && (ply - rootPly) >= minNullPly) {
 
-        // set reduction based on depth, eval, and whether or not the last move made was tactical
+        // set reduction based on depth, eval, and whether the last move made was tactical
         int R = 4 + depth / 5 + std::min(3, (staticEval - beta) / 50) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
 
         board.continuationHistory() = &continuationHistory[0][0][15][0]; // no piece has a value of 15 so we can use that as our "null" flag
@@ -964,7 +981,7 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
         for (int i = 0; i < quietCount; i++) {
             orderPenalty = -bonus - stat_bonus(quietCount - i);
             updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), orderPenalty);
-            moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += orderPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(orderPenalty) / UCI::maxHistoryVal;
+            moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += orderPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(orderPenalty) / maxHistoryVal;
         }
     }
 
@@ -979,7 +996,7 @@ void Anduril::updateQuietStats(libchess::Position &board, libchess::Move bestMov
     insertKiller(bestMove, ply - rootPly);
 
     // update move history and continuation history for best move
-    moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] += bonus - moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] * abs(bonus) / UCI::maxHistoryVal;
+    moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] += bonus - moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] * abs(bonus) / maxHistoryVal;
     updateContinuationHistory(board, *board.piece_on(bestMove.from_square()), bestMove.to_square(), bonus);
 
     // update countermoves
@@ -997,7 +1014,7 @@ void Anduril::updateContinuationHistory(libchess::Position &board, libchess::Pie
         }
         // we index ply - i + 1 because we need to check that the ply we are looking at wasn't null, so we have to access the next ply's previous move
         if (board.prevMoveType(ply - start - i + 1) != libchess::Move::Type::NONE) {
-            (*board.continuationHistory(ply - start - i))[piece.value()][to] += bonus - (*board.continuationHistory(ply - start - i))[piece.value()][to] * abs(bonus) / UCI::maxContinuationVal;
+            (*board.continuationHistory(ply - start - i))[piece.value()][to] += bonus - (*board.continuationHistory(ply - start - i))[piece.value()][to] * abs(bonus) / maxContinuationVal;
             //(*board.continuationHistory(ply - i))[piece.value()][to] = std::clamp((*board.continuationHistory(ply - i))[piece.value()][to] + bonus, -UCI::maxContinuationVal, UCI::maxContinuationVal);
         }
     }

@@ -133,17 +133,7 @@ public:
     int qMG = 1332;
     int qEG = 1749;
 
-    int tMG = 150;
-    int tEG = 150;
-
-    int bpM = 10;
-    int bpE = 30;
-
-    int spc = 47;
-
     int svq = -171;
-    int rvc = 460;
-    int rvs = 148;
     int pcc = 148;
     int pci = 68;
     int fpc = 148;
@@ -154,15 +144,6 @@ public:
     int sec = 22;
     int sem = 18;
     int sed = 20;
-
-    int sbc = 101;
-    int sbm = 201;
-    int msb = 4296;
-
-    int stat_bonus(int depth) {
-        return std::min(sbm * depth - sbc, msb);
-        //return 2 * depth * depth;
-    }
 
 
     // piece values used for see
