@@ -66,7 +66,8 @@ void std_aligned_free(void* ptr) {
 #endif
 }
 
-// large page allocation based on stockfish 16
+// large page allocation from stockfish 16
+// why must windows make this so disgusting?
 #if defined(_WIN32)
 
 static void* aligned_large_pages_alloc_windows([[maybe_unused]] size_t allocSize) {
