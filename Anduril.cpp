@@ -119,13 +119,12 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 
     // transposition lookup
     uint64_t hash = board.hash();
-    bool found = false;
-    Node *node = table.probe(hash, found);
-    int nType = found ? node->nodeTypeGenBound & 0x3 : 0;
-    int nScore = found ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
-    libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
+    Node *node = table.probe(hash, board.found());
+    int nType = board.found() ? node->nodeTypeGenBound & 0x3 : 0;
+    int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
+    libchess::Move nMove = board.found() ? libchess::Move(node->bestMove) : libchess::Move(0);
 	if (!PvNode
-		&& found
+		&& board.found()
         && nScore != -32001
 		&& node->nodeDepth >= tDepth
         && (nType & (nScore >= beta ? 2 : 1))) {
@@ -137,7 +136,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     // we can't stand pat if we are in check
     if (!check) {
         // stand pat score to see if we can exit early
-        if (found) {
+        if (board.found()) {
             if (node->nodeEval != -32001) {
                 bestScore = standPat = node->nodeEval;
             }
@@ -157,7 +156,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 
         // adjust alpha and beta based on the stand pat
         if (bestScore >= beta) {
-			if (!found) {
+			if (!board.found()) {
                 node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, standPat);
 			}
             return standPat;
@@ -373,16 +372,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     // transposition lookup
     uint64_t hash = board.hash();
-    bool found = false;
-    Node *node = table.probe(hash, found);
-    int nDepth = found ? node->nodeDepth : -99;
-    int nType = found ? node->nodeTypeGenBound & 0x3 : 0;
-    int nScore = found ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
-    libchess::Move nMove = found ? libchess::Move(node->bestMove) : libchess::Move(0);
-    bool transpositionCapture = found && board.is_capture_move(nMove);
+    Node *node = table.probe(hash, board.found());
+    int nDepth = board.found() ? node->nodeDepth : -99;
+    int nType = board.found() ? node->nodeTypeGenBound & 0x3 : 0;
+    int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
+    libchess::Move nMove = board.found() ? libchess::Move(node->bestMove) : libchess::Move(0);
+    bool transpositionCapture = board.found() && board.is_capture_move(nMove);
 
 	if (!PvNode
-		&& found
+		&& board.found()
         && nScore != -32001
         && excludedMove.value() == 0
 		&& nDepth > depth
@@ -426,15 +424,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // it won't be needed if in check however
     int staticEval;
     if (check) {
-        board.staticEval() = staticEval = 32001;
-        improving = false;
-        improvement = 0;
+        board.staticEval() = staticEval = 0;
     }
     else if (excludedMove.value() != 0) {
         // if there is an excluded move, its the same position so the static eval is already saved
         staticEval = board.staticEval();
     }
-    else if (found) {
+    else if (board.found()) {
         // little check in case something gets messed up
         if (node->nodeEval == -32001) {
             board.staticEval() = staticEval = evaluateBoard(board);
@@ -543,7 +539,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && depth > 3
         && !check
         && abs(beta) < 31000
-        && !(found
+        && !(board.found()
         && nDepth >= depth - 3
         && nScore != -32001
         && nScore < probCutBeta)) {

@@ -8,7 +8,7 @@
 #include "Node.h"
 
 // one cluster holds two nodes
-// 32 bytes
+// 24 bytes
 struct Cluster {
     Node entry[2];
 };

@@ -296,7 +296,7 @@ class Position {
     PieceHistory*& continuationHistory() { return state_mut_ref().continuationHistory; }
     PieceHistory*& continuationHistory(int ply) { return state_mut_ref(ply).continuationHistory; }
     Move::Type prevMoveType(int ply) { return state(ply).move_type_; }
-    bool found() { return state().found; }
+    bool& found() { return state_mut_ref().found; }
     bool found(int ply) { return state(ply).found; }
     std::optional<Move> previousMove(int ply) { return state(ply).previous_move_; }
 
