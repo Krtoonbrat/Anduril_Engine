@@ -7,21 +7,20 @@
 
 // constructor for main search
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
-                       ButterflyHistory *his, const PieceHistory **contHis,
-                       std::array<int, 6> *see)
-                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), continuationHistory(contHis), seeValues(see) {
+                       ButterflyHistory *his, const PieceHistory **contHis)
+                       : board(b), transposition(ttm), refutations{k[0], k[1], cm}, moveHistory(his), continuationHistory(contHis) {
     stage = (board.in_check() ? EVASION_TT : MAIN_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
 // constructor for qsearch
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-                       const PieceHistory **contHis, std::array<int, 6> *see, int d)
-                      : board(b), transposition(ttm), moveHistory(his), continuationHistory(contHis), seeValues(see), depth(d) {
+                       const PieceHistory **contHis, int d)
+                      : board(b), transposition(ttm), moveHistory(his), continuationHistory(contHis), depth(d) {
     stage = (board.in_check() ? EVASION_TT : QSEARCH_TT) + !(transposition.value() != 0 && board.is_legal_move(transposition));
 }
 
 // constructor for probcut
-MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see) : board(b), transposition(ttm), threshold(t), seeValues(see) {
+MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, int t) : board(b), transposition(ttm), threshold(t) {
     stage = PROBCUT_TT + !(transposition.value() != 0 && board.is_capture_move(ttm)
                                                       && board.is_legal_move(ttm)
                                                       && board.see_ge(ttm, t));
@@ -104,7 +103,7 @@ void MovePicker::score() {
 
     for (auto& m : *this) {
         if constexpr (type == CAPTURES) {
-            m.score = seeValues->at(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0); // the condition is for enpassant, as there would not be a piece on the destination
+            m.score = libchess::Position::pieceValuesMG[(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0)]; // the condition is for enpassant, as there would not be a piece on the destination
         }
         else if constexpr(type == QUIETS) {
             m.score =  (threatenedPieces & libchess::lookups::square(m.from_square()) ?
@@ -122,7 +121,7 @@ void MovePicker::score() {
         else { // evasions
             if (board.is_capture_move(m)) {
                 // the condition is for enpassant, as there would not be a piece on the destination
-                m.score = seeValues->at(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0) + (100000); // we add a large number to make sure captures are always searched first
+                m.score = libchess::Position::pieceValuesMG[(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0)] + (100000); // we add a large number to make sure captures are always searched first
             }
             else {
                 m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())

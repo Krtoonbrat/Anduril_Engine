@@ -36,11 +36,10 @@ public:
     MovePicker& operator=(const MovePicker&) = delete;
 
     MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
-               ButterflyHistory *his, const PieceHistory **contHis,
-               std::array<int, 6> *see);
+               ButterflyHistory *his, const PieceHistory **contHis);
     MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-               const PieceHistory **contHis, std::array<int, 6> *see, int d);
-    MovePicker(libchess::Position &b, libchess::Move &ttm, int t, std::array<int, 6> *see);
+               const PieceHistory **contHis, int d);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, int t);
 
     libchess::Move nextMove(bool skipQuiet = false);
 
@@ -69,9 +68,6 @@ private:
     int threshold;
     libchess::MoveList moves;
     int depth;
-
-    // I should find a better solution for this, but for now passing a pointer works.
-    std::array<int, 6> *seeValues;
 };
 
 // shamelessly stolen from stockfish again

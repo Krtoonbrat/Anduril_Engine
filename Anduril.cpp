@@ -175,7 +175,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
     libchess::Square prevMoveSq = board.prevMoveType(ply) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
-    MovePicker picker(board, nMove, &moveHistory, contHistory, &seeValues, depth);
+    MovePicker picker(board, nMove, &moveHistory, contHistory, depth);
 
     // arbitrarily low score to make sure its replaced
     int score = -32001;
@@ -545,7 +545,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nScore < probCutBeta)) {
 
         // get a move picker
-        MovePicker picker(board, nMove, probCutBeta - board.staticEval(), &seeValues);
+        MovePicker picker(board, nMove, probCutBeta - board.staticEval());
 
         // we loop through all the moves to try and find one that
         // causes a beta cut on a reduced search
@@ -606,7 +606,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // get a move picker
     MovePicker picker(board, nMove, killers[ply - rootPly],
                       counterMove,
-                      &moveHistory, contHistory, &seeValues);
+                      &moveHistory, contHistory);
 
     // at root, we are going to ignore the picker object.  The amount of time spent allocating and selecting moves should be negligible because this only happens for one position per search
     // here we set the pointer for the current root move to the beginning of the move list, and sort the list
@@ -943,18 +943,18 @@ template int Anduril::negamax<Anduril::Root>(libchess::Position &board, int dept
 int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
     int material = 0;
     if (whiteToPlay) {
-        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE).popcount() * kMG;
-        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() * bMG;
-        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::WHITE).popcount() * rMG;
-        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE).popcount() * qMG;
+        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::WHITE).popcount() * libchess::Position::pieceValuesMG[1];
+        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::WHITE).popcount() * libchess::Position::pieceValuesMG[2];
+        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::WHITE).popcount() * libchess::Position::pieceValuesMG[3];
+        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::WHITE).popcount() * libchess::Position::pieceValuesMG[4];
 
         return material;
     }
     else {
-        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK).popcount() * kMG;
-        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() * bMG;
-        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::BLACK).popcount() * rMG;
-        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK).popcount() * qMG;
+        material += board.piece_type_bb(libchess::constants::KNIGHT, libchess::constants::BLACK).popcount() * libchess::Position::pieceValuesMG[1];
+        material += board.piece_type_bb(libchess::constants::BISHOP, libchess::constants::BLACK).popcount() * libchess::Position::pieceValuesMG[2];
+        material += board.piece_type_bb(libchess::constants::ROOK, libchess::constants::BLACK).popcount() * libchess::Position::pieceValuesMG[3];
+        material += board.piece_type_bb(libchess::constants::QUEEN, libchess::constants::BLACK).popcount() * libchess::Position::pieceValuesMG[4];
 
         return material;
     }

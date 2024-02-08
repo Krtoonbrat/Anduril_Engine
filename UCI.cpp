@@ -15,6 +15,8 @@
 
 int libchess::Position::pieceValuesMG[6] = {115, 446, 502, 649, 1332, 0};
 int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
+int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
+                                 148,  490,  518,  878,  1749, 0, 0, 0};
 
 int maxHistoryVal = 16384;
 int maxContinuationVal = 16384;

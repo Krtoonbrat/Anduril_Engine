@@ -118,21 +118,6 @@ public:
     std::condition_variable cv;
 
     // values for CLOP to tune
-    int kMG = 446;
-    int kEG = 490;
-
-    int pMG = 115;
-    int pEG = 148;
-
-    int bMG = 502;
-    int bEG = 518;
-
-    int rMG = 649;
-    int rEG = 878;
-
-    int qMG = 1332;
-    int qEG = 1749;
-
     int svq = -171;
     int pcc = 148;
     int pci = 68;
@@ -145,13 +130,8 @@ public:
     int sem = 18;
     int sed = 20;
 
-
-    // piece values used for see
-    std::array<int, 6> seeValues = {pMG, kMG, bMG, rMG, qMG, 0};
-
     // endgame values used for qsearch
-    int pieceValues[16] = { pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0,
-                            pEG,  kEG,  bEG,  rEG,  qEG, 0, 0, 0};
+    static int pieceValues[16];
 
     // continuation history table
     // 2x2 because we separate check and capture moves

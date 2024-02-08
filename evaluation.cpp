@@ -1051,8 +1051,8 @@ int Anduril::space(libchess::Position &board) {
     // Find the difference and add one.  We have to add one because we want it to stop when 6 pieces have been exchanged, not 6 + something else
     // threshold = 6766 - 2106 + 1 = 4661
     // TODO: calculation stuff for clop too, prolly should remove when done.  Its there to make sure that the threshold is the same amount of captures no matter the value of the pieces (ish)
-    int totalNPM = (4 * (kMG + bMG + rMG)) + (2 * qMG);
-    int delta = 3 * (kMG + bMG);
+    int totalNPM = (4 * (libchess::Position::pieceValuesMG[1] + libchess::Position::pieceValuesMG[2] + libchess::Position::pieceValuesMG[3])) + (2 * libchess::Position::pieceValuesMG[4]);
+    int delta = 3 * (libchess::Position::pieceValuesMG[1] + libchess::Position::pieceValuesMG[2]);
     int threshold = totalNPM - delta + 1;
     if (nonPawnMaterial(true, board) + nonPawnMaterial(false, board) < threshold) {
         return 0;
