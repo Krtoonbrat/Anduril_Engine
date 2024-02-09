@@ -424,7 +424,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // it won't be needed if in check however
     int staticEval;
     if (check) {
-        board.staticEval() = staticEval = 0;
+        board.staticEval() = staticEval = 32001;
     }
     else if (excludedMove.value() != 0) {
         // if there is an excluded move, its the same position so the static eval is already saved
@@ -452,16 +452,16 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     // set up the improvement variable, which is the difference in static evals between the current turn and
     // our last turn.  If we were in check the last turn, we try the move prior to that
-    if (ply - rootPly >= 2 && board.staticEval(ply - 2) != 0) {
+    if (ply - rootPly >= 2 && board.staticEval(ply - 2) != 32001) {
         improvement = board.staticEval() - board.staticEval(ply - 2);
     }
-    else if (ply - rootPly >= 4 && board.staticEval(ply - 4) != 0) {
+    else if (ply - rootPly >= 4 && board.staticEval(ply - 4) != 32001) {
         improvement = board.staticEval() - board.staticEval(ply - 4);
     }
     else {
         improvement = 1; // if we were in check the last two turns, assume we are improving by some amount
     }
-    improving = improvement > 0;
+    improving = !check && improvement > 0; // if we are currently in check, we assume we are not improving
 
     // razoring
     // TODO: change after CLOP tuning
@@ -591,6 +591,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // Internal Iterative Reduction.  Idea taken from Ethereal.  We lower the depth on cutnodes that are high in the
     // search tree where we expected to find a transposition, but didn't.  This is a modernized approach to Internal Iterative Deepening
     if (cutNode
+        && !check
         && depth >= 7
         && nMove.value() == 0) {
         depth -= 1;
