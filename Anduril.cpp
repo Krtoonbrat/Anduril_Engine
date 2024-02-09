@@ -16,9 +16,9 @@
 int reductions[150][150];
 
 // stat bonus values
-int sbc = 101;
-int sbm = 201;
-int msb = 4296;
+int sbc = 163;
+int sbm = 417;
+int msb = 6413;
 
 // razoring values
 int rvc = 460;

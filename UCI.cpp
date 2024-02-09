@@ -18,8 +18,8 @@ int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
 int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
                                  148,  490,  518,  878,  1749, 0, 0, 0};
 
-int maxHistoryVal = 16384;
-int maxContinuationVal = 16384;
+int maxHistoryVal = 20805;
+int maxContinuationVal = 23293;
 
 extern int BlockedPawnMG[2];
 extern int BlockedPawnEG[2];
@@ -186,11 +186,11 @@ namespace UCI {
                 std::cout << "option name ppm type string default 13" << std::endl;
                 std::cout << "option name ppe type string default 11" << std::endl;
 
-                std::cout << "option name sbc type string default 101" << std::endl;
-                std::cout << "option name sbm type string default 201" << std::endl;
-                std::cout << "option name msb type string default 4296" << std::endl;
-                std::cout << "option name mhv type string default 16384" << std::endl;
-                std::cout << "option name mcv type string default 16384" << std::endl;
+                std::cout << "option name sbc type string default 163" << std::endl;
+                std::cout << "option name sbm type string default 417" << std::endl;
+                std::cout << "option name msb type string default 6413" << std::endl;
+                std::cout << "option name mhv type string default 20805" << std::endl;
+                std::cout << "option name mcv type string default 23293" << std::endl;
 
                 std::cout << "option name rvc type string default 460" << std::endl;
                 std::cout << "option name rvs type string default 148" << std::endl;
