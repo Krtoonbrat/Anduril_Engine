@@ -310,6 +310,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // are we in check?
     int check = board.in_check();
 
+    // update the selective depth info to send to the GUI
+    if (PvNode && selDepth < (ply - rootPly) + 1) {
+        selDepth = (ply - rootPly) + 1;
+    }
+
     // is the time up?  Mate distance pruning?
     if constexpr (!rootNode) {
         // check for aborted search
@@ -339,10 +344,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     // did alpha change?
     bool alphaChange = false;
-
-    if (PvNode && selDepth < (ply - rootPly) + 1) {
-        selDepth = (ply - rootPly) + 1;
-    }
 
     // represents our next move to search
     libchess::Move move(0);
