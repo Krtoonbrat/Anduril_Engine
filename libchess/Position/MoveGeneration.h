@@ -1,6 +1,8 @@
 #ifndef LIBCHESS_MOVEGENERATION_H
 #define LIBCHESS_MOVEGENERATION_H
 
+#include "../Position.h"
+
 namespace libchess {
 
 // added by Krtoonbrat
