@@ -779,6 +779,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 extension = 1;
             }
 
+            // recapture extension
+            else if (PvNode
+                     && capture
+                     && board.previous_move()
+                     && board.is_capture_move(*board.previous_move())
+                     && move.to_square() == board.previous_move()->to_square()) {
+                extension = 1;
+            }
+
         }
 
         // add extensions to depth
