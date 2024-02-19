@@ -863,15 +863,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             reduction -= std::max(-2, std::min(2, hist / 8192));
 
             // new depth we will search with
-            // we need to search at least one more move
-            // replaced clamp with this solution.  actualDepth was very rarely less than 1 (due to negative extensions), causing undefined behavior
+            // we need to search at least one more move, and allow an "extension" of up to one (really all we are doing in this case is not changing the depth)
             int newDepth = std::max(1, std::min(actualDepth - reduction, actualDepth + 1));
 
             incPly();
             score = -negamax<NonPV>(board, newDepth, -(alpha + 1), -alpha, true);
 
             // full depth search when LMR fails high
-            if (score > alpha && newDepth < actualDepth - 1) {
+            if (score > alpha && newDepth < actualDepth) {
                 score = -negamax<NonPV>(board, actualDepth, -(alpha + 1), -alpha, !cutNode);
             }
             decPly();
