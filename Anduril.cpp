@@ -860,7 +860,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             // adjust based on history stats
             hist += moveHistory[board.side_to_move()][move.from_square()][move.to_square()];
-            reduction -= std::max(-2, std::min(2, hist / 8192));
+            reduction -= hist / 26602;
 
             // new depth we will search with
             // we need to search at least one more move, and allow an "extension" of up to one (really all we are doing in this case is not changing the depth)
