@@ -194,6 +194,17 @@ namespace UCI {
 
                 std::cout << "option name rvc type string default 460" << std::endl;
                 std::cout << "option name rvs type string default 148" << std::endl;
+/*
+                std::cout << "option name pMG type string default 115" << std::endl;
+                std::cout << "option name pEG type string default 148" << std::endl;
+                std::cout << "option name kMG type string default 446" << std::endl;
+                std::cout << "option name kEG type string default 490" << std::endl;
+                std::cout << "option name bMG type string default 502" << std::endl;
+                std::cout << "option name bEG type string default 518" << std::endl;
+                std::cout << "option name rMG type string default 649" << std::endl;
+                std::cout << "option name rEG type string default 878" << std::endl;
+                std::cout << "option name qMG type string default 1332" << std::endl;
+                std::cout << "option name qEG type string default 1749" << std::endl;
 
                 /*
                 std::cout << "option name svq type spin default -171 min -10000 max 10000" << std::endl;
@@ -264,100 +275,52 @@ namespace UCI {
         }
 
         // setoption name pMG value 100
+
         /*
+        if ((ptr = strstr(line, "pMG"))) {
+            libchess::Position::pieceValuesMG[0] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "pEG"))) {
+            libchess::Position::pieceValuesEG[0] = atoi(ptr + 10);
+            Anduril::pieceValues[0] = libchess::Position::pieceValuesEG[0];
+        }
+
         if ((ptr = strstr(line, "kMG"))) {
-            AI->kMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[1] = AI->kMG;
-            for (auto &thread : gondor) {
-                thread->kMG = AI->kMG;
-            }
+            libchess::Position::pieceValuesMG[1] = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "kEG"))) {
-            AI->kEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[1] = AI->kEG;
-            for (auto &thread : gondor) {
-                thread->kEG = AI->kEG;
-            }
+            libchess::Position::pieceValuesEG[1] = atoi(ptr + 10);
+            Anduril::pieceValues[1] = libchess::Position::pieceValuesEG[1];
         }
 
         if ((ptr = strstr(line, "bMG"))) {
-            AI->bMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[2] = AI->bMG;
-            for (auto &thread : gondor) {
-                thread->bMG = AI->bMG;
-            }
+            libchess::Position::pieceValuesMG[2] = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "bEG"))) {
-            AI->bEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[2] = AI->bEG;
-            for (auto &thread : gondor) {
-                thread->bEG = AI->bEG;
-            }
+            libchess::Position::pieceValuesEG[2] = atoi(ptr + 10);
+            Anduril::pieceValues[2] = libchess::Position::pieceValuesEG[2];
         }
 
         if ((ptr = strstr(line, "rMG"))) {
-            AI->rMG = atoi(ptr + 10);
-            libchess::Position::pieceValuesMG[3] = AI->rMG;
-            for (auto &thread : gondor) {
-                thread->rMG = AI->rMG;
-            }
+            libchess::Position::pieceValuesMG[3] = atoi(ptr + 10);
+
         }
 
         if ((ptr = strstr(line, "rEG"))) {
-            AI->rEG = atoi(ptr + 10);
-            libchess::Position::pieceValuesEG[3] = AI->rEG;
-            for (auto &thread : gondor) {
-                thread->rEG = AI->rEG;
-            }
+            libchess::Position::pieceValuesEG[3] = atoi(ptr + 10);
+            Anduril::pieceValues[3] = libchess::Position::pieceValuesEG[3];
         }
 
-        if ((ptr = strstr(line, "tMG"))) {
-            AI->tMG = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->tMG = AI->tMG;
-            }
+        if ((ptr = strstr(line, "qMG"))) {
+            libchess::Position::pieceValuesMG[4] = atoi(ptr + 10);
         }
 
-        if ((ptr = strstr(line, "tEG"))) {
-            AI->tEG = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->tEG = AI->tEG;
-            }
-        }
-
-        if ((ptr = strstr(line, "QOV"))) {
-            queenOrderVal = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "ROV"))) {
-            rookOrderVal = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "MOV"))) {
-            minorOrderVal = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "bpM"))) {
-            AI->bpM = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->bpM = AI->bpM;
-            }
-        }
-
-        if ((ptr = strstr(line, "bpE"))) {
-            AI->bpE = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->bpE = AI->bpE;
-            }
-        }
-
-        if ((ptr = strstr(line, "spc"))) {
-            AI->spc = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->spc = AI->spc;
-            }
+        if ((ptr = strstr(line, "qEG"))) {
+            libchess::Position::pieceValuesEG[4] = atoi(ptr + 10);
+            Anduril::pieceValues[4] = libchess::Position::pieceValuesEG[4];
         }
          */
 
