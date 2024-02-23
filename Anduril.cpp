@@ -9,6 +9,7 @@
 
 #include "Anduril.h"
 #include "MovePicker.h"
+#include "Thread.h"
 #include "UCI.h"
 
 // reduction table
@@ -26,6 +27,9 @@ int rvs = 148;
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
+
+// our thread pool
+extern ThreadPool gondor;
 
 // the other formula simplifies down to this.  This should be easier to tune than 4 separate variables
 void initReductions(double nem, double neb) {
@@ -318,7 +322,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // is the time up?  Mate distance pruning?
     if constexpr (!rootNode) {
         // check for aborted search
-        if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
         }
 
@@ -896,7 +900,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         board.unmake_move();
 
         // if the search was stopped for whatever reason, return immediately
-        if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             return 0;
         }
 
@@ -1128,4 +1132,12 @@ libchess::Bitboard Anduril::attackByPiece(libchess::Position &board) {
     }
 
     return attacks;
+}
+
+uint64_t Anduril::getMovesExplored() {
+    uint64_t total = 0;
+    for (auto &t : gondor) {
+        total += t->engine->movesExplored.load();
+    }
+    return total;
 }

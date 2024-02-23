@@ -15,16 +15,13 @@ namespace UCI {
     void loop(int argc, char* argv[]);
 
     // parses the go command from the GUI
-    void parseGo(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI, Book &openingBook, bool &bookOpen);
+    void parseGo(char* line, libchess::Position &board, Book &openingBook, bool &bookOpen);
 
     // parses position commands from the GUI
     void parsePosition(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI);
 
     // parses options
-    void parseOption(char* line, std::unique_ptr<Anduril> &AI, bool &bookOpen);
-
-    // parks thread waiting for a search
-    void waitForSearch(std::unique_ptr<Anduril> &AI, libchess::Position &board);
+    void parseOption(char* line, libchess::Position &board, bool &bookOpen);
 
     static int queenOrderVal = 50000;
     static int rookOrderVal =  25000;

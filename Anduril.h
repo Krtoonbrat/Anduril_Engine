@@ -54,7 +54,7 @@ public:
     int evaluateBoard(libchess::Position &board);
 
     // getter and setter for moves explored
-    inline uint64_t getMovesExplored();
+    uint64_t getMovesExplored();
 
     inline void setMovesExplored(int moves) { movesExplored = moves; }
 
@@ -111,12 +111,6 @@ public:
     // time we should stop the search
     std::chrono::time_point<std::chrono::steady_clock> stopTime;
 
-    // mutex for starting and stopping the search
-    std::mutex mutex;
-
-    // condition for parking the search
-    std::condition_variable cv;
-
     // values for CLOP to tune
     int svq = -171;
     int pcc = 148;
@@ -142,17 +136,6 @@ public:
 
     // total number of moves Anduril searched
     std::atomic<uint64_t> movesExplored;
-
-    // did the GUI tell us to quit?
-    std::atomic<bool> quit;
-
-    // did the GUI tell us to stop the search?
-    // used for stopping search threads
-    std::atomic<bool> stopped;
-
-    // should we be searching?
-    // used for starting threads
-    std::atomic<bool> searching;
 
 private:
 
@@ -276,12 +259,6 @@ private:
 
 };
 
-// number of threads to search with
-extern int threads;
-
-// each thread gets its own object
-static std::vector<std::unique_ptr<Anduril>> gondor;
-
 // total amount of cut nodes
 static std::atomic<uint64_t> cutNodes;
 
@@ -290,15 +267,6 @@ static std::atomic<uint64_t> movesTransposed;
 
 // amount of moves we searched in quiescence
 static std::atomic<uint64_t> quiesceExplored;
-
-inline uint64_t Anduril::getMovesExplored() {
-    uint64_t total = 0;
-    for (auto &t : gondor) {
-        total += t->movesExplored.load();
-    }
-    total += movesExplored.load();
-    return total;
-}
 
 // initialize the reduction table
 void initReductions(double nem, double neb);

@@ -8,9 +8,12 @@
 
 #include "Anduril.h"
 #include "misc.h"
+#include "Thread.h"
 #include "TranspositionTable.h"
 
 TranspositionTable table;
+
+extern ThreadPool gondor;
 
 // saves the information passed to the node, possibly overwriting the old position
 void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int ev) {
@@ -63,12 +66,12 @@ void TranspositionTable::resize(size_t tSize) {
 void TranspositionTable::clear() {
     std::vector<std::thread> threadPool;
 
-    for (size_t idx = 0; idx < size_t(threads); ++idx) {
+    for (size_t idx = 0; idx < size_t(gondor.numThreads); ++idx) {
         threadPool.emplace_back([this, idx]() {
 
-            const size_t stride = size_t(clusterCount / threads),
+            const size_t stride = size_t(clusterCount / gondor.numThreads),
                          start  = size_t(stride * idx),
-                         len    = idx != size_t(threads) - 1 ?
+                         len    = idx != size_t(gondor.numThreads) - 1 ?
                                   stride : clusterCount - start;
 
             std::memset(&tPtr[start], 0, len * sizeof(Cluster));

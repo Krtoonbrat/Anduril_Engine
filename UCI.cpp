@@ -11,6 +11,7 @@
 
 #include "Anduril.h"
 #include "libchess/Position.h"
+#include "Thread.h"
 #include "UCI.h"
 
 int libchess::Position::pieceValuesMG[6] = {115, 446, 502, 649, 1332, 0};
@@ -34,6 +35,8 @@ extern int msb;
 extern int rvc;
 extern int rvs;
 
+ThreadPool gondor;
+
 // all the UCI protocol stuff is going to be implemented
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
 // I am following is written in C
@@ -54,18 +57,16 @@ namespace UCI {
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
         std::unique_ptr<Anduril> AI = std::make_unique<Anduril>(0);
-        AI->quit = false;
-        AI->stopped = true;
-        AI->searching = false;
-        threads = 1;
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = openingBook.getBookOpen();
+        gondor.set(board, 1);
 
         // initialize the oversize state array
         for (int i = -7; i < 0; i++) {
             board.continuationHistory(i) = &AI->continuationHistory[0][0][15][0];
         }
 
+        //TODO: refactor benching after thread change
         if (argc > 1) {
             std::string in = std::string(argv[1]);
             if (in == "bench") {
@@ -76,8 +77,6 @@ namespace UCI {
                 }
                 AI->limits.timeSet = false;
                 AI->limits.depth = 12;
-                AI->stopped = false;
-                AI->searching = true;
                 for (auto &i : positions) {
                     table.newSearch();
                     AI->go(i);
@@ -85,9 +84,6 @@ namespace UCI {
                 return;
             }
         }
-
-        // start the search thread and park it until we need it
-        std::thread searchThread(&waitForSearch, std::ref(AI), std::ref(board));
 
         while (true) {
             // clear the line and flush stdout in case of buffer issues
@@ -108,40 +104,22 @@ namespace UCI {
                 parsePosition(line, board, AI);
             }
             else if (!strncmp(line, "setoption", 9)) {
-                parseOption(line, AI, bookOpen);
+                parseOption(line, board, bookOpen);
             }
             else if (!strncmp(line, "ucinewgame", 10)) {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
                 table.clear();
-                for (auto &i : gondor) {
-                    i->pTable = HashTable<PawnEntry, 8>();
-                    i->evalTable = HashTable<SimpleNode, 8>();
-                    i->resetHistories();
-                }
-                AI->pTable = HashTable<PawnEntry, 8>();
-                AI->evalTable = HashTable<SimpleNode, 8>();
-                AI->resetHistories();
+                gondor.clear();
                 board = *board.from_fen(StartFEN);
             }
             else if (!strncmp(line, "go", 2)) {
-                parseGo(line, board, AI, openingBook, bookOpen);
+                parseGo(line, board, openingBook, bookOpen);
             }
             else if (!strncmp(line, "stop", 4)) {
-                for (auto &i : gondor) {
-                    i->stopped = true;
-                }
-                AI->stopped = true;
+                gondor.stop = true;
             }
             else if (!strncmp(line, "quit", 4)) {
-                for (auto &i : gondor) {
-                    i->stopped = true;
-                    i->quit = true;
-                }
-                AI->stopped = !AI->stopped.load();
-                AI->quit = true;
-                AI->searching = true;
-                AI->cv.notify_one();
-                searchThread.join();
+                gondor.stop = true;
                 break;
             }
             else if (!strncmp(line, "uci", 3)) {
@@ -226,27 +204,17 @@ namespace UCI {
 
 
             }
-
-            // break the loop if quit is received
-            if (AI->quit.load()) { break; }
         }
     }
 
-    void parseOption(char* line, std::unique_ptr<Anduril> &AI, bool &bookOpen) {
+    void parseOption(char* line, libchess::Position &board, bool &bookOpen) {
         char *ptr = NULL;
 
         // set thread count
         // this is probably risky cuz a thread could be executing on an object we are deleting, YOLO
         if ((ptr = strstr(line, "Threads"))) {
-            threads = atoi(ptr + 13);
-            while (threads != gondor.size() + 1) {
-                if (threads > gondor.size() + 1) {
-                    gondor.emplace_back(std::make_unique<Anduril>(gondor.size() + 1));
-                }
-                else {
-                    gondor.pop_back();
-                }
-            }
+            gondor.numThreads = atoi(ptr + 13);
+            gondor.set(board, gondor.numThreads);
         }
 
         // set hash size
@@ -488,12 +456,12 @@ namespace UCI {
          */
     }
 
-    void parseGo(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI, Book &openingBook, bool &bookOpen) {
+    void parseGo(char* line, libchess::Position &board, Book &openingBook, bool &bookOpen) {
         // reset all the limit
         int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
         int increment = 0;
-        AI->limits.timeSet = false;
+        gondor.mainThread()->engine->limits.timeSet = false;
         char *ptr = NULL;
 
         // this makes sure that the opening book is set to the correct state
@@ -540,21 +508,21 @@ namespace UCI {
             mtg = 1;
         }
 
-        AI->startTime = std::chrono::steady_clock::now();
-        AI->limits.depth = depth;
+        gondor.mainThread()->engine->startTime = std::chrono::steady_clock::now();
+        gondor.mainThread()->engine->limits.depth = depth;
 
         if (time != -1) {
-            AI->limits.timeSet = true;
+            gondor.mainThread()->engine->limits.timeSet = true;
             time /= mtg;
             time -= 50;
             std::chrono::milliseconds searchTime(time + increment);
-            AI->stopTime = std::chrono::steady_clock::now();
-            AI->stopTime += searchTime;
+            gondor.mainThread()->engine->stopTime = std::chrono::steady_clock::now();
+            gondor.mainThread()->engine->stopTime += searchTime;
         }
 
         if (depth == -1) {
             // we won't ever hit a depth of 100, so it stands in as a "max" or "infinite" depth
-            AI->limits.depth = 100;
+            gondor.mainThread()->engine->limits.depth = 100;
         }
 
         /*
@@ -569,51 +537,14 @@ namespace UCI {
                 board.make_move(bestMove);
             }
             else {
-                //std::cout << "End of opening book, starting search" << std::endl;
                 openingBook.flipBookOpen();
-                for (auto &i : gondor) {
-                    i->stopped = false;
-                    i->searching = true;
-                }
                 table.newSearch();
-                AI->stopped = false;
-                AI->searching = true;
-                AI->cv.notify_one();
-                //AI.go(board);
+                gondor.startSearch();
             }
         }
         else {
-            for (auto &i : gondor) {
-                i->stopped = false;
-                i->searching = true;
-            }
             table.newSearch();
-            AI->stopped = false;
-            AI->searching = true;
-            AI->cv.notify_one();
-            //AI.go(board);
-        }
-    }
-
-    void waitForSearch(std::unique_ptr<Anduril> &AI, libchess::Position &board) {
-        while (true) {
-            std::unique_lock<std::mutex> lock(AI->mutex);
-            AI->stopped = true;
-            AI->searching = false;
-            AI->cv.wait(lock, [&AI] { return AI->searching.load(); });
-
-            if (AI->quit.load()) {
-                return;
-            }
-
-            lock.unlock();
-            AI->go(board);
-
-            // we have to check for a quit on both ends in case the quit command comes during a search
-            // if that happens, stopped will be set to true, and we would wait at the top, but we actually want to exit
-            if (AI->quit.load()) {
-                return;
-            }
+            gondor.startSearch();
         }
     }
 
@@ -639,9 +570,6 @@ namespace UCI {
             }
         }
 
-        // reset the ply counter
-        AI->resetPly();
-
         // set up the variable for parsing the moves
         ptrToken = strstr(line, "moves");
         libchess::Move move(0);
@@ -660,7 +588,6 @@ namespace UCI {
                 move = *libchess::Move::from(moveStr);
                 if (move.value() == 0) { break; }
                 board.make_move(move);
-                AI->incPly();
                 while (*ptrToken && *ptrToken != ' ') {
                     ptrToken++;
                 }
@@ -683,26 +610,14 @@ void Anduril::go(libchess::Position board) {
     //std::cout << board.fen() << std::endl;
     libchess::Move bestMove(0);
     libchess::Move prevBestMove = bestMove;
-    std::vector<std::thread> pool;
 
     if (id == 0) {
         movesExplored = 0;
         cutNodes = 0;
         movesTransposed = 0;
         quiesceExplored = 0;
-        pool.reserve(threads - 1);
         //threads = 4;   // for profiling
-        for (int i = 1; i < threads; i++) {
-            // more profiling stuff
-            /*
-            gondor.emplace_back(std::make_unique<Anduril>(i));
-            gondor[i - 1]->limits.depth = 20;
-            gondor[i - 1]->stopped = false;
-            gondor[i - 1]->searching = true;
-            gondor[i - 1]->startTime = std::chrono::steady_clock::now();
-            */
-            pool.emplace_back(&Anduril::go, gondor[i - 1].get(), board);
-        }
+        gondor.wakeThreads();
     }
 
     // this is for debugging
@@ -782,7 +697,7 @@ void Anduril::go(libchess::Position board) {
 
         // was the search stopped?
         // stop the search if time is up
-        if (stopped.load() || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
             incomplete = true;
             finalDepth = true;
         }
@@ -958,17 +873,17 @@ void Anduril::go(libchess::Position board) {
     }
 
     if (id == 0) {
-        setMovesExplored(0);
+        gondor.stop = true;
         cutNodes = 0;
         movesTransposed = 0;
         quiesceExplored = 0;
 
         // stop the other threads
-        for (int i = 0; i < threads - 1; i++) {
-            gondor[i]->stopped = true;
-            gondor[i]->searching = false;
-            gondor[i]->setMovesExplored(0);
-            pool[i].join();
+        gondor.waitForSearchFinish();
+
+        // reset the node count for each thread
+        for (auto &thread : gondor) {
+            thread->engine->setMovesExplored(0);
         }
 
         // tell the GUI what move we want to make
