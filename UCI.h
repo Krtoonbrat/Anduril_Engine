@@ -27,8 +27,8 @@ namespace UCI {
     static int rookOrderVal =  25000;
     static int minorOrderVal = 15000;
 
-    static double nem = 2.27108;
-    static double neb = -0.319991;
+    static double nem = 1.87106;
+    static double neb = -0.565281;
 
     // strings for benchmarking used by stockfish
     const std::vector<std::string> Defaults = {

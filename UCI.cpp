@@ -151,8 +151,8 @@ namespace UCI {
                 std::cout << "option name MOV type spin default 15000 min 0 max 1000000" << std::endl;
                  */
 
-                std::cout << "option name neb type string default -0.319991" << std::endl;
-                std::cout << "option name nem type string default 2.27108" << std::endl;
+                std::cout << "option name neb type string default -0.565281" << std::endl;
+                std::cout << "option name nem type string default 1.87106" << std::endl;
 
                 std::cout << "option name bm5 type string default 20" << std::endl;
                 std::cout << "option name bm6 type string default 63" << std::endl;
