@@ -112,7 +112,7 @@ Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
 int TranspositionTable::hashFull() {
     int count = 0;
     for (int i = 0; i < 1000; i++) {
-        for (int j = 0; j < 2; j++) {
+        for (int j = 0; j < 3; j++) {
             count += tPtr[i].entry[j].nodeDepth && (tPtr[i].entry[j].nodeTypeGenBound & GEN_MASK) == generation8;
         }
     }
