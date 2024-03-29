@@ -91,7 +91,7 @@ constexpr int outpost[2] = {19, 14};
 
 constexpr int bishopPair[2] = {10, 30};
 
-constexpr int spaceDividend = 47;
+constexpr int spaceDivisor = 47;
 
 constexpr int trappedKnight[2] = {150, 150};
 
@@ -1073,7 +1073,7 @@ int Anduril::space(libchess::Position &board) {
     int bonus = safeSquares.popcount() + (behindPawn & safeSquares & ~attackMap[them][ALL_PIECES]).popcount();
     int weight = board.color_bb(us).popcount() - 3 + std::min(blockedPawnsCount[us], 9);
 
-    return bonus * weight * weight / spaceDividend;
+    return bonus * weight * weight / spaceDivisor;
 }
 
 // gets the phase of the game for evalutation
