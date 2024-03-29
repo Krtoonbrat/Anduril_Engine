@@ -126,7 +126,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     Node *node = table.probe(hash, board.found());
     int nType = board.found() ? node->nodeTypeGenBound & 0x3 : 0;
     int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
-    libchess::Move nMove = board.found() ? libchess::Move(node->bestMove) : libchess::Move(0);
+    libchess::Move nMove = board.found() ? board.from_table(node->bestMove) : libchess::Move(0);
 	if (!PvNode
 		&& board.found()
         && nScore != -32001
@@ -295,7 +295,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 1, tDepth, bestMove.value(), standPat);
+    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 1, tDepth, bestMove.to_table(), standPat);
     return bestScore;
 
 }
@@ -381,7 +381,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     int nDepth = board.found() ? node->nodeDepth : -99;
     int nType = board.found() ? node->nodeTypeGenBound & 0x3 : 0;
     int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
-    libchess::Move nMove = board.found() ? libchess::Move(node->bestMove) : libchess::Move(0);
+    libchess::Move nMove = board.found() ? board.from_table(node->bestMove) : libchess::Move(0);
     bool transpositionCapture = board.found() && board.is_capture_move(nMove);
 
 	if (!PvNode
@@ -585,7 +585,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             if (score >= probCutBeta) {
                 // write to the node
-                node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.value(), board.staticEval());
+                node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.to_table(), board.staticEval());
                 cutNodes++;
                 return score;
             }
@@ -950,7 +950,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     if (excludedMove.value() == 0) {
-        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange && PvNode ? 3 : 1, depth, bestMove.value(), board.staticEval());
+        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange && PvNode ? 3 : 1, depth, bestMove.to_table(), board.staticEval());
     }
     return bestScore;
 
@@ -1051,7 +1051,7 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
     hash = board.hash();
     node = table.probe(hash, found);
     while (found && node->bestMove != 0) {
-        libchess::Move tmp(node->bestMove);
+        libchess::Move tmp = board.from_table(node->bestMove);
         if (board.is_capture_move(tmp) && board.piece_type_on(tmp.to_square()) == std::nullopt && tmp.type() != libchess::Move::Type::ENPASSANT) {
             break;
         }

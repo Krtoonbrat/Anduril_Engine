@@ -16,7 +16,7 @@ TranspositionTable table;
 extern ThreadPool gondor;
 
 // saves the information passed to the node, possibly overwriting the old position
-void Node::save(uint64_t k, int s, int t, int d, uint32_t m, int ev) {
+void Node::save(uint64_t k, int s, int t, int d, uint16_t m, int ev) {
     // keep the move the same for the same position
     if (m != 0 || uint16_t(k) != key) {
         bestMove = m;
@@ -87,7 +87,7 @@ Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
     Node *entry = firstEntry(key);
     uint16_t k = (uint16_t)key;
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 3; i++) {
         if (entry[i].key == k || entry[i].key == 0) {
             foundNode = entry[i].key == k;
             entry[i].nodeTypeGenBound = uint8_t(generation8 | (entry[i].nodeTypeGenBound & (GEN_DELTA - 1)));
@@ -97,7 +97,7 @@ Node* TranspositionTable::probe(uint64_t key, bool &foundNode) {
 
     // find an entry to be replaced
     Node *replace = entry;
-    for (int i = 1; i < 2; i++) {
+    for (int i = 1; i < 3; i++) {
         if (replace->nodeDepth - ((GEN_CYCLE + generation8 - replace->nodeTypeGenBound) & GEN_MASK) > entry[i].nodeDepth - ((GEN_CYCLE + generation8 - entry[i].nodeTypeGenBound) & GEN_MASK)) {
             replace = &entry[i];
         }

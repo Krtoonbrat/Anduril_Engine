@@ -124,6 +124,38 @@ inline bool Position::gives_check(Move move) const {
     return attackers_to(king.forward_bitscan(), occ_after_move) & ~color_bb(!stm);
 }
 
+// added by Krtoonbrat
+// constructs a move from a 16 bit integer
+inline Move Position::from_table(uint16_t move) {
+    Move m;
+
+    // grab the to and from squares
+    Square from = Square{move & 0x3f};
+    Square to = Square{(move & 0xfc0) >> 6};
+
+    // we get the move type before promotion type because we might not need promotion type
+    uint8_t type = (0xc000 & move) >> 14;
+
+    // construct and return the move
+    switch(type) {
+        case 2:
+            return Move{from, to, Move::Type::ENPASSANT};
+        case 3:
+            return Move{from, to, Move::Type::CASTLING};
+        default:
+            m = Move{from, to};
+            return Move{from, to, move_type_of(m)};
+        case 1:
+            uint8_t promotion = (0x3000 & move) >> 12;
+            PieceType promotion_pt = promotion == 0 ? constants::KNIGHT
+                                        : promotion == 1 ? constants::BISHOP
+                                        : promotion == 2 ? constants::ROOK
+                                        : constants::QUEEN;
+            m = Move{from, to, promotion_pt};
+            return Move{from, to, promotion_pt, move_type_of(m)};
+    }
+}
+
 inline void Position::unmake_move() {
     auto move = state().previous_move_;
     if (side_to_move() == constants::WHITE) {

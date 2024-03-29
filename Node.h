@@ -7,10 +7,10 @@
 
 #include "libchess/Position.h"
 
-// 12 bytes
+// 10 bytes
 struct Node {
     // saves the information passed in to the node
-    void save(uint64_t k, int s, int t, int d, uint32_t m, int ev);
+    void save(uint64_t k, int s, int t, int d, uint16_t m, int ev);
 
     // the evaluation of the node after a full search
     int16_t nodeScore;
@@ -31,7 +31,7 @@ struct Node {
     uint16_t key;
 
     // the best move for the node
-    uint32_t bestMove;
+    uint16_t bestMove;
 
 
 };

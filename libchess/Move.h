@@ -56,6 +56,46 @@ class Move {
                  (std::uint32_t(type) << MOVE_TYPE_SHIFT)) {
     }
 
+    // added by Krtoonbrat
+    // this converts the move to a 16 bit integer for storage in the transposition table
+    uint16_t to_table() const {
+        uint16_t move = 0;
+
+        // add the to and from squares
+        move |= from_square().value();
+        move |= to_square().value() << 6;
+
+        // add potential promotion
+        PieceType promotion_pt = PieceType{int((value() & PROMOTION_TYPE_MASK) >> PROMOTION_TYPE_SHIFT)};
+        // we can skip knights since their value is 0
+        if (promotion_pt == constants::BISHOP) {
+            move |= 1 << 12;
+        } else if (promotion_pt == constants::ROOK) {
+            move |= 2 << 12;
+        } else if (promotion_pt == constants::QUEEN) {
+            move |= 3 << 12;
+        }
+
+        // add the move type
+        Type move_type = type();
+        switch(move_type) {
+            case Type::PROMOTION:
+            case Type::CAPTURE_PROMOTION:
+                move |= 1 << 14;
+                break;
+            case Type::ENPASSANT:
+                move |= 2 << 14;
+                break;
+            case Type::CASTLING:
+                move |= 3 << 14;
+                break;
+            default:
+                break;
+        }
+
+        return move;
+    }
+
     static std::optional<Move> from(const std::string& str) {
         auto strlen = str.length();
         if (strlen > 5 || strlen < 4) {

@@ -225,6 +225,7 @@ class Position {
 
     // added by Krtoonbrat
     [[nodiscard]] bool gives_check(Move move) const;
+    [[nodiscard]] Move from_table(uint16_t move);
 
     // Attacks
     [[nodiscard]] Bitboard checkers_to(Color c) const;
