@@ -609,7 +609,6 @@ namespace UCI {
 void Anduril::go(libchess::Position board) {
     //std::cout << board.fen() << std::endl;
     libchess::Move bestMove(0);
-    libchess::Move prevBestMove = bestMove;
 
     if (id == 0) {
         movesExplored = 0;
@@ -754,7 +753,7 @@ void Anduril::go(libchess::Position board) {
         delta += delta * 3 / 4;
 
         if (!incomplete && found) {
-            prevBestMove = libchess::Move(node->bestMove);
+            bestMove = board.from_table(node->bestMove);
             prevBestScore = bestScore;
             //std::cout << "Total low misses: " << aspMissesL << std::endl;
             //std::cout << "Total high misses: " << aspMissesH << std::endl;
@@ -765,7 +764,7 @@ void Anduril::go(libchess::Position board) {
             end = std::chrono::steady_clock::now();
             timeElapsed = end - startTime;
 
-            std::vector<libchess::Move> PV = getPV(board, rDepth, prevBestMove);
+            std::vector<libchess::Move> PV = getPV(board, rDepth, bestMove);
             std::string pv = "";
             for (auto m: PV) {
                 pv += " " + m.to_str();
@@ -887,7 +886,7 @@ void Anduril::go(libchess::Position board) {
         }
 
         // tell the GUI what move we want to make
-        std::cout << "bestmove " << prevBestMove.to_str() << std::endl;
+        std::cout << "bestmove " << bestMove.to_str() << std::endl;
     }
 
     //std::cout << board.fen() << std::endl;
