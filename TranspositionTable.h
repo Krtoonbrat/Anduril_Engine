@@ -17,7 +17,7 @@ struct Cluster {
 // this was the stockfish way to find the index for a cluster.  If it works for them, it works for me
 // this function returns the high 64 bits of a 128 bit product of two values we pass in.
 inline uint64_t mul_hi64(uint64_t a, uint64_t b) {
-#if defined(__GNUC__) && defined(IS_64BIT)
+#if defined(__GNUC__)
     __extension__ typedef unsigned __int128 uint128;
     return ((uint128)a * (uint128)b) >> 64;
 #else
