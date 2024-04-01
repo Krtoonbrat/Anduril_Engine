@@ -211,7 +211,6 @@ namespace UCI {
         char *ptr = NULL;
 
         // set thread count
-        // this is probably risky cuz a thread could be executing on an object we are deleting, YOLO
         if ((ptr = strstr(line, "Threads"))) {
             gondor.numThreads = atoi(ptr + 13);
             gondor.set(board, gondor.numThreads);
