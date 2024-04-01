@@ -1,12 +1,10 @@
 #ifndef LIBCHESS_POSITION_H
 #define LIBCHESS_POSITION_H
 
-#include <cctype>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <tuple>
-#include <vector>
 
 #include "Bitboard.h"
 #include "CastlingRights.h"
