@@ -58,7 +58,7 @@ public:
 
     size_t sizeMB = 0;
 
-    uint8_t generation8;
+    uint8_t generation8 = 0;
 
 private:
     Cluster *tPtr = nullptr;
