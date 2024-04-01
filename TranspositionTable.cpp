@@ -116,5 +116,5 @@ int TranspositionTable::hashFull() {
             count += tPtr[i].entry[j].nodeDepth && (tPtr[i].entry[j].nodeTypeGenBound & GEN_MASK) == generation8;
         }
     }
-    return count / 2;
+    return count / 3;
 }
