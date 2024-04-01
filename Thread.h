@@ -45,7 +45,7 @@ public:
     Thread* mainThread() const { return threads.front(); }
 
     std::atomic_bool stop;
-    int numThreads;
+    int numThreads = 1;
 
     // iterator functions
     auto cbegin() const { return threads.cbegin(); }
