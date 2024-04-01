@@ -29,8 +29,6 @@ libchess::Bitboard libchess::lookups::rook_table[0x19000] = {Bitboard()};
 libchess::Bitboard libchess::lookups::bishop_table[0x1480] = {Bitboard()};
 std::array<std::array<uint8_t, 64>, 64> libchess::lookups::squareDistance;
 
-int threads;
-
 int main(int argc, char* argv[]) {
     libchess::lookups::SQUARES = libchess::lookups::init::squares();
 
@@ -59,7 +57,6 @@ int main(int argc, char* argv[]) {
 
     initReductions(UCI::nem, UCI::neb);
 
-    threads = 1;
     table.resize(256);
 
     // for profiling
