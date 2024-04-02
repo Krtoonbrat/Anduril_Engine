@@ -118,7 +118,11 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     uint64_t hash = board.hash();
     SimpleNode *eNode = evalTable[hash];
     if (eNode->key == hash) {
-        return eNode->score;
+        // still need to do final adjustments after we grab the score
+        int score = eNode->score;
+        score = score * (100 - board.halfmoves()) / 100;
+        score = std::clamp(score, -31507, 31507);
+        return score;
     }
 
     // extra bitboard variable that is needed for various calculations
@@ -305,6 +309,12 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     // save information to the node
     eNode->key = hash;
     eNode->score = finalScore;
+
+    // idea from stockfish: damp down score when shuffling
+    finalScore = finalScore * (100 - board.halfmoves()) / 100;
+
+    // clamp score to values below checkmate
+    finalScore = std::clamp(finalScore, -31507, 31507);
 
     return finalScore;
 }
