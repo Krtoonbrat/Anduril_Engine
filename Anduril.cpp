@@ -1081,59 +1081,6 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
     return PV;
 }
 
-// gets the attacks by a team of a certain piece
-template<Anduril::PieceType pt, bool white>
-libchess::Bitboard Anduril::attackByPiece(libchess::Position &board) {
-    constexpr libchess::Color c = white ? libchess::constants::WHITE : libchess::constants::BLACK;
-    libchess::Bitboard attacks;
-    libchess::Bitboard pieces;
-    libchess::PieceType type = libchess::constants::PAWN;
-
-    // grab the correct bitboard
-    if constexpr (pt == PAWN) {
-        pieces = board.piece_type_bb(type, c);
-    }
-    else if constexpr (pt == KNIGHT) {
-        type = libchess::constants::KNIGHT;
-        pieces = board.piece_type_bb(type, c);
-    }
-    else if constexpr (pt == BISHOP) {
-        type = libchess::constants::BISHOP;
-        pieces = board.piece_type_bb(type, c);
-    }
-    else if constexpr (pt == ROOK) {
-        type = libchess::constants::ROOK;
-        pieces = board.piece_type_bb(type, c);
-    }
-    else if constexpr (pt == QUEEN) {
-        type = libchess::constants::QUEEN;
-        pieces = board.piece_type_bb(type, c);
-    }
-    else if constexpr (pt == KING) {
-        type = libchess::constants::KING;
-        pieces = board.piece_type_bb(type, c);
-    }
-
-    // loop through the pieces
-    // special case for pawns because it uses a different function
-    if constexpr (pt == PAWN) {
-        while (pieces) {
-            libchess::Square square = pieces.forward_bitscan();
-            attacks |= libchess::lookups::pawn_attacks(square, c);
-            pieces.forward_popbit();
-        }
-    }
-    else {
-        while (pieces) {
-            libchess::Square square = pieces.forward_bitscan();
-            attacks |= libchess::lookups::non_pawn_piece_type_attacks(type, square, board.occupancy_bb());
-            pieces.forward_popbit();
-        }
-    }
-
-    return attacks;
-}
-
 uint64_t Anduril::getMovesExplored() {
     uint64_t total = 0;
     for (auto &t : gondor) {

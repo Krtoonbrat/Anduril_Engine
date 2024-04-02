@@ -68,10 +68,6 @@ public:
     // finds and returns the principal variation
     std::vector<libchess::Move> getPV(libchess::Position &board, int depth, libchess::Move bestMove);
 
-    // gets the attacks by a team of a certain piece
-    template<PieceType pt, bool white>
-    static libchess::Bitboard attackByPiece(libchess::Position &board);
-
     // reset the move and counter move tables
     inline void resetHistories() {
         for (int i = 0; i < 64; i++) {
