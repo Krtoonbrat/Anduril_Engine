@@ -704,7 +704,7 @@ void Anduril::go(libchess::Position board) {
         completedDepth = sDepth;
 
         // set the aspiration window
-        if (rDepth >= 5) {
+        if (rDepth >= 8) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
