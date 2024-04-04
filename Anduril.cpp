@@ -351,8 +351,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     libchess::Move excludedMove = board.getExcluded();
 
     // reset killers for next ply
-    killers[ply - rootPly + 1][0] = libchess::Move(0);
-    killers[ply - rootPly + 1][1] = libchess::Move(0);
+    killers[ply - rootPly + 2][0] = libchess::Move(0);
+    killers[ply - rootPly + 2][1] = libchess::Move(0);
 
     // amount of quiet moves we searched and what moves they were
     int quietCount = 0;
