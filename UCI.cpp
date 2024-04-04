@@ -513,7 +513,7 @@ namespace UCI {
         if (time != -1) {
             gondor.mainThread()->engine->limits.timeSet = true;
             time /= mtg;
-            time -= 50;
+            time -= 50 * (moveTime == -1);
             std::chrono::milliseconds searchTime(time + increment);
             gondor.mainThread()->engine->stopTime = std::chrono::steady_clock::now();
             gondor.mainThread()->engine->stopTime += searchTime;
