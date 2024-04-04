@@ -34,7 +34,7 @@ if (DEFINED MAKE_PROFILE)
 endif()
 
 # add pext if defined
-if (DEFINED USE_PEXT)
+if (USE_PEXT)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mbmi2 -DUSE_PEXT")
 endif()
 
