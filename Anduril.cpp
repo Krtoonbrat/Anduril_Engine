@@ -136,34 +136,30 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
 		return nScore;
 	}
 
-    int standPat = -32001;
     // we can't stand pat if we are in check
     if (!check) {
         // stand pat score to see if we can exit early
         if (board.found()) {
-            if (node->nodeEval != -32001) {
-                bestScore = standPat = node->nodeEval;
-            }
-            else {
-                bestScore = standPat = evaluateBoard(board);
+            if ((bestScore = board.staticEval() = node->nodeEval) == -32001) {
+                bestScore = board.staticEval() = evaluateBoard(board);
             }
 
             // previously saved transposition score can be used as a better position evaluation
             if (nScore != -32001
-                && (nType & (nScore > standPat ? 2 : 1))) {
+                && (nType & (nScore > bestScore ? 2 : 1))) {
                 bestScore = nScore;
             }
         }
         else {
-            bestScore = standPat = board.prevMoveType(ply) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - 1);
+            bestScore = board.staticEval() = board.prevMoveType(ply) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - 1);
         }
 
         // adjust alpha and beta based on the stand pat
         if (bestScore >= beta) {
 			if (!board.found()) {
-                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, standPat);
+                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, board.staticEval());
 			}
-            return standPat;
+            return bestScore;
         }
         if (PvNode && bestScore > alpha) {
             alpha = bestScore;
@@ -295,7 +291,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 1, tDepth, bestMove.to_table(), standPat);
+    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 1, tDepth, bestMove.to_table(), board.staticEval());
     return bestScore;
 
 }
