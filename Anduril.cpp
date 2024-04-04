@@ -998,7 +998,7 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
 
     // extra penalty for early move that was not a transposition or main killer in previous ply
     if (board.previous_move() && ((board.moveCount(ply - 1) == 1 + board.found(ply - 1) || *board.previous_move() == killers[ply - rootPly - 1][0])) && !board.previously_captured_piece()) {
-        updateContinuationHistory(board, movedPiece, bestMove.to_square(), -largerBonus, -1);
+        updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), -largerBonus, 1);
     }
 }
 
