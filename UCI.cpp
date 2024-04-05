@@ -10,6 +10,7 @@
 #include <thread>
 
 #include "Anduril.h"
+#include "misc.h"
 #include "libchess/Position.h"
 #include "Thread.h"
 #include "UCI.h"
@@ -60,6 +61,9 @@ namespace UCI {
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = openingBook.getBookOpen();
         gondor.set(board, 1);
+
+        // load the nnue file
+        LoadNNUE();
 
         // initialize the oversize state array
         for (int i = -7; i < 0; i++) {

@@ -40,6 +40,33 @@ using fun8_t = bool (*)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGE
     #include <stdlib.h>
 #endif
 
+// nnue stuff.  From scorpio
+typedef void (CDECL *PNNUE_INIT) (
+        const char * evalFile);
+typedef int (CDECL *PNNUE_EVALUATE) (
+        int player, int* pieces, int* squares);
+
+static PNNUE_INIT nnue_init;
+static PNNUE_EVALUATE nnue_evaluate;
+
+char nnue_path[256] = "../egbdll/nets/nn-62ef826d1a6d.nnue";
+
+void LoadNNUE() {
+    static HMODULE hmod = 0;
+    if ((hmod = LoadLibraryA("../egbdll/nnueprobe.dll")) != nullptr) {
+        nnue_init = (PNNUE_INIT) GetProcAddress(hmod, "nnue_init");
+        nnue_evaluate = (PNNUE_EVALUATE) GetProcAddress(hmod, "nnue_evaluate");
+    }
+
+    if (nnue_init) {
+        nnue_init(nnue_path);
+    }
+}
+
+int NNUE_evaluate(int player, int* pieces, int* squares) {
+    return nnue_evaluate(player, pieces, squares);
+}
+
 // mostly all based on stockfish for the memory allocation stuff
 void* std_aligned_alloc(size_t alignment, size_t size) {
 #if defined(POSIXALIGNEDALLOC)

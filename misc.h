@@ -8,6 +8,10 @@
 #include <cstddef>
 #include <cstdint>
 
+// nnue stuff.  From scorpio
+void LoadNNUE();
+int NNUE_evaluate(int player, int* pieces, int* squares);
+
 // memory allocation stuff
 // large page allocation based on stockfish 16
 void* std_aligned_alloc(size_t alignment, size_t size);

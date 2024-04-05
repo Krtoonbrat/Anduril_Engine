@@ -5,6 +5,7 @@
 #include <iostream> // we need this for debugging if we print the board
 
 #include "Anduril.h"
+#include "misc.h"
 
 // table holding the values for king tropism
 constexpr int SafetyTable[100] = {
@@ -112,6 +113,69 @@ int rookPawnBonus[9] = { 15,  12,  9,  6,  3,  0, -3, -6, -9 };
 int passedBonusMG[7] = {0, 1, 4, 6, 18, 46, 78};
 int passedBonusEG[7] = {0, 10, 10, 14, 22, 51, 74};
 
+constexpr bool use_nnue = true;
+
+int nnue(libchess::Position &board) {
+    int piece[33], square[33], index = 0;
+
+    // white king is first, then black king
+    piece[index] = 1;
+    square[index] = board.king_square(libchess::constants::WHITE).value();
+    index++;
+
+    piece[index] = 1;
+    square[index] = board.king_square(libchess::constants::BLACK).value();
+    index++;
+
+    // add the rest of the pieces
+    libchess::Bitboard pieces = board.occupancy_bb() ^ board.piece_type_bb(libchess::constants::KING);
+    while (pieces) {
+        libchess::Square sq = pieces.forward_bitscan();
+        libchess::Piece p = *board.piece_on(sq);
+        if (p == libchess::constants::WHITE_PAWN) {
+            piece[index] = 6;
+        }
+        else if (p == libchess::constants::BLACK_PAWN) {
+            piece[index] = 12;
+        }
+        else if (p == libchess::constants::WHITE_KNIGHT) {
+            piece[index] = 5;
+        }
+        else if (p == libchess::constants::BLACK_KNIGHT) {
+            piece[index] = 11;
+        }
+        else if (p == libchess::constants::WHITE_BISHOP) {
+            piece[index] = 4;
+        }
+        else if (p == libchess::constants::BLACK_BISHOP) {
+            piece[index] = 10;
+        }
+        else if (p == libchess::constants::WHITE_ROOK) {
+            piece[index] = 3;
+        }
+        else if (p == libchess::constants::BLACK_ROOK) {
+            piece[index] = 9;
+        }
+        else if (p == libchess::constants::WHITE_QUEEN) {
+            piece[index] = 2;
+        }
+        else if (p == libchess::constants::BLACK_QUEEN) {
+            piece[index] = 8;
+        }
+        square[index] = sq.value();
+        index++;
+
+        pieces.forward_popbit();
+    }
+
+    // last slot gets 0s to show we are done
+    piece[index] = 0;
+    square[index] = 0;
+
+    // call the nnue function
+    return NNUE_evaluate(board.side_to_move().value(), piece, square);
+}
+
 // generates a static evaluation of the board
 int Anduril::evaluateBoard(libchess::Position &board) {
     // first check for transpositions
@@ -123,6 +187,13 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         score = score * (100 - board.halfmoves()) / 100;
         score = std::clamp(score, -31507, 31507);
         return score;
+    }
+
+    if constexpr (use_nnue) {
+        int finalScore = nnue(board);
+        eNode->key = hash;
+        eNode->score = finalScore;
+        return finalScore;
     }
 
     // extra bitboard variable that is needed for various calculations
