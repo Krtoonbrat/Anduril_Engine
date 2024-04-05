@@ -40,31 +40,37 @@ using fun8_t = bool (*)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGE
     #include <stdlib.h>
 #endif
 
+namespace NNUE {
+
 // nnue stuff.  From scorpio
-typedef void (CDECL *PNNUE_INIT) (
-        const char * evalFile);
-typedef int (CDECL *PNNUE_EVALUATE) (
-        int player, int* pieces, int* squares);
+    typedef void (CDECL *PNNUE_INIT)(
+            const char *evalFile);
 
-static PNNUE_INIT nnue_init;
-static PNNUE_EVALUATE nnue_evaluate;
+    typedef int (CDECL *PNNUE_EVALUATE)(
+            int player, int *pieces, int *squares);
 
-char nnue_path[256] = "../egbdll/nets/nn-62ef826d1a6d.nnue";
+    static PNNUE_INIT nnue_init;
+    static PNNUE_EVALUATE nnue_evaluate;
 
-void LoadNNUE() {
-    static HMODULE hmod = 0;
-    if ((hmod = LoadLibraryA("../egbdll/nnueprobe.dll")) != nullptr) {
-        nnue_init = (PNNUE_INIT) GetProcAddress(hmod, "nnue_init");
-        nnue_evaluate = (PNNUE_EVALUATE) GetProcAddress(hmod, "nnue_evaluate");
+    char nnue_path[256] = "../egbdll/nets/nn-62ef826d1a6d.nnue";
+    char nnue_library_path[256] = "../egbdll/nnueprobe.dll";
+
+    void LoadNNUE() {
+        static HMODULE hmod = nullptr;
+        if ((hmod = LoadLibraryA(nnue_library_path)) != nullptr) {
+            nnue_init = (PNNUE_INIT) GetProcAddress(hmod, "nnue_init");
+            nnue_evaluate = (PNNUE_EVALUATE) GetProcAddress(hmod, "nnue_evaluate");
+        }
+
+        if (nnue_init) {
+            nnue_init(nnue_path);
+        }
     }
 
-    if (nnue_init) {
-        nnue_init(nnue_path);
+    int NNUE_evaluate(int player, int *pieces, int *squares) {
+        return nnue_evaluate(player, pieces, squares);
     }
-}
 
-int NNUE_evaluate(int player, int* pieces, int* squares) {
-    return nnue_evaluate(player, pieces, squares);
 }
 
 // mostly all based on stockfish for the memory allocation stuff

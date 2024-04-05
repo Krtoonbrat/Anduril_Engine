@@ -36,7 +36,10 @@ extern int msb;
 extern int rvc;
 extern int rvs;
 
-extern char nnue_path[256];
+namespace NNUE {
+    extern char nnue_path[256];
+    extern char nnue_library_path[256];
+}
 
 ThreadPool gondor;
 
@@ -65,7 +68,7 @@ namespace UCI {
         gondor.set(board, 1);
 
         // load the nnue file
-        LoadNNUE();
+        NNUE::LoadNNUE();
 
         // initialize the oversize state array
         for (int i = -7; i < 0; i++) {
@@ -138,6 +141,7 @@ namespace UCI {
                 std::cout << "option name OwnBook type check default true" << std::endl;
 
                 std::cout << "option name nnue_path type string default ../egbdll/nets/nn-62ef826d1a6d.nnue" << std::endl;
+                std::cout << "option name nnue_library_path type string default ../egbdll/nnueprobe.dll" << std::endl;
                 /*
                 std::cout << "option name kMG type spin default 446 min -40000 max 40000" << std::endl;
                 std::cout << "option name kEG type spin default 490 min -40000 max 40000" << std::endl;
@@ -250,12 +254,20 @@ namespace UCI {
 
         // set nnue path
         if ((ptr = strstr(line, "nnue_path"))) {
-            strcpy(nnue_path, ptr + 16);
-            char *end = strchr(nnue_path, '\n');
+            strcpy(NNUE::nnue_path, ptr + 16);
+            char *end = strchr(NNUE::nnue_path, '\n');
             if (end) {
                 *end = '\0';
             }
-            LoadNNUE();
+            NNUE::LoadNNUE();
+        }
+        if ((ptr = strstr(line, "nnue_library_path"))) {
+            strcpy(NNUE::nnue_library_path, ptr + 24);
+            char *end = strchr(NNUE::nnue_library_path, '\n');
+            if (end) {
+                *end = '\0';
+            }
+            NNUE::LoadNNUE();
         }
 
         // setoption name pMG value 100

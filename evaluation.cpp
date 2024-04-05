@@ -173,7 +173,7 @@ int nnue(libchess::Position &board) {
     square[index] = 0;
 
     // call the nnue function
-    return NNUE_evaluate(board.side_to_move().value(), piece, square);
+    return NNUE::NNUE_evaluate(board.side_to_move().value(), piece, square);
 }
 
 // generates a static evaluation of the board

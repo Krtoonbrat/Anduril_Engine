@@ -8,9 +8,13 @@
 #include <cstddef>
 #include <cstdint>
 
-// nnue stuff.  From scorpio
-void LoadNNUE();
-int NNUE_evaluate(int player, int* pieces, int* squares);
+namespace NNUE {
+
+    // nnue stuff.  From scorpio
+    void LoadNNUE();
+    int NNUE_evaluate(int player, int *pieces, int *squares);
+
+}
 
 // memory allocation stuff
 // large page allocation based on stockfish 16
