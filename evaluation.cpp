@@ -193,6 +193,13 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         int finalScore = nnue(board);
         eNode->key = hash;
         eNode->score = finalScore;
+
+        // idea from stockfish: damp down score when shuffling
+        finalScore = finalScore * (100 - board.halfmoves()) / 100;
+
+        // clamp score to values below checkmate
+        finalScore = std::clamp(finalScore, -31507, 31507);
+
         return finalScore;
     }
 
