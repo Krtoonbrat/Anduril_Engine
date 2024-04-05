@@ -284,8 +284,6 @@ class Position {
     // added by Krtoonbrat, based on the Stockfish implementation
     bool see_ge(Move move, int threshold);
 
-    int getPSQTMG() { return state().scoreMG; }
-    int getPSQTEG() { return state().scoreEG; }
     Move getExcluded() { return state().excludedMove; }
     void setExcluded(Move move) { state_mut_ref().excludedMove = move; }
     int& staticEval() { return state_mut_ref().staticEval; }
@@ -331,8 +329,6 @@ protected:
         hash_type hash_ = 0;
         hash_type pawn_hash_ = 0;
         int halfmoves_ = 0;
-        int scoreMG = 0;
-        int scoreEG = 0;
         int moveCount = 0;
         bool found = false;
         Move excludedMove = Move(0);

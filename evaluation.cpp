@@ -263,8 +263,8 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     int scoreEG = 0;
 
     // get the material score for the board
-    scoreMG += board.getPSQTMG();
-    scoreEG += board.getPSQTEG();
+    //scoreMG += board.getPSQTMG();
+    //scoreEG += board.getPSQTEG();
 
     // first check for a transposition
     uint64_t phash = board.pawn_hash();

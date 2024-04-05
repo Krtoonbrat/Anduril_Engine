@@ -374,8 +374,6 @@ inline void Position::make_move(Move move) {
         next_state.halfmoves_ = 0;
     }
 
-    int scoreMG = prev_state.scoreMG;
-    int scoreEG = prev_state.scoreEG;
     Square epCapSquare = stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8);
     int tableCoordsFrom;
     int tableCoordsTo;
@@ -384,20 +382,6 @@ inline void Position::make_move(Move move) {
         case Move::Type::NORMAL:
             move_piece(from_square, to_square, *moving_pt, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][tableCoordsFrom];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][tableCoordsFrom];
-                scoreMG += pieceSquareTableMG[moving_pt->value()][tableCoordsTo];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][tableCoordsTo];
-            }
-            else {
-                scoreMG += pieceSquareTableMG[moving_pt->value()][from_square];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][from_square];
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][to_square];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][to_square];
-            }
             if (*moving_pt == constants::PAWN) {
                 phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             }
@@ -405,34 +389,12 @@ inline void Position::make_move(Move move) {
         case Move::Type::CAPTURE:
             remove_piece(to_square, *captured_pt, !stm);
             hash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
-            if (stm == constants::WHITE) {
-                scoreMG += pieceValuesMG[captured_pt->value()] + pieceSquareTableMG[captured_pt->value()][to_square];
-                scoreEG += pieceValuesEG[captured_pt->value()] + pieceSquareTableEG[captured_pt->value()][to_square];
-            }
-            else {
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceValuesMG[captured_pt->value()] + pieceSquareTableMG[captured_pt->value()][tableCoordsTo];
-                scoreEG -= pieceValuesEG[captured_pt->value()] + pieceSquareTableEG[captured_pt->value()][tableCoordsTo];
-            }
             if (*captured_pt == constants::PAWN) {
                 phash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
             }
+
             move_piece(from_square, to_square, *moving_pt, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][tableCoordsFrom];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][tableCoordsFrom];
-                scoreMG += pieceSquareTableMG[moving_pt->value()][tableCoordsTo];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][tableCoordsTo];
-            }
-            else {
-                scoreMG += pieceSquareTableMG[moving_pt->value()][from_square];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][from_square];
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][to_square];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][to_square];
-            }
             if (*moving_pt == constants::PAWN) {
                 phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             }
@@ -441,20 +403,7 @@ inline void Position::make_move(Move move) {
             move_piece(from_square, to_square, constants::PAWN, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][tableCoordsFrom];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][tableCoordsFrom];
-                scoreMG += pieceSquareTableMG[moving_pt->value()][tableCoordsTo];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][tableCoordsTo];
-            }
-            else {
-                scoreMG += pieceSquareTableMG[moving_pt->value()][from_square];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][from_square];
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][to_square];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][to_square];
-            }
+
             // is enpassant even possible on the next turn?
             possiblePassant = stm == constants::WHITE ? Square(from_square + 8) : Square(from_square - 8);
             enpassant = piece_type_bb(constants::PAWN, !stm) & lookups::pawn_attacks(possiblePassant, stm);
@@ -467,85 +416,33 @@ inline void Position::make_move(Move move) {
             move_piece(from_square, to_square, constants::PAWN, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceSquareTableMG[constants::PAWN.value()][tableCoordsFrom];
-                scoreEG -= pieceSquareTableEG[constants::PAWN.value()][tableCoordsFrom];
-                scoreMG += pieceSquareTableMG[constants::PAWN.value()][tableCoordsTo];
-                scoreEG += pieceSquareTableEG[constants::PAWN.value()][tableCoordsTo];
-            }
-            else {
-                scoreMG += pieceSquareTableMG[constants::PAWN.value()][from_square];
-                scoreEG += pieceSquareTableEG[constants::PAWN.value()][from_square];
-                scoreMG -= pieceSquareTableMG[constants::PAWN.value()][to_square];
-                scoreEG -= pieceSquareTableEG[constants::PAWN.value()][to_square];
-            }
+
             remove_piece(epCapSquare,constants::PAWN,!stm);
             hash ^= zobrist::piece_square_key(epCapSquare, constants::PAWN, !stm);
             phash ^= zobrist::piece_square_key(epCapSquare, constants::PAWN, !stm);
-            if (stm == constants::WHITE) {
-                scoreMG += pieceValuesMG[constants::PAWN.value()] + pieceSquareTableMG[constants::PAWN.value()][epCapSquare];
-                scoreEG += pieceValuesEG[constants::PAWN.value()] + pieceSquareTableEG[constants::PAWN.value()][epCapSquare];
-            }
-            else {
-                tableCoordsTo = ((7 - (epCapSquare / 8)) * 8) + epCapSquare % 8;
-                scoreMG -= pieceValuesMG[constants::PAWN.value()] + pieceSquareTableMG[constants::PAWN.value()][tableCoordsTo];
-                scoreEG -= pieceValuesEG[constants::PAWN.value()] + pieceSquareTableEG[constants::PAWN.value()][tableCoordsTo];
-            }
             break;
         case Move::Type::CASTLING:
             move_piece(from_square, to_square, constants::KING, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][tableCoordsFrom];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][tableCoordsFrom];
-                scoreMG += pieceSquareTableMG[moving_pt->value()][tableCoordsTo];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][tableCoordsTo];
-            }
-            else {
-                scoreMG += pieceSquareTableMG[moving_pt->value()][from_square];
-                scoreEG += pieceSquareTableEG[moving_pt->value()][from_square];
-                scoreMG -= pieceSquareTableMG[moving_pt->value()][to_square];
-                scoreEG -= pieceSquareTableEG[moving_pt->value()][to_square];
-            }
             switch (to_square) {
                 case constants::C1:
                     move_piece(constants::A1, constants::D1, constants::ROOK, stm);
                     tableCoordsFrom = ((7 - (constants::A1 / 8)) * 8) + constants::A1 % 8;
                     tableCoordsTo = ((7 - (constants::D1 / 8)) * 8) + constants::D1 % 8;
-                    scoreMG -= pieceSquareTableMG[constants::ROOK.value()][tableCoordsFrom];
-                    scoreEG -= pieceSquareTableEG[constants::ROOK.value()][tableCoordsFrom];
-                    scoreMG += pieceSquareTableMG[constants::ROOK.value()][tableCoordsTo];
-                    scoreEG += pieceSquareTableEG[constants::ROOK.value()][tableCoordsTo];
                     hash ^= zobrist::piece_square_key(constants::A1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D1, constants::ROOK, stm);
                     break;
                 case constants::G1:
                     move_piece(constants::H1, constants::F1, constants::ROOK, stm);
                     tableCoordsFrom = ((7 - (constants::H1 / 8)) * 8) + constants::H1 % 8;
                     tableCoordsTo = ((7 - (constants::F1 / 8)) * 8) + constants::F1 % 8;
-                    scoreMG -= pieceSquareTableMG[constants::ROOK.value()][tableCoordsFrom];
-                    scoreEG -= pieceSquareTableEG[constants::ROOK.value()][tableCoordsFrom];
-                    scoreMG += pieceSquareTableMG[constants::ROOK.value()][tableCoordsTo];
-                    scoreEG += pieceSquareTableEG[constants::ROOK.value()][tableCoordsTo];
                     hash ^= zobrist::piece_square_key(constants::H1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F1, constants::ROOK, stm);
                     break;
                 case constants::C8:
                     move_piece(constants::A8, constants::D8, constants::ROOK, stm);
-                    scoreMG += pieceSquareTableMG[constants::ROOK.value()][constants::A8.value()];
-                    scoreEG += pieceSquareTableEG[constants::ROOK.value()][constants::A8.value()];
-                    scoreMG -= pieceSquareTableMG[constants::ROOK.value()][constants::D8.value()];
-                    scoreEG -= pieceSquareTableEG[constants::ROOK.value()][constants::D8.value()];
                     hash ^= zobrist::piece_square_key(constants::A8, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D8, constants::ROOK, stm);
                     break;
                 case constants::G8:
                     move_piece(constants::H8, constants::F8, constants::ROOK, stm);
-                    scoreMG += pieceSquareTableMG[constants::ROOK.value()][constants::H8.value()];
-                    scoreEG += pieceSquareTableEG[constants::ROOK.value()][constants::H8.value()];
-                    scoreMG -= pieceSquareTableMG[constants::ROOK.value()][constants::F8.value()];
-                    scoreEG -= pieceSquareTableEG[constants::ROOK.value()][constants::F8.value()];
                     hash ^= zobrist::piece_square_key(constants::H8, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F8, constants::ROOK, stm);
                     break;
                 default:
@@ -554,66 +451,24 @@ inline void Position::make_move(Move move) {
             break;
         case Move::Type::PROMOTION:
             remove_piece(from_square, constants::PAWN, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                scoreMG -= pieceValuesMG[constants::PAWN.value()] + pieceSquareTableMG[constants::PAWN.value()][tableCoordsFrom];
-                scoreEG -= pieceValuesEG[constants::PAWN.value()] + pieceSquareTableEG[constants::PAWN.value()][tableCoordsFrom];
-            }
-            else {
-                scoreMG += pieceValuesMG[constants::PAWN.value()] + pieceSquareTableMG[constants::PAWN.value()][from_square];
-                scoreEG += pieceValuesEG[constants::PAWN.value()] + pieceSquareTableEG[constants::PAWN.value()][from_square];
-            }
             hash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
             phash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
+
             put_piece(to_square, *promotion_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG += pieceValuesMG[promotion_pt->value()] + pieceSquareTableMG[promotion_pt->value()][tableCoordsTo];
-                scoreEG += pieceValuesEG[promotion_pt->value()] + pieceSquareTableEG[promotion_pt->value()][tableCoordsTo];
-            }
-            else {
-                scoreMG -= pieceValuesMG[promotion_pt->value()] + pieceSquareTableMG[promotion_pt->value()][to_square];
-                scoreEG -= pieceValuesEG[promotion_pt->value()] + pieceSquareTableEG[promotion_pt->value()][to_square];
-            }
             hash ^= zobrist::piece_square_key(to_square, *promotion_pt, stm);
             break;
         case Move::Type::CAPTURE_PROMOTION:
             remove_piece(to_square, *captured_pt, !stm);
-            if (stm == constants::WHITE) {
-                scoreMG += pieceValuesMG[captured_pt->value()] + pieceSquareTableMG[captured_pt->value()][to_square];
-                scoreEG += pieceValuesEG[captured_pt->value()] + pieceSquareTableEG[captured_pt->value()][to_square];
-            }
-            else {
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG -= pieceValuesMG[captured_pt->value()] + pieceSquareTableMG[captured_pt->value()][tableCoordsTo];
-                scoreEG -= pieceValuesEG[captured_pt->value()] + pieceSquareTableEG[captured_pt->value()][tableCoordsTo];
-            }
             hash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
             if (*captured_pt == constants::PAWN) {
                 phash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
             }
+
             remove_piece(from_square, constants::PAWN, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsFrom = ((7 - (from_square / 8)) * 8) + from_square % 8;
-                scoreMG -= pieceValuesMG[constants::PAWN.value()] + pieceSquareTableMG[constants::PAWN.value()][tableCoordsFrom];
-                scoreEG -= pieceValuesEG[constants::PAWN.value()] + pieceSquareTableEG[constants::PAWN.value()][tableCoordsFrom];
-            }
-            else {
-                scoreMG += pieceValuesMG[constants::PAWN.value()] + pieceSquareTableMG[constants::PAWN.value()][from_square];
-                scoreEG += pieceValuesEG[constants::PAWN.value()] + pieceSquareTableEG[constants::PAWN.value()][from_square];
-            }
             hash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
             phash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
+
             put_piece(to_square, *promotion_pt, stm);
-            if (stm == constants::WHITE) {
-                tableCoordsTo = ((7 - (to_square / 8)) * 8) + to_square % 8;
-                scoreMG += pieceValuesMG[promotion_pt->value()] + pieceSquareTableMG[promotion_pt->value()][tableCoordsTo];
-                scoreEG += pieceValuesEG[promotion_pt->value()] + pieceSquareTableEG[promotion_pt->value()][tableCoordsTo];
-            }
-            else {
-                scoreMG -= pieceValuesMG[promotion_pt->value()] + pieceSquareTableMG[promotion_pt->value()][to_square];
-                scoreEG -= pieceValuesEG[promotion_pt->value()] + pieceSquareTableEG[promotion_pt->value()][to_square];
-            }
             hash ^= zobrist::piece_square_key(to_square, *promotion_pt, stm);
             break;
         case Move::Type::NONE:
@@ -640,8 +495,6 @@ inline void Position::make_move(Move move) {
     reverse_side_to_move();
     next_state.hash_ = hash;
     next_state.pawn_hash_ = phash;
-    next_state.scoreMG = scoreMG;
-    next_state.scoreEG = scoreEG;
 }
 
 inline void Position::make_null_move() {
@@ -669,8 +522,6 @@ inline void Position::make_null_move() {
     }
     // the pawn hash shouldn't change at all
     next.pawn_hash_ = prev.pawn_hash_;
-    next.scoreMG = prev.scoreMG;
-    next.scoreEG = prev.scoreEG;
 }
 
 }  // namespace libchess

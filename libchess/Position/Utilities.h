@@ -352,15 +352,6 @@ inline std::optional<Position> Position::from_fen(const std::string& fen) {
             auto piece = Piece::from(c);
             if (piece) {
                 pos.put_piece(current_square, piece->type(), piece->color());
-                if (!piece->color()) {
-                    int tableCoords = ((7 - (current_square / 8)) * 8) + current_square % 8;
-                    curr_state.scoreMG += pieceValuesMG[piece->type().value()] + pieceSquareTableMG[piece->type().value()][tableCoords];
-                    curr_state.scoreEG += pieceValuesEG[piece->type().value()] + pieceSquareTableEG[piece->type().value()][tableCoords];
-                }
-                else {
-                    curr_state.scoreMG -= pieceValuesMG[piece->type().value()] + pieceSquareTableMG[piece->type().value()][current_square];
-                    curr_state.scoreEG -= pieceValuesEG[piece->type().value()] + pieceSquareTableEG[piece->type().value()][current_square];
-                }
             }
             ++current_square;
         }
