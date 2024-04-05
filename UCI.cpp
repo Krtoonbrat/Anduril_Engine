@@ -36,6 +36,8 @@ extern int msb;
 extern int rvc;
 extern int rvs;
 
+extern char nnue_path[256];
+
 ThreadPool gondor;
 
 // all the UCI protocol stuff is going to be implemented
@@ -135,6 +137,7 @@ namespace UCI {
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
 
+                std::cout << "option name nnue_path type string default ../egbdll/nets/nn-62ef826d1a6d.nnue" << std::endl;
                 /*
                 std::cout << "option name kMG type spin default 446 min -40000 max 40000" << std::endl;
                 std::cout << "option name kEG type spin default 490 min -40000 max 40000" << std::endl;
@@ -243,6 +246,16 @@ namespace UCI {
             else {
                 bookOpen = false;
             }
+        }
+
+        // set nnue path
+        if ((ptr = strstr(line, "nnue_path"))) {
+            strcpy(nnue_path, ptr + 16);
+            char *end = strchr(nnue_path, '\n');
+            if (end) {
+                *end = '\0';
+            }
+            LoadNNUE();
         }
 
         // setoption name pMG value 100
