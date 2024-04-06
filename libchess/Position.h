@@ -11,6 +11,7 @@
 #include "Color.h"
 #include "../History.h"
 #include "Lookups.h"
+#include "../misc.h"
 #include "Move.h"
 #include "Piece.h"
 #include "PieceType.h"
@@ -170,6 +171,24 @@ class Position {
     Position() : side_to_move_(constants::WHITE), ply_(0) {
     }
 
+    struct State {
+        CastlingRights castling_rights_;
+        std::optional<Square> enpassant_square_;
+        std::optional<Move> previous_move_;
+        std::optional<PieceType> captured_pt_;
+        Move::Type move_type_ = Move::Type::NONE;
+        std::uint64_t hash_ = 0;
+        std::uint64_t pawn_hash_ = 0;
+        int halfmoves_ = 0;
+        int moveCount = 0;
+        bool found = false;
+        Move excludedMove = Move(0);
+        int staticEval = 0;
+        PieceHistory *continuationHistory;
+        int pliesSinceNull = 0;
+        NNUE::NNUEdata nnue;
+    };
+
    public:
     explicit Position(const std::string& fen_str) : Position() {
         *this = *Position::from_fen(fen_str);
@@ -184,6 +203,49 @@ class Position {
         THREEFOLD_REPETITION,
         FIFTY_MOVES
     };
+
+    /*
+    Bitboard piece_type_bb_[6];
+    Bitboard color_bb_[2];
+    Color side_to_move_;
+    int fullmoves_;
+    int ply_;
+    std::unique_ptr<State[]> history_;
+
+    std::string start_fen_;
+     */
+
+    Position(const Position& cpy) : Position() {
+        for (int i = 0; i < 6; i++) {
+            piece_type_bb_[i] = cpy.piece_type_bb_[i];
+        }
+        for (int i = 0; i < 2; i++) {
+            color_bb_[i] = cpy.color_bb_[i];
+        }
+        side_to_move_ = cpy.side_to_move_;
+        fullmoves_ = cpy.fullmoves_;
+        ply_ = cpy.ply_;
+        createHistory();
+        std::memcpy(history_.get(), cpy.history_.get(), 1000 * sizeof(State));
+        start_fen_ = cpy.start_fen_;
+    }
+
+    Position& operator=(const Position& cpy) {
+        Position& p = *this;
+        for (int i = 0; i < 6; i++) {
+            p.piece_type_bb_[i] = cpy.piece_type_bb_[i];
+        }
+        for (int i = 0; i < 2; i++) {
+            p.color_bb_[i] = cpy.color_bb_[i];
+        }
+        p.side_to_move_ = cpy.side_to_move_;
+        p.fullmoves_ = cpy.fullmoves_;
+        p.ply_ = cpy.ply_;
+        p.createHistory();
+        std::memcpy(p.history_.get(), cpy.history_.get(), 1000 * sizeof(State));
+        p.start_fen_ = cpy.start_fen_;
+        return *this;
+    }
 
     // Getters
     [[nodiscard]] Bitboard piece_type_bb(PieceType piece_type) const;
@@ -296,6 +358,8 @@ class Position {
     bool& found() { return state_mut_ref().found; }
     bool found(int ply) { return state(ply).found; }
     std::optional<Move> previousMove(int ply) { return state(ply).previous_move_; }
+    NNUE::NNUEdata& nnue() { return state_mut_ref().nnue; }
+    NNUE::NNUEdata& nnue(int ply) { return state_mut_ref(ply).nnue; }
 
 
     [[nodiscard]] int ply() const {
@@ -319,34 +383,20 @@ protected:
         7,  15, 15, 15, 3,  15, 15, 11
     };
     // clang-format on
-
-    struct State {
-        CastlingRights castling_rights_;
-        std::optional<Square> enpassant_square_;
-        std::optional<Move> previous_move_;
-        std::optional<PieceType> captured_pt_;
-        Move::Type move_type_ = Move::Type::NONE;
-        hash_type hash_ = 0;
-        hash_type pawn_hash_ = 0;
-        int halfmoves_ = 0;
-        int moveCount = 0;
-        bool found = false;
-        Move excludedMove = Move(0);
-        int staticEval = 0;
-        PieceHistory *continuationHistory;
-        int pliesSinceNull = 0;
-    };
     State& state_mut_ref() {
-        return *(history_ + ply() + 7);
+        return history_[ply() + 7];
     }
     State& state_mut_ref(int ply) {
-        return *(history_ + ply + 7);
+        return history_[ply + 7];
     }
     [[nodiscard]] const State& state() const {
-        return *(history_ + ply() + 7);
+        return history_[ply() + 7];
     }
     [[nodiscard]] const State& state(int ply) const {
-        return *(history_ + ply + 7);
+        return history_[ply + 7];
+    }
+    void createHistory() {
+        history_ = std::make_unique<State[]>(1000);
     }
     [[nodiscard]] hash_type calculate_hash() const {
         hash_type hash_value = 0;
@@ -421,7 +471,7 @@ protected:
     Color side_to_move_;
     int fullmoves_;
     int ply_;
-    State history_[1000];
+    std::unique_ptr<State[]> history_;
 
     std::string start_fen_;
 };

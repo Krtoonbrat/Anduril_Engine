@@ -42,24 +42,34 @@ using fun8_t = bool (*)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGE
 
 namespace NNUE {
 
-// nnue stuff.  From scorpio
+    // nnue stuff.  From scorpio
     typedef void (CDECL *PNNUE_INIT)(
             const char *evalFile);
 
     typedef int (CDECL *PNNUE_EVALUATE)(
             int player, int *pieces, int *squares);
 
+    typedef int (CDECL *PNNUE_EVALUATE_INCREMENTAL) (
+            int player, int* pieces, int* squares, NNUEdata**);
+
     static PNNUE_INIT nnue_init;
     static PNNUE_EVALUATE nnue_evaluate;
+    static PNNUE_EVALUATE_INCREMENTAL nnue_evaluate_incremental;
 
     char nnue_path[256] = "../egbdll/nets/nn-62ef826d1a6d.nnue";
     char nnue_library_path[256] = "../egbdll/nnueprobe.dll";
 
     void LoadNNUE() {
         static HMODULE hmod = nullptr;
+
+        if (hmod) {
+            FreeLibrary(hmod);
+        }
+
         if ((hmod = LoadLibraryA(nnue_library_path)) != nullptr) {
             nnue_init = (PNNUE_INIT) GetProcAddress(hmod, "nnue_init");
             nnue_evaluate = (PNNUE_EVALUATE) GetProcAddress(hmod, "nnue_evaluate");
+            nnue_evaluate_incremental = (PNNUE_EVALUATE_INCREMENTAL) GetProcAddress(hmod, "nnue_evaluate_incremental");
         }
 
         if (nnue_init) {
@@ -71,7 +81,11 @@ namespace NNUE {
         return nnue_evaluate(player, pieces, squares);
     }
 
-}
+    int NNUE_incremental(int player, int *pieces, int *squares, NNUEdata** data) {
+        return nnue_evaluate_incremental(player, pieces, squares, data);
+    }
+
+} // namespace NNUE
 
 // mostly all based on stockfish for the memory allocation stuff
 void* std_aligned_alloc(size_t alignment, size_t size) {

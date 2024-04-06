@@ -132,36 +132,8 @@ int nnue(libchess::Position &board) {
     while (pieces) {
         libchess::Square sq = pieces.forward_bitscan();
         libchess::Piece p = *board.piece_on(sq);
-        if (p == libchess::constants::WHITE_PAWN) {
-            piece[index] = 6;
-        }
-        else if (p == libchess::constants::BLACK_PAWN) {
-            piece[index] = 12;
-        }
-        else if (p == libchess::constants::WHITE_KNIGHT) {
-            piece[index] = 5;
-        }
-        else if (p == libchess::constants::BLACK_KNIGHT) {
-            piece[index] = 11;
-        }
-        else if (p == libchess::constants::WHITE_BISHOP) {
-            piece[index] = 4;
-        }
-        else if (p == libchess::constants::BLACK_BISHOP) {
-            piece[index] = 10;
-        }
-        else if (p == libchess::constants::WHITE_ROOK) {
-            piece[index] = 3;
-        }
-        else if (p == libchess::constants::BLACK_ROOK) {
-            piece[index] = 9;
-        }
-        else if (p == libchess::constants::WHITE_QUEEN) {
-            piece[index] = 2;
-        }
-        else if (p == libchess::constants::BLACK_QUEEN) {
-            piece[index] = 8;
-        }
+
+        piece[index] = p.to_nnue();
         square[index] = sq.value();
         index++;
 
@@ -172,8 +144,17 @@ int nnue(libchess::Position &board) {
     piece[index] = 0;
     square[index] = 0;
 
+    // grab data for incremental refresh
+    NNUE::NNUEdata* data[3] = {nullptr, nullptr, nullptr};
+    data[0] = &board.nnue();
+    data[1] = &board.nnue(board.ply() - 1);
+    data[2] = &board.nnue(board.ply() - 2);
+
+    // call incremental nnue function
+    return NNUE::NNUE_incremental(board.side_to_move().value(), piece, square, &data[0]);
+
     // call the nnue function
-    return NNUE::NNUE_evaluate(board.side_to_move().value(), piece, square);
+    //return NNUE::NNUE_evaluate(board.side_to_move().value(), piece, square);
 }
 
 // generates a static evaluation of the board

@@ -375,8 +375,61 @@ inline void Position::make_move(Move move) {
     }
 
     Square epCapSquare = stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8);
-    int tableCoordsFrom;
-    int tableCoordsTo;
+
+    // update nnue data
+    NNUE::NNUEdata& nnue_next = next_state.nnue;
+    NNUE::DirtyPiece *dp = &(nnue_next.dirtyPiece);
+    nnue_next.accumulator.computedAccumulation = 0;
+    dp->dirtyNum = 0;
+
+    // move piece
+    dp->pc[0] = piece_on(from_square)->to_nnue();
+    dp->from[0] = from_square.value();
+    dp->to[0] = to_square.value();
+    dp->dirtyNum++;
+
+    // remove captured piece
+    if (captured_pt) {
+        dp->pc[1] = piece_on(to_square)->to_nnue();
+        dp->from[1] = move_type == Move::Type::ENPASSANT ? epCapSquare.value() : to_square.value();
+        dp->to[1] = 64;
+        dp->dirtyNum++;
+    }
+
+    // promotion
+    if (promotion_pt) {
+        dp->to[0] = 64;
+        dp->pc[2] = Piece::from(promotion_pt, stm)->to_nnue();
+        dp->from[2] = 64;
+        dp->to[2] = to_square.value();
+        dp->dirtyNum++;
+    }
+
+    // castling
+    if (move_type == Move::Type::CASTLING) {
+        dp->pc[1] = Piece::from(constants::ROOK, stm)->to_nnue();
+        switch (to_square) {
+            case constants::C1:
+                dp->from[1] = constants::A1.value();
+                dp->to[1] = constants::D1.value();
+                break;
+            case constants::G1:
+                dp->from[1] = constants::H1.value();
+                dp->to[1] = constants::F1.value();
+                break;
+            case constants::C8:
+                dp->from[1] = constants::A8.value();
+                dp->to[1] = constants::D8.value();
+                break;
+            case constants::G8:
+                dp->from[1] = constants::H8.value();
+                dp->to[1] = constants::F8.value();
+                break;
+            default:
+                break;
+        }
+        dp->dirtyNum++;
+    }
 
     switch (move_type) {
         case Move::Type::NORMAL:
@@ -427,14 +480,10 @@ inline void Position::make_move(Move move) {
             switch (to_square) {
                 case constants::C1:
                     move_piece(constants::A1, constants::D1, constants::ROOK, stm);
-                    tableCoordsFrom = ((7 - (constants::A1 / 8)) * 8) + constants::A1 % 8;
-                    tableCoordsTo = ((7 - (constants::D1 / 8)) * 8) + constants::D1 % 8;
                     hash ^= zobrist::piece_square_key(constants::A1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D1, constants::ROOK, stm);
                     break;
                 case constants::G1:
                     move_piece(constants::H1, constants::F1, constants::ROOK, stm);
-                    tableCoordsFrom = ((7 - (constants::H1 / 8)) * 8) + constants::H1 % 8;
-                    tableCoordsTo = ((7 - (constants::F1 / 8)) * 8) + constants::F1 % 8;
                     hash ^= zobrist::piece_square_key(constants::H1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F1, constants::ROOK, stm);
                     break;
                 case constants::C8:
@@ -522,6 +571,11 @@ inline void Position::make_null_move() {
     }
     // the pawn hash shouldn't change at all
     next.pawn_hash_ = prev.pawn_hash_;
+
+    // update nnue data
+    memcpy(&next.nnue.accumulator, &prev.nnue.accumulator, sizeof(NNUE::Accumulator));
+    NNUE::DirtyPiece *dp = &(next.nnue.dirtyPiece);
+    dp->dirtyNum = 0;
 }
 
 }  // namespace libchess

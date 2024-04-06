@@ -8,11 +8,39 @@
 #include <cstddef>
 #include <cstdint>
 
+// cache alignment stuff from scorpio
+#include <cstdlib>
+#define CACHE_LINE_SIZE  64
+
+#if defined (__GNUC__)
+#   define CACHE_ALIGN  __attribute__ ((aligned(CACHE_LINE_SIZE)))
+#else
+#   define CACHE_ALIGN __declspec(align(CACHE_LINE_SIZE))
+#endif
+
 namespace NNUE {
 
     // nnue stuff.  From scorpio
+    typedef struct DirtyPiece {
+        int dirtyNum;
+        int pc[3];
+        int from[3];
+        int to[3];
+    } DirtyPiece;
+
+    typedef struct Accumulator {
+        CACHE_ALIGN int16_t accumulation[2][256];
+        int computedAccumulation;
+    } Accumulator;
+
+    typedef struct NNUEdata {
+        Accumulator accumulator;
+        DirtyPiece dirtyPiece;
+    } NNUEdata;
+
     void LoadNNUE();
     int NNUE_evaluate(int player, int *pieces, int *squares);
+    int NNUE_incremental(int player, int *pieces, int *squares, NNUEdata** data);
 
 }
 

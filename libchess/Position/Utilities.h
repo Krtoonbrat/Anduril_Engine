@@ -335,6 +335,7 @@ inline int Position::see_for(Move move, std::array<int, 6> piece_values) {
 
 inline std::optional<Position> Position::from_fen(const std::string& fen) {
     Position pos;
+    pos.createHistory();
     State& curr_state = pos.state_mut_ref();
 
     std::istringstream fen_stream{fen};
@@ -383,6 +384,10 @@ inline std::optional<Position> Position::from_fen(const std::string& fen) {
     pos.state_mut_ref().hash_ = pos.calculate_hash();
     pos.state_mut_ref().pawn_hash_ = pos.calculate_pawn_hash();
     pos.start_fen_ = fen;
+
+    // nnue
+    pos.state_mut_ref().nnue.accumulator.computedAccumulation = 0;
+
     return pos;
 }
 

@@ -58,6 +58,25 @@ class Piece {
         return Piece::from(*piece_type, piece_color);
     }
 
+    int to_nnue() {
+        switch (type()) {
+            case constants::PAWN:
+                return color() == constants::WHITE ? 6 : 12;
+            case constants::KNIGHT:
+                return color() == constants::WHITE ? 5 : 11;
+            case constants::BISHOP:
+                return color() == constants::WHITE ? 4 : 10;
+            case constants::ROOK:
+                return color() == constants::WHITE ? 3 : 9;
+            case constants::QUEEN:
+                return color() == constants::WHITE ? 2 : 8;
+            case constants::KING:
+                return color() == constants::WHITE ? 0 : 1;
+        }
+
+        return 0;
+    }
+
    private:
     value_type value_;
 };

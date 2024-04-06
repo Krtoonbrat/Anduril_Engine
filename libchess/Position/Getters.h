@@ -24,15 +24,15 @@ inline Color Position::side_to_move() const {
 }
 
 inline CastlingRights Position::castling_rights() const {
-    return (history_ + ply() + 7)->castling_rights_;
+    return history_[ply() + 7].castling_rights_;
 }
 
 inline std::optional<Square> Position::enpassant_square() const {
-    return (history_ + ply() + 7)->enpassant_square_;
+    return history_[ply() + 7].enpassant_square_;
 }
 
 inline int Position::halfmoves() const {
-    return (history_ + ply() + 7)->halfmoves_;
+    return history_[ply() + 7].halfmoves_;
 }
 
 inline int Position::fullmoves() const {
@@ -40,19 +40,19 @@ inline int Position::fullmoves() const {
 }
 
 inline std::optional<Move> Position::previous_move() const {
-    return (history_ + ply() + 7)->previous_move_;
+    return history_[ply() + 7].previous_move_;
 }
 
 inline std::optional<PieceType> Position::previously_captured_piece() const {
-    return (history_ + ply() + 7)->captured_pt_;
+    return history_[ply() + 7].captured_pt_;
 }
 
 inline Position::hash_type Position::hash() const {
-    return (history_ + ply() + 7)->hash_;
+    return history_[ply() + 7].hash_;
 }
 
 inline Position::hash_type Position::pawn_hash() const {
-    return (history_ + ply() + 7)->pawn_hash_;
+    return history_[ply() + 7].pawn_hash_;
 }
 
 inline Square Position::king_square(Color color) const {
