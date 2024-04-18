@@ -121,7 +121,7 @@ void MovePicker::score() {
         else { // evasions
             if (board.is_capture_move(m)) {
                 // the condition is for enpassant, as there would not be a piece on the destination
-                m.score = libchess::Position::pieceValuesMG[(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0)] + (100000); // we add a large number to make sure captures are always searched first
+                m.score = libchess::Position::pieceValuesMG[(board.piece_type_on(m.to_square()) ? board.piece_type_on(m.to_square())->value() : 0)] + (500000); // we add a large number to make sure captures are always searched first
             }
             else {
                 m.score = moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())
