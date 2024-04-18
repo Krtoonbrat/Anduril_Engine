@@ -89,8 +89,8 @@ void ThreadPool::set(libchess::Position &b, int n) {
 // clears the search information from each thread
 void ThreadPool::clear() {
     for (Thread* t : threads) {
-        t->engine->pTable = HashTable<PawnEntry, 8>();
-        t->engine->evalTable = HashTable<SimpleNode, 8>();
+        //t->engine->pTable = HashTable<PawnEntry, 8>();
+        //t->engine->evalTable = HashTable<SimpleNode, 8>();
         t->engine->resetHistories();
     }
 }

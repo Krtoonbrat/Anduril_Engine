@@ -159,6 +159,18 @@ int nnue(libchess::Position &board) {
 
 // generates a static evaluation of the board
 int Anduril::evaluateBoard(libchess::Position &board) {
+    if constexpr (use_nnue) {
+        int finalScore = nnue(board);
+
+        // idea from stockfish: damp down score when shuffling
+        finalScore = finalScore * (100 - board.halfmoves()) / 100;
+
+        // clamp score to values below checkmate
+        finalScore = std::clamp(finalScore, -31507, 31507);
+
+        return finalScore;
+    }
+/*
     // first check for transpositions
     uint64_t hash = board.hash();
     SimpleNode *eNode = evalTable[hash];
@@ -168,20 +180,6 @@ int Anduril::evaluateBoard(libchess::Position &board) {
         score = score * (100 - board.halfmoves()) / 100;
         score = std::clamp(score, -31507, 31507);
         return score;
-    }
-
-    if constexpr (use_nnue) {
-        int finalScore = nnue(board);
-        eNode->key = hash;
-        eNode->score = finalScore;
-
-        // idea from stockfish: damp down score when shuffling
-        finalScore = finalScore * (100 - board.halfmoves()) / 100;
-
-        // clamp score to values below checkmate
-        finalScore = std::clamp(finalScore, -31507, 31507);
-
-        return finalScore;
     }
 
     // extra bitboard variable that is needed for various calculations
@@ -376,6 +374,7 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     finalScore = std::clamp(finalScore, -31507, 31507);
 
     return finalScore;
+    */
 }
 
 // calculates all mobility scores and tropism

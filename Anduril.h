@@ -93,10 +93,10 @@ public:
         }
     }
     // pawn transposition table
-    HashTable<PawnEntry, 8> pTable = HashTable<PawnEntry, 8>();
+    //HashTable<PawnEntry, 8> pTable = HashTable<PawnEntry, 8>();
 
     // transposition table for evaluations
-    HashTable<SimpleNode, 8> evalTable = HashTable<SimpleNode, 8>();
+    //HashTable<SimpleNode, 8> evalTable = HashTable<SimpleNode, 8>();
 
     // the limit the GUI could send
     limit limits;
@@ -113,7 +113,6 @@ public:
     int pci = 68;
     int fpc = 148;
     int fpm = 78;
-    int hpv = -5928;
     int smq = -112;
     int smt = -48;
     int sec = 22;
