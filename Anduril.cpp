@@ -25,6 +25,11 @@ int msb = 6413;
 int rvc = 460;
 int rvs = 148;
 
+// history pruning value
+int hpv = -5928;
+int hrv = 26602;
+int qte = 4500;
+
 extern int maxHistoryVal;
 extern int maxContinuationVal;
 
@@ -776,7 +781,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             else if (PvNode
                      && move == nMove
                      && move == killers[ply - rootPly][0]
-                     && (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()] >= 4500) {
+                      && (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()] >= qte) {
                 extension = 1;
             }
 
@@ -860,7 +865,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             // adjust based on history stats
             hist += moveHistory[board.side_to_move()][move.from_square()][move.to_square()];
-            reduction -= hist / 26602;
+            reduction -= hist / hrv;
 
             // new depth we will search with
             // we need to search at least one more move, and allow an "extension" of up to one (really all we are doing in this case is not changing the depth)

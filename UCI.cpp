@@ -36,6 +36,10 @@ extern int msb;
 extern int rvc;
 extern int rvs;
 
+extern int hpv;
+extern int hrv;
+extern int qte;
+
 namespace NNUE {
     extern char nnue_path[256];
     extern char nnue_library_path[256];
@@ -180,6 +184,9 @@ namespace UCI {
                 std::cout << "option name msb type string default 6413" << std::endl;
                 std::cout << "option name mhv type string default 20805" << std::endl;
                 std::cout << "option name mcv type string default 23293" << std::endl;
+                std::cout << "option name hpv type string default -5928" << std::endl;
+                std::cout << "option name hrv type string default 26602" << std::endl;
+                std::cout << "option name qte type string default 4500" << std::endl;
 
                 std::cout << "option name rvc type string default 460" << std::endl;
                 std::cout << "option name rvs type string default 148" << std::endl;
@@ -372,6 +379,18 @@ namespace UCI {
 
         if ((ptr = strstr(line, "mcv"))) {
             maxContinuationVal = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "hpv"))) {
+            hpv = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "hrv"))) {
+            hrv = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "qte"))) {
+            qte = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "spm"))) {
