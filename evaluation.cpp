@@ -123,7 +123,7 @@ int nnue(libchess::Position &board) {
     square[index] = board.king_square(libchess::constants::WHITE).value();
     index++;
 
-    piece[index] = 1;
+    piece[index] = 7;
     square[index] = board.king_square(libchess::constants::BLACK).value();
     index++;
 

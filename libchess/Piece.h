@@ -71,7 +71,7 @@ class Piece {
             case constants::QUEEN:
                 return color() == constants::WHITE ? 2 : 8;
             case constants::KING:
-                return color() == constants::WHITE ? 0 : 1;
+                return color() == constants::WHITE ? 1 : 7;
         }
 
         return 0;
