@@ -17,5 +17,8 @@ using PieceHistory = std::array<std::array<int16_t, 64>, 16>;
 // except it considers previous moves
 using ContinuationHistory = std::array<std::array<PieceHistory, 64>, 16>;
 
+// this is the type for the capture history table
+using CaptureHistory = std::array<std::array<std::array<int16_t, 5>, 64>, 13>;
+
 
 #endif //ANDURIL_ENGINE_HISTORY_H

@@ -91,6 +91,13 @@ public:
                 }
             }
         }
+        for (auto &i : captureHistory) {
+            for (auto &j : i) {
+                for (auto &k : j) {
+                    k = 0;
+                }
+            }
+        }
     }
     // pawn transposition table
     //HashTable<PawnEntry, 8> pTable = HashTable<PawnEntry, 8>();
@@ -115,9 +122,6 @@ public:
     int fpm = 78;
     int smq = -112;
     int smt = -48;
-    int sec = 22;
-    int sem = 18;
-    int sed = 20;
 
     // endgame values used for qsearch
     static int pieceValues[16];
@@ -126,6 +130,9 @@ public:
     // 2x2 because we separate check and capture moves
     // this makes the actual structure 2x2x13x64x13x64.  Yikes.
     ContinuationHistory continuationHistory[2][2];
+
+    // capture history table
+    CaptureHistory captureHistory;
 
     const int id;
 
@@ -168,7 +175,8 @@ private:
     }
 
     void updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
-                          libchess::Move *quietsSearched, int quietCount);
+                          libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched,
+                          int captureCount);
 
     void updateQuietStats(libchess::Position &board, libchess::Move bestMove, int bonus);
 

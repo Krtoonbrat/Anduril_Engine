@@ -21,17 +21,29 @@ int sbc = 163;
 int sbm = 417;
 int msb = 6413;
 
+// this is the value we add to beta to determine if we use the larger bonus when updating the history tables
+int lbc = 40;
+
 // razoring values
 int rvc = 460;
 int rvs = 148;
+
+// reverse futility margin
+int rfm = 200;
 
 // history pruning value
 int hpv = -5928;
 int hrv = 26602;
 int qte = 4500;
 
+// singular extension values
+int sec = 22;
+int sem = 18;
+int sed = 20;
+
 extern int maxHistoryVal;
 extern int maxContinuationVal;
+extern int maxCaptureVal;
 
 // our thread pool
 extern ThreadPool gondor;
@@ -57,8 +69,8 @@ constexpr int moveCountPruningThreshold(bool improving, int depth) {
 
 // returns the margin for reverse futility pruning.  Returns the same values as the list we used before, except this is
 // able to a higher depth, and we introduced the improving factor to it
-constexpr int reverseFutilityMargin(int depth, bool improving) {
-    return 200 * (depth - improving);
+int reverseFutilityMargin(int depth, bool improving) {
+    return rfm * (depth - improving);
 }
 
 // changes mate scores from being relative to the root to being relative to the current ply
@@ -180,7 +192,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
     libchess::Square prevMoveSq = board.prevMoveType(ply) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
-    MovePicker picker(board, nMove, &moveHistory, contHistory, depth);
+    MovePicker picker(board, nMove, &moveHistory, contHistory, &captureHistory, depth);
 
     // arbitrarily low score to make sure its replaced
     int score = -32001;
@@ -362,6 +374,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // amount of quiet moves we searched and what moves they were
     int quietCount = 0;
     libchess::Move quietMoves[64];
+
+    // amount of capture moves we searched and what they were
+    int captureCount = 0;
+    libchess::Move captureMoves[32];
 
     // represents the best score we have found so far
     int bestScore = -32001;
@@ -551,7 +567,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && nScore < probCutBeta)) {
 
         // get a move picker
-        MovePicker picker(board, nMove, probCutBeta - board.staticEval());
+        MovePicker picker(board, nMove, &captureHistory, probCutBeta - board.staticEval());
 
         // we loop through all the moves to try and find one that
         // causes a beta cut on a reduced search
@@ -613,7 +629,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // get a move picker
     MovePicker picker(board, nMove, killers[ply - rootPly],
                       counterMove,
-                      &moveHistory, contHistory);
+                      &moveHistory, contHistory, &captureHistory);
 
     // at root, we are going to ignore the picker object.  The amount of time spent allocating and selecting moves should be negligible because this only happens for one position per search
     // here we set the pointer for the current root move to the beginning of the move list, and sort the list
@@ -928,7 +944,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // if the move was worse than a previous move, remember it for update later
         if (move != bestMove) {
-            if (!capture && quietCount < 64) {
+            if (capture && captureCount < 32) {
+                captureMoves[captureCount++] = move;
+            }
+            else if (quietCount < 64) {
                 quietMoves[quietCount++] = move;
             }
         }
@@ -941,7 +960,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     else if (bestMove.value() != 0) {
-        updateStatistics(board, bestMove, bestScore, depth, beta, quietMoves, quietCount);
+        updateStatistics(board, bestMove, bestScore, depth, beta, quietMoves, quietCount, captureMoves, captureCount);
     }
 
     // bonus for prior move that caused fail low
@@ -982,9 +1001,9 @@ int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
 
 // updates all history statistics
 void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
-                               libchess::Move *quietsSearched, int quietCount) {
+                               libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched, int captureCount) {
     int largerBonus = stat_bonus(depth + 1);
-    int bonus = bestScore > beta + 40 ? largerBonus : stat_bonus(depth);
+    int bonus = bestScore > beta + lbc ? largerBonus : stat_bonus(depth);
     int orderPenalty;
     libchess::Piece movedPiece = *board.piece_on(bestMove.from_square());
     libchess::PieceType capturedPiece(0);
@@ -995,15 +1014,26 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
 
         // decrease stats for non-best quiets
         for (int i = 0; i < quietCount; i++) {
-            orderPenalty = -bonus - stat_bonus(quietCount - i);
+            orderPenalty = -bonus;
             updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), orderPenalty);
             moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += orderPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(orderPenalty) / maxHistoryVal;
         }
+    }
+    else {
+        int capturedIndex = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
+        captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] += largerBonus - captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] * abs(bonus) / maxCaptureVal;
     }
 
     // extra penalty for early move that was not a transposition or main killer in previous ply
     if (board.previous_move() && ((board.moveCount(ply - 1) == 1 + board.found(ply - 1) || *board.previous_move() == killers[ply - rootPly - 1][0])) && !board.previously_captured_piece()) {
         updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), -largerBonus, 1);
+    }
+
+    for (int i = 0; i < captureCount; i++) {
+        orderPenalty = -largerBonus;
+        int movedPieceIdx = board.piece_on(capturesSearched[i].from_square())->to_nnue();
+        int capturedType = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
+        captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] += orderPenalty - captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] * abs(orderPenalty) / maxCaptureVal;
     }
 }
 

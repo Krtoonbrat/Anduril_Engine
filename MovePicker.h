@@ -36,10 +36,10 @@ public:
     MovePicker& operator=(const MovePicker&) = delete;
 
     MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
-               ButterflyHistory *his, const PieceHistory **contHis);
+               ButterflyHistory *his, const PieceHistory **contHis, const CaptureHistory *capHis);
     MovePicker(libchess::Position &b, libchess::Move &ttm, ButterflyHistory *his,
-               const PieceHistory **contHis, int d);
-    MovePicker(libchess::Position &b, libchess::Move &ttm, int t);
+               const PieceHistory **contHis, const CaptureHistory *capHis, int d);
+    MovePicker(libchess::Position &b, libchess::Move &ttm, const CaptureHistory *capHis, int t);
 
     libchess::Move nextMove(bool skipQuiet = false);
 
@@ -62,6 +62,7 @@ private:
     libchess::Position& board;
     ButterflyHistory *moveHistory;
     const PieceHistory **continuationHistory;
+    const CaptureHistory *captureHistory;
     libchess::Move transposition;
     libchess::Move refutations[3];
     int stage;

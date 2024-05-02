@@ -22,6 +22,7 @@ int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
 
 int maxHistoryVal = 20805;
 int maxContinuationVal = 23293;
+int maxCaptureVal = 10962;
 
 extern int BlockedPawnMG[2];
 extern int BlockedPawnEG[2];
@@ -33,12 +34,20 @@ extern int sbc;
 extern int sbm;
 extern int msb;
 
+extern int lbc;
+
 extern int rvc;
 extern int rvs;
+
+extern int rfm;
 
 extern int hpv;
 extern int hrv;
 extern int qte;
+
+extern int sec;
+extern int sem;
+extern int sed;
 
 namespace NNUE {
     extern char nnue_path[256];
@@ -182,14 +191,21 @@ namespace UCI {
                 std::cout << "option name sbc type string default 163" << std::endl;
                 std::cout << "option name sbm type string default 417" << std::endl;
                 std::cout << "option name msb type string default 6413" << std::endl;
+                std::cout << "option name lbc type string default 40" << std::endl;
                 std::cout << "option name mhv type string default 20805" << std::endl;
                 std::cout << "option name mcv type string default 23293" << std::endl;
+                std::cout << "option name cpm type string default 10962" << std::endl;
                 std::cout << "option name hpv type string default -5928" << std::endl;
                 std::cout << "option name hrv type string default 26602" << std::endl;
                 std::cout << "option name qte type string default 4500" << std::endl;
 
                 std::cout << "option name rvc type string default 460" << std::endl;
                 std::cout << "option name rvs type string default 148" << std::endl;
+                std::cout << "option name rfm type string default 200" << std::endl;
+
+                std::cout << "option name sec type string default 22" << std::endl;
+                std::cout << "option name sem type string default 18" << std::endl;
+                std::cout << "option name sed type string default 20" << std::endl;
 /*
                 std::cout << "option name pMG type string default 115" << std::endl;
                 std::cout << "option name pEG type string default 148" << std::endl;
@@ -365,12 +381,24 @@ namespace UCI {
             msb = atoi(ptr + 10);
         }
 
+        if ((ptr = strstr(line, "lbc"))) {
+            lbc = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "cpm"))) {
+            maxCaptureVal = atoi(ptr + 10);
+        }
+
         if ((ptr = strstr(line, "rvc"))) {
             rvc = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "rvs"))) {
             rvs = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "rfm"))) {
+            rfm = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "mhv"))) {
@@ -407,6 +435,18 @@ namespace UCI {
 
         if ((ptr = strstr(line, "ppe"))) {
             threatByPawnPush[1] = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "sec"))) {
+            sec = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "sem"))) {
+            sem = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "sed"))) {
+            sed = atoi(ptr + 10);
         }
 
         /*
@@ -842,7 +882,7 @@ void Anduril::go(libchess::Position board) {
                               << " pv" << pv << std::endl;
                 } else {
                     std::cout << "info "
-                              << "score cp " << prevBestScore
+                              << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
                               << " nodes " << getMovesExplored()
@@ -880,7 +920,7 @@ void Anduril::go(libchess::Position board) {
                               << " pv" << pv << std::endl;
                 } else {
                     std::cout << "info "
-                              << "score cp " << prevBestScore
+                              << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
