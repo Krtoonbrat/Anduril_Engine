@@ -17,12 +17,13 @@
 int reductions[150][150];
 
 // stat bonus values
-int sbc = 163;
-int sbm = 417;
-int msb = 6413;
+int sbc = 93;
+int sbm = 284;
+int msb = 5699;
+int lsb = 147;
 
 // this is the value we add to beta to determine if we use the larger bonus when updating the history tables
-int lbc = 40;
+int lbc = 65;
 
 // razoring values
 int rvc = 460;
@@ -37,9 +38,9 @@ int hrv = 26602;
 int qte = 4500;
 
 // singular extension values
-int sec = 22;
-int sem = 18;
-int sed = 20;
+int sec = 178;
+int sem = 54;
+int sed = 64;
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
@@ -58,8 +59,7 @@ void initReductions(double nem, double neb) {
 }
 
 int stat_bonus(int depth) {
-    return std::min(sbm * depth - sbc, msb);
-    //return 2 * depth * depth;
+    return std::clamp(sbm * depth - sbc, lsb, msb);
 }
 
 // returns the amount of moves we need to search before we can use move count based pruning

@@ -20,9 +20,9 @@ int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
 int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
                                  148,  490,  518,  878,  1749, 0, 0, 0};
 
-int maxHistoryVal = 20805;
-int maxContinuationVal = 23293;
-int maxCaptureVal = 10962;
+int maxHistoryVal = 14362;
+int maxContinuationVal = 19552;
+int maxCaptureVal = 17872;
 
 extern int BlockedPawnMG[2];
 extern int BlockedPawnEG[2];
@@ -33,6 +33,7 @@ extern int threatByPawnPush[2];
 extern int sbc;
 extern int sbm;
 extern int msb;
+extern int lsb;
 
 extern int lbc;
 
@@ -153,7 +154,7 @@ namespace UCI {
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default true" << std::endl;
 
-                std::cout << "option name nnue_path type string default ../egbdll/nets/nn-62ef826d1a6d.nnue" << std::endl;
+                std::cout << "option name nnue_path type string default ../egbdll/nets/nn-c157e0a5755b.nnue" << std::endl;
                 std::cout << "option name nnue_library_path type string default ../egbdll/nnueprobe.dll" << std::endl;
                 /*
                 std::cout << "option name kMG type spin default 446 min -40000 max 40000" << std::endl;
@@ -188,13 +189,14 @@ namespace UCI {
                 std::cout << "option name ppm type string default 13" << std::endl;
                 std::cout << "option name ppe type string default 11" << std::endl;
 
-                std::cout << "option name sbc type string default 163" << std::endl;
-                std::cout << "option name sbm type string default 417" << std::endl;
-                std::cout << "option name msb type string default 6413" << std::endl;
-                std::cout << "option name lbc type string default 40" << std::endl;
-                std::cout << "option name mhv type string default 20805" << std::endl;
-                std::cout << "option name mcv type string default 23293" << std::endl;
-                std::cout << "option name cpm type string default 10962" << std::endl;
+                std::cout << "option name sbc type string default 93" << std::endl;
+                std::cout << "option name sbm type string default 284" << std::endl;
+                std::cout << "option name msb type string default 5699" << std::endl;
+                std::cout << "option name lsb type string default 147" << std::endl;
+                std::cout << "option name lbc type string default 65" << std::endl;
+                std::cout << "option name mhv type string default 14362" << std::endl;
+                std::cout << "option name mcv type string default 19552" << std::endl;
+                std::cout << "option name cpm type string default 17872" << std::endl;
                 std::cout << "option name hpv type string default -5928" << std::endl;
                 std::cout << "option name hrv type string default 26602" << std::endl;
                 std::cout << "option name qte type string default 4500" << std::endl;
@@ -203,9 +205,9 @@ namespace UCI {
                 std::cout << "option name rvs type string default 148" << std::endl;
                 std::cout << "option name rfm type string default 200" << std::endl;
 
-                std::cout << "option name sec type string default 22" << std::endl;
-                std::cout << "option name sem type string default 18" << std::endl;
-                std::cout << "option name sed type string default 20" << std::endl;
+                std::cout << "option name sec type string default 178" << std::endl;
+                std::cout << "option name sem type string default 54" << std::endl;
+                std::cout << "option name sed type string default 64" << std::endl;
 /*
                 std::cout << "option name pMG type string default 115" << std::endl;
                 std::cout << "option name pEG type string default 148" << std::endl;
@@ -379,6 +381,10 @@ namespace UCI {
 
         if ((ptr = strstr(line, "msb"))) {
             msb = atoi(ptr + 10);
+        }
+
+        if ((ptr = strstr(line, "lsb"))) {
+            lsb = atoi(ptr + 10);
         }
 
         if ((ptr = strstr(line, "lbc"))) {
