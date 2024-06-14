@@ -18,7 +18,7 @@ namespace UCI {
     void parseGo(char* line, libchess::Position &board, Book &openingBook, bool &bookOpen);
 
     // parses position commands from the GUI
-    void parsePosition(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI);
+    void parsePosition(char* line, libchess::Position &board);
 
     // parses options
     void parseOption(char* line, libchess::Position &board, bool &bookOpen);

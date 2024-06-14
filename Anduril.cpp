@@ -979,6 +979,37 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 // template definition so that we can call from UCI.cpp
 template int Anduril::negamax<Anduril::Root>(libchess::Position &board, int depth, int alpha, int beta, bool cutNode);
 
+void Anduril::bench(libchess::Position &board) {
+    // setup for the search
+    limits.timeSet = false;
+    movesExplored = 0;
+
+    // set the killer vector to have the correct number of slots
+    for (auto i : killers) {
+        i[0] = libchess::Move(0);
+        i[1] = libchess::Move(0);
+    }
+
+    ply = board.ply();
+    rootPly = ply;
+
+    // initialize the oversize state array
+    for (int i = 7; i > 0; i--) {
+        board.continuationHistory(ply - i) = &continuationHistory[0][0][15][0];
+    }
+
+    // start the timer and search
+    // using PV instead of root will silence any console activity that would have occurred.
+    // In return, this is slightly inaccurate to the "real thing", but realistically it should be close enough to not matter
+    startTime = std::chrono::steady_clock::now();
+    negamax<PV>(board, 20, -32001, 32001, false);
+
+    // stop the timer and report the nodes searched and speed
+    stopTime = std::chrono::steady_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = stopTime - startTime;
+    std::cout << getMovesExplored() << " nodes " << uint64_t(getMovesExplored() / (elapsed.count() / 1000)) << " nps" << std::endl;
+}
+
 int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
     int material = 0;
     if (whiteToPlay) {

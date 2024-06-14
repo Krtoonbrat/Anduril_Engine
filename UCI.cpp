@@ -68,15 +68,11 @@ namespace UCI {
     const char* StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     void loop(int argc, char* argv[]) {
-        // first we turn off the stdin and stdout buffers
-        //setbuf(stdin, NULL);
-        //setbuf(stdout, NULL);
 
         char line[INPUTBUFFER];
 
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
-        std::unique_ptr<Anduril> AI = std::make_unique<Anduril>(0);
         Book openingBook = Book(R"(..\book\Performance.bin)");
         bool bookOpen = openingBook.getBookOpen();
         gondor.set(board, 1);
@@ -84,26 +80,11 @@ namespace UCI {
         // load the nnue file
         NNUE::LoadNNUE();
 
-        // initialize the oversize state array
-        for (int i = -7; i < 0; i++) {
-            board.continuationHistory(i) = &AI->continuationHistory[0][0][15][0];
-        }
-
-        //TODO: refactor benching after thread change
         if (argc > 1) {
             std::string in = std::string(argv[1]);
             if (in == "bench") {
-                std::vector<libchess::Position> positions;
-                positions.reserve(Defaults.size());
-                for (auto &i : Defaults) {
-                    positions.emplace_back(i);
-                }
-                AI->limits.timeSet = false;
-                AI->limits.depth = 12;
-                for (auto &i : positions) {
-                    table.newSearch();
-                    AI->go(i);
-                }
+                // benchmark will just use the already created engine and board, run for depth 20, and report node count and speed.  Program exits when this is finished if the bench command was given as an argument
+                gondor.mainThread()->engine->bench(board);
                 return;
             }
         }
@@ -124,7 +105,7 @@ namespace UCI {
                 std::cout << "readyok" << std::endl;
             }
             else if (!strncmp(line, "position", 8)) {
-                parsePosition(line, board, AI);
+                parsePosition(line, board);
             }
             else if (!strncmp(line, "setoption", 9)) {
                 parseOption(line, board, bookOpen);
@@ -641,7 +622,7 @@ namespace UCI {
         }
     }
 
-    void parsePosition(char* line, libchess::Position &board, std::unique_ptr<Anduril> &AI) {
+    void parsePosition(char* line, libchess::Position &board) {
         // first move the pointer past the "position" token
         line += 9;
 
@@ -708,7 +689,6 @@ void Anduril::go(libchess::Position board) {
         cutNodes = 0;
         movesTransposed = 0;
         quiesceExplored = 0;
-        //threads = 4;   // for profiling
         gondor.wakeThreads();
     }
 

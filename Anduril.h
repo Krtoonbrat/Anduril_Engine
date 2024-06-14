@@ -56,6 +56,9 @@ public:
     // getter and setter for moves explored
     uint64_t getMovesExplored();
 
+    // benchmarks the engine
+    void bench(libchess::Position &board);
+
     inline void setMovesExplored(int moves) { movesExplored = moves; }
 
     // reset the ply
