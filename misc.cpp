@@ -7,6 +7,20 @@
 #include <cstdlib>
 #include <iostream>
 
+// linux includes from scorpio for nnue
+#ifndef _WIN32
+#    define dlsym __shut_up
+#    include <dlfcn.h>
+#    undef dlsym
+extern "C" void *(*dlsym(void *handle, const char *symbol))();
+
+#    define HMODULE void*
+#    define LoadLibraryA(x) dlopen(x,RTLD_LAZY)
+#    define FreeLibrary(x) dlclose(x)
+#    define GetProcAddress dlsym
+#    define CDECL
+#endif
+
 #ifdef _WIN32
 #if _WIN32_WINNT < 0x0601
 #undef _WIN32_WINNT
@@ -57,7 +71,12 @@ namespace NNUE {
     static PNNUE_EVALUATE_INCREMENTAL nnue_evaluate_incremental;
 
     char nnue_path[256] = "../egbdll/nets/nn-62ef826d1a6d.nnue";
+#ifdef _WIN32
     char nnue_library_path[256] = "../egbdll/nnueprobe.dll";
+#else
+    char nnue_library_path[256] = "../egbdll/libnnueprobe.so";
+#endif
+
 
     void LoadNNUE() {
         static HMODULE hmod = nullptr;
