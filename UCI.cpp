@@ -74,6 +74,7 @@ namespace UCI {
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
         Book openingBook = Book(R"(..\book\Performance.bin)");
+        openingBook.closeBook();
         bool bookOpen = openingBook.getBookOpen();
         gondor.set(board, 1);
 
@@ -133,7 +134,7 @@ namespace UCI {
                 std::cout << "option name ClearHash type button" << std::endl;
                 std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
-                std::cout << "option name OwnBook type check default true" << std::endl;
+                std::cout << "option name OwnBook type check default false" << std::endl;
 
                 std::cout << "option name nnue_path type string default ../egbdll/nets/nn-c157e0a5755b.nnue" << std::endl;
                 std::cout << "option name nnue_library_path type string default ../egbdll/nnueprobe.dll" << std::endl;
