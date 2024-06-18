@@ -136,8 +136,8 @@ namespace UCI {
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
                 std::cout << "option name OwnBook type check default false" << std::endl;
 
-                std::cout << "option name nnue_path type string default ../egbdll/nets/nn-c157e0a5755b.nnue" << std::endl;
-                std::cout << "option name nnue_library_path type string default ../egbdll/nnueprobe.dll" << std::endl;
+                std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
+                std::cout << "option name nnue_library_path type string default " << NNUE::nnue_library_path << std::endl;
                 /*
                 std::cout << "option name kMG type spin default 446 min -40000 max 40000" << std::endl;
                 std::cout << "option name kEG type spin default 490 min -40000 max 40000" << std::endl;
