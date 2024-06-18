@@ -70,7 +70,7 @@ namespace NNUE {
     static PNNUE_EVALUATE nnue_evaluate;
     static PNNUE_EVALUATE_INCREMENTAL nnue_evaluate_incremental;
 
-    char nnue_path[256] = "../egbdll/nets/nn-62ef826d1a6d.nnue";
+    char nnue_path[256] = "../egbdll/nets/nn-c157e0a5755b.nnue";
 #ifdef _WIN32
     char nnue_library_path[256] = "../egbdll/nnueprobe.dll";
 #else
