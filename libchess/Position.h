@@ -1,6 +1,7 @@
 #ifndef LIBCHESS_POSITION_H
 #define LIBCHESS_POSITION_H
 
+#include <cstring>
 #include <optional>
 #include <sstream>
 #include <string>
