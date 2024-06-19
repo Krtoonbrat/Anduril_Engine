@@ -18,14 +18,10 @@
 
 #if defined (_WIN32)
 #   define _CDECL __cdecl
-#ifdef DLL_EXPORT
-#   define DLLExport EXTERNC __declspec(dllexport)
-#else
-#   define DLLExport EXTERNC __declspec(dllimport)
-#endif
+#   define DLLExport EXTERNC
 #else
 #   define _CDECL
-#   define DLLExport EXTERNC
+#   define DLLExport EXTERNC __declspec(dllimport)
 #endif
 
 /**

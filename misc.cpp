@@ -66,9 +66,9 @@ namespace NNUE {
     typedef int (CDECL *PNNUE_EVALUATE_INCREMENTAL) (
             int player, int* pieces, int* squares, NNUEdata**);
 
-    static PNNUE_INIT nnue_init;
+    //static PNNUE_INIT nnue_init;
     static PNNUE_EVALUATE nnue_evaluate;
-    static PNNUE_EVALUATE_INCREMENTAL nnue_evaluate_incremental;
+    //static PNNUE_EVALUATE_INCREMENTAL nnue_evaluate_incremental;
 
     char nnue_path[256] = "../egbdll/nets/nn-c157e0a5755b.nnue";
 #ifdef _WIN32
@@ -86,14 +86,14 @@ namespace NNUE {
         }
 
         if ((hmod = LoadLibraryA(nnue_library_path)) != nullptr) {
-            nnue_init = (PNNUE_INIT) GetProcAddress(hmod, "nnue_init");
+            //nnue_init = (PNNUE_INIT) GetProcAddress(hmod, "nnue_init");
             nnue_evaluate = (PNNUE_EVALUATE) GetProcAddress(hmod, "nnue_evaluate");
-            nnue_evaluate_incremental = (PNNUE_EVALUATE_INCREMENTAL) GetProcAddress(hmod, "nnue_evaluate_incremental");
+            //nnue_evaluate_incremental = (PNNUE_EVALUATE_INCREMENTAL) GetProcAddress(hmod, "nnue_evaluate_incremental");
         }
 
-        if (nnue_init) {
-            nnue_init(nnue_path);
-        }
+
+        nnue_init(nnue_path);
+
     }
 
     int NNUE_evaluate(int player, int *pieces, int *squares) {

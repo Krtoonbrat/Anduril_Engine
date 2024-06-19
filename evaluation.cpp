@@ -145,7 +145,7 @@ int nnue(libchess::Position &board) {
     square[index] = 0;
 
     // grab data for incremental refresh
-    NNUE::NNUEdata* data[3] = {nullptr, nullptr, nullptr};
+    NNUEdata* data[3] = {nullptr, nullptr, nullptr};
     data[0] = &board.nnue();
     data[1] = &board.nnue(board.ply() - 1);
     data[2] = &board.nnue(board.ply() - 2);

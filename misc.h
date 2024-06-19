@@ -10,6 +10,8 @@
 
 // cache alignment stuff from scorpio
 #include <cstdlib>
+#include "nnue-probe/nnue.h"
+
 #define CACHE_LINE_SIZE  64
 
 #if defined (__GNUC__)
@@ -19,24 +21,6 @@
 #endif
 
 namespace NNUE {
-
-    // nnue stuff.  From scorpio
-    typedef struct DirtyPiece {
-        int dirtyNum;
-        int pc[3];
-        int from[3];
-        int to[3];
-    } DirtyPiece;
-
-    typedef struct Accumulator {
-        CACHE_ALIGN int16_t accumulation[2][256];
-        int computedAccumulation;
-    } Accumulator;
-
-    typedef struct NNUEdata {
-        Accumulator accumulator;
-        DirtyPiece dirtyPiece;
-    } NNUEdata;
 
     void LoadNNUE();
     int NNUE_evaluate(int player, int *pieces, int *squares);

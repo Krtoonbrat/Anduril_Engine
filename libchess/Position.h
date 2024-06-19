@@ -187,7 +187,7 @@ class Position {
         int staticEval = 0;
         PieceHistory *continuationHistory;
         int pliesSinceNull = 0;
-        NNUE::NNUEdata nnue;
+        NNUEdata nnue;
     };
 
    public:
@@ -359,8 +359,8 @@ class Position {
     bool& found() { return state_mut_ref().found; }
     bool found(int ply) { return state(ply).found; }
     std::optional<Move> previousMove(int ply) { return state(ply).previous_move_; }
-    NNUE::NNUEdata& nnue() { return state_mut_ref().nnue; }
-    NNUE::NNUEdata& nnue(int ply) { return state_mut_ref(ply).nnue; }
+    NNUEdata& nnue() { return state_mut_ref().nnue; }
+    NNUEdata& nnue(int ply) { return state_mut_ref(ply).nnue; }
 
 
     [[nodiscard]] int ply() const {

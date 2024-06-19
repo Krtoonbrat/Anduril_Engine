@@ -377,8 +377,8 @@ inline void Position::make_move(Move move) {
     Square epCapSquare = stm == constants::WHITE ? Square(to_square - 8) : Square(to_square + 8);
 
     // update nnue data
-    NNUE::NNUEdata& nnue_next = next_state.nnue;
-    NNUE::DirtyPiece *dp = &(nnue_next.dirtyPiece);
+    NNUEdata& nnue_next = next_state.nnue;
+    DirtyPiece *dp = &(nnue_next.dirtyPiece);
     nnue_next.accumulator.computedAccumulation = 0;
     dp->dirtyNum = 0;
 
@@ -573,8 +573,8 @@ inline void Position::make_null_move() {
     next.pawn_hash_ = prev.pawn_hash_;
 
     // update nnue data
-    memcpy(&next.nnue.accumulator, &prev.nnue.accumulator, sizeof(NNUE::Accumulator));
-    NNUE::DirtyPiece *dp = &(next.nnue.dirtyPiece);
+    memcpy(&next.nnue.accumulator, &prev.nnue.accumulator, sizeof(Accumulator));
+    DirtyPiece *dp = &(next.nnue.dirtyPiece);
     dp->dirtyNum = 0;
 }
 
