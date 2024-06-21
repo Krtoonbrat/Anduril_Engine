@@ -10,18 +10,13 @@
 /**
 * Calling convention
 */
-#ifdef __cplusplus
-#   define EXTERNC extern "C"
-#else
-#   define EXTERNC
-#endif
+
+# define EXTERNC extern "C"
 
 #if defined (_WIN32)
 #   define _CDECL __cdecl
-#   define DLLExport EXTERNC
 #else
 #   define _CDECL
-#   define DLLExport EXTERNC __declspec(dllimport)
 #endif
 
 /**
@@ -94,7 +89,7 @@ int nnue_evaluate_pos(Position* pos);
 /**
 * Load NNUE file
 */
-DLLExport void _CDECL nnue_init(
+EXTERNC void _CDECL nnue_init(
   const char * evalFile             /** Path to NNUE file */
 );
 
@@ -103,7 +98,7 @@ DLLExport void _CDECL nnue_init(
 * Returns
 *   Score relative to side to move in approximate centi-pawns
 */
-DLLExport int _CDECL nnue_evaluate_fen(
+EXTERNC int _CDECL nnue_evaluate_fen(
   const char* fen                   /** FEN string to probe evaluation for */
 );
 
@@ -125,7 +120,7 @@ DLLExport int _CDECL nnue_evaluate_fen(
 * Returns
 *   Score relative to side to move in approximate centi-pawns
 */
-DLLExport int _CDECL nnue_evaluate(
+EXTERNC int _CDECL nnue_evaluate(
   int player,                       /** Side to move: white=0 black=1 */
   int* pieces,                      /** Array of pieces */
   int* squares                      /** Corresponding array of squares each piece stands on */
@@ -141,7 +136,7 @@ DLLExport int _CDECL nnue_evaluate(
 *    nnue_data[1] is pointer to NNUEdata for ply - 1
 *    nnue_data[2] is pointer to NNUEdata for ply - 2
 */
-DLLExport int _CDECL nnue_evaluate_incremental(
+EXTERNC int _CDECL nnue_evaluate_incremental(
   int player,                       /** Side to move: white=0 black=1 */
   int* pieces,                      /** Array of pieces */
   int* squares,                     /** Corresponding array of squares each piece stands on */
