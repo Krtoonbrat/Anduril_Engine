@@ -61,15 +61,13 @@ ThreadPool gondor;
 // with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
 // I am following is written in C
 namespace UCI {
-    // this is the largest input we expect from the GUI
-    constexpr int INPUTBUFFER = 400 * 6;
 
     // FEN for the start position
     const char* StartFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     void loop(int argc, char* argv[]) {
-
-        char line[INPUTBUFFER];
+        // strings for parsing messages from the GUI
+        std::string line, token;
 
         // set up the board, engine, book, and game state
         libchess::Position board(StartFEN);
@@ -91,43 +89,47 @@ namespace UCI {
         }
 
         while (true) {
-            // clear the line and flush stdout in case of buffer issues
-            memset(&line[0], 0, sizeof(line));
-            fflush(stdout);
-
+            // grab the line
             // continue if we don't receive anything
-            if (!fgets(line, INPUTBUFFER, stdin)) { continue; }
+            if (!std::getline(std::cin, line)) { continue; }
 
             // continue if all we get is a new line
-            if (line[0] == '\n') { continue; }
+            if (line == "\n") { continue; }
+
+            // string stream for easy parsing
+            std::stringstream stream(line);
+
+            // clear the string and extract the first token
+            token.clear();
+            stream >> std::skipws >> token;
 
             // these are the commands we can get from the GUI
-            if (!strncmp(line, "isready", 7)) {
+            if (token == "isready") {
                 std::cout << "readyok" << std::endl;
             }
-            else if (!strncmp(line, "position", 8)) {
-                parsePosition(line, board);
+            else if (token == "position") {
+                parsePosition(stream, board);
             }
-            else if (!strncmp(line, "setoption", 9)) {
-                parseOption(line, board, bookOpen);
+            else if (token == "setoption") {
+                parseOption(stream, board, bookOpen);
             }
-            else if (!strncmp(line, "ucinewgame", 10)) {
+            else if (token == "ucinewgame") {
                 if (!openingBook.getBookOpen()) { openingBook.flipBookOpen(); }
                 table.clear();
                 gondor.clear();
-                board = *board.from_fen(StartFEN);
+                board = *libchess::Position::from_fen(StartFEN);
             }
-            else if (!strncmp(line, "go", 2)) {
-                parseGo(line, board, openingBook, bookOpen);
+            else if (token == "go") {
+                parseGo(stream, board, openingBook, bookOpen);
             }
-            else if (!strncmp(line, "stop", 4)) {
+            else if (token == "stop") {
                 gondor.stop = true;
             }
-            else if (!strncmp(line, "quit", 4)) {
+            else if (token == "quit") {
                 gondor.stop = true;
                 break;
             }
-            else if (!strncmp(line, "uci", 3)) {
+            else if (token == "uci") {
                 std::cout << "id name Anduril" << std::endl;
                 std::cout << "id author Krtoonbrat" << std::endl;
 
@@ -225,22 +227,42 @@ namespace UCI {
         }
     }
 
-    void parseOption(char* line, libchess::Position &board, bool &bookOpen) {
-        char *ptr = NULL;
+    void parseOption(std::stringstream &stream, libchess::Position &board, bool &bookOpen) {
+        // format:
+        // setoption name pMG value 100
 
-        // set thread count
-        if ((ptr = strstr(line, "Threads"))) {
-            gondor.numThreads = atoi(ptr + 13);
-            gondor.set(board, gondor.numThreads);
+        std::string token, value;
+
+        // must send token "name" with a setoption command
+        stream >> token;
+        if (token != "name" && token != "Name") {
+            return;
         }
 
-        // set hash size
-        if ((ptr = strstr(line, "ClearHash"))) {
+        // actually grab the token we want this time
+        stream >> token;
+
+        // we check "ClearHash" here because it does not need a "value" token
+        if (token == "ClearHash") {
             table.clear();
             std::cout << "info string Hash table cleared" << std::endl;
         }
-        else if ((ptr = strstr(line, "Hash"))) {
-            int hashSize = atoi(ptr + 10);
+
+        // now we check for the required "value" token
+        stream >> value;
+        if (value != "value" && value != "Value") {
+            return;
+        }
+
+        // set thread count
+        if (token == "Threads") {
+            stream >> gondor.numThreads;
+            gondor.set(board, gondor.numThreads);
+        }
+
+        else if (token == "Hash") {
+            int hashSize;
+            stream >> hashSize;
             if (hashSize == table.sizeMB) {
                 std::cout << "info string Hash size already set to " << hashSize << " MB" << std::endl;
             }
@@ -250,8 +272,9 @@ namespace UCI {
         }
 
         // set book open or closed
-        if ((ptr = strstr(line, "OwnBook"))) {
-            if ((ptr = strstr(line, "true"))) {
+        else if (token == "OwnBook") {
+            stream >> token;
+            if (token == "true") {
                 bookOpen = true;
             }
             else {
@@ -260,322 +283,138 @@ namespace UCI {
         }
 
         // set nnue path
-        if ((ptr = strstr(line, "nnue_path"))) {
-            strcpy(NNUE::nnue_path, ptr + 16);
+        else if (token == "nnue_path") {
+            stream >> NNUE::nnue_path;
             char *end = strchr(NNUE::nnue_path, '\n');
             if (end) {
                 *end = '\0';
             }
             NNUE::LoadNNUE();
         }
-        if ((ptr = strstr(line, "nnue_library_path"))) {
-            strcpy(NNUE::nnue_library_path, ptr + 24);
-            char *end = strchr(NNUE::nnue_library_path, '\n');
-            if (end) {
-                *end = '\0';
-            }
-            NNUE::LoadNNUE();
-        }
 
-        // setoption name pMG value 100
-
-        /*
-        if ((ptr = strstr(line, "pMG"))) {
-            libchess::Position::pieceValuesMG[0] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "pEG"))) {
-            libchess::Position::pieceValuesEG[0] = atoi(ptr + 10);
-            Anduril::pieceValues[0] = libchess::Position::pieceValuesEG[0];
-        }
-
-        if ((ptr = strstr(line, "kMG"))) {
-            libchess::Position::pieceValuesMG[1] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "kEG"))) {
-            libchess::Position::pieceValuesEG[1] = atoi(ptr + 10);
-            Anduril::pieceValues[1] = libchess::Position::pieceValuesEG[1];
-        }
-
-        if ((ptr = strstr(line, "bMG"))) {
-            libchess::Position::pieceValuesMG[2] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "bEG"))) {
-            libchess::Position::pieceValuesEG[2] = atoi(ptr + 10);
-            Anduril::pieceValues[2] = libchess::Position::pieceValuesEG[2];
-        }
-
-        if ((ptr = strstr(line, "rMG"))) {
-            libchess::Position::pieceValuesMG[3] = atoi(ptr + 10);
-
-        }
-
-        if ((ptr = strstr(line, "rEG"))) {
-            libchess::Position::pieceValuesEG[3] = atoi(ptr + 10);
-            Anduril::pieceValues[3] = libchess::Position::pieceValuesEG[3];
-        }
-
-        if ((ptr = strstr(line, "qMG"))) {
-            libchess::Position::pieceValuesMG[4] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "qEG"))) {
-            libchess::Position::pieceValuesEG[4] = atoi(ptr + 10);
-            Anduril::pieceValues[4] = libchess::Position::pieceValuesEG[4];
-        }
-         */
-
-        if ((ptr = strstr(line, "neb"))) {
-            neb = atof(ptr + 10);
+        else if (token == "neb") {
+            stream >> neb;
             initReductions(nem, neb);
         }
 
-        if ((ptr = strstr(line, "nem"))) {
-            nem = atof(ptr + 10);
+        else if (token == "nem") {
+            stream >> nem;
             initReductions(nem, neb);
         }
 
-        if ((ptr = strstr(line, "bm5"))) {
-            BlockedPawnMG[0] = atoi(ptr + 10);
+        else if (token == "sbc") {
+            stream >> sbc;
         }
 
-        if ((ptr = strstr(line, "bm6"))) {
-            BlockedPawnMG[1] = atoi(ptr + 10);
+        else if (token == "sbm") {
+            stream >> sbm;
         }
 
-        if ((ptr = strstr(line, "be5"))) {
-            BlockedPawnEG[0] = atoi(ptr + 10);
+        else if (token == "msb") {
+            stream >> msb;
         }
 
-        if ((ptr = strstr(line, "be6"))) {
-            BlockedPawnEG[1] = atoi(ptr + 10);
+        else if (token == "lsb") {
+            stream >> lsb;
         }
 
-        if ((ptr = strstr(line, "sbc"))) {
-            sbc = atoi(ptr + 10);
+        else if (token == "lbc") {
+            stream >> lbc;
         }
 
-        if ((ptr = strstr(line, "sbm"))) {
-            sbm = atoi(ptr + 10);
+        else if (token == "cpm") {
+            stream >> maxCaptureVal;
         }
 
-        if ((ptr = strstr(line, "msb"))) {
-            msb = atoi(ptr + 10);
+        else if (token == "rvc") {
+            stream >> rvc;
         }
 
-        if ((ptr = strstr(line, "lsb"))) {
-            lsb = atoi(ptr + 10);
+        else if (token == "rvs") {
+            stream >> rvs;
         }
 
-        if ((ptr = strstr(line, "lbc"))) {
-            lbc = atoi(ptr + 10);
+        else if (token == "rfm") {
+            stream >> rfm;
         }
 
-        if ((ptr = strstr(line, "cpm"))) {
-            maxCaptureVal = atoi(ptr + 10);
+        else if (token == "mhv") {
+            stream >> maxHistoryVal;
         }
 
-        if ((ptr = strstr(line, "rvc"))) {
-            rvc = atoi(ptr + 10);
+        else if (token == "mcv") {
+            stream >> maxContinuationVal;
         }
 
-        if ((ptr = strstr(line, "rvs"))) {
-            rvs = atoi(ptr + 10);
+        else if (token == "hpv") {
+            stream >> hpv;
         }
 
-        if ((ptr = strstr(line, "rfm"))) {
-            rfm = atoi(ptr + 10);
+        else if (token == "hrv") {
+            stream >> hrv;
         }
 
-        if ((ptr = strstr(line, "mhv"))) {
-            maxHistoryVal = atoi(ptr + 10);
+        else if (token == "qte") {
+            stream >> qte;
         }
 
-        if ((ptr = strstr(line, "mcv"))) {
-            maxContinuationVal = atoi(ptr + 10);
+        else if (token == "sec") {
+            stream >> sec;
         }
 
-        if ((ptr = strstr(line, "hpv"))) {
-            hpv = atoi(ptr + 10);
+        else if (token == "sem") {
+            stream >> sem;
         }
-
-        if ((ptr = strstr(line, "hrv"))) {
-            hrv = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "qte"))) {
-            qte = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "spm"))) {
-            threatBySafePawn[0] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "spe"))) {
-            threatBySafePawn[1] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "ppm"))) {
-            threatByPawnPush[0] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "ppe"))) {
-            threatByPawnPush[1] = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "sec"))) {
-            sec = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "sem"))) {
-            sem = atoi(ptr + 10);
-        }
-
-        if ((ptr = strstr(line, "sed"))) {
-            sed = atoi(ptr + 10);
-        }
-
-        /*
-        if ((ptr = strstr(line, "svq"))) {
-            AI->svq = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->svq = AI->svq;
-            }
-        }
-
-        if ((ptr = strstr(line, "rvc"))) {
-            AI->rvc = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->rvc = AI->rvc;
-            }
-        }
-
-        if ((ptr = strstr(line, "rvs"))) {
-            AI->rvs = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->rvs = AI->rvs;
-            }
-        }
-
-        if ((ptr = strstr(line, "pcc"))) {
-            AI->pcc = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->pcc = AI->pcc;
-            }
-        }
-
-        if ((ptr = strstr(line, "pci"))) {
-            AI->pci = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->pci = AI->pci;
-            }
-        }
-
-        if ((ptr = strstr(line, "fpc"))) {
-            AI->fpc = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->fpc = AI->fpc;
-            }
-        }
-
-        if ((ptr = strstr(line, "fpm"))) {
-            AI->fpm = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->fpm = AI->fpm;
-            }
-        }
-
-        if ((ptr = strstr(line, "hpv"))) {
-            AI->hpv = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->hpv = AI->hpv;
-            }
-        }
-
-        if ((ptr = strstr(line, "smq"))) {
-            AI->smq = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->smq = AI->smq;
-            }
-        }
-
-        if ((ptr = strstr(line, "smt"))) {
-            AI->smt = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->smt = AI->smt;
-            }
-        }
-
-        if ((ptr = strstr(line, "sec"))) {
-            AI->sec = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->sec = AI->sec;
-            }
-        }
-
-        if ((ptr = strstr(line, "sem"))) {
-            AI->sem = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->sem = AI->sem;
-            }
-        }
-
-        if ((ptr = strstr(line, "sed"))) {
-            AI->sed = atoi(ptr + 10);
-            for (auto &thread : gondor) {
-                thread->sed = AI->sed;
-            }
-        }
-         */
     }
 
-    void parseGo(char* line, libchess::Position &board, Book &openingBook, bool &bookOpen) {
+    void parseGo(std::stringstream &stream, libchess::Position &board, Book &openingBook, bool &bookOpen) {
         // reset all the limit
         int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
         int increment = 0;
         gondor.mainThread()->engine->limits.timeSet = false;
-        char *ptr = NULL;
+
+        std::string token;
 
         // this makes sure that the opening book is set to the correct state
         if (!bookOpen) {
             openingBook.closeBook();
         }
 
-        // commands
-        if ((ptr = strstr(line, "infinite"))) {
-            openingBook.closeBook();
-            ;
-        }
+        // consume the tokens
+        while (stream >> token) {
+            // commands
+            if (token == "infinite") {
+                openingBook.closeBook();
+            }
 
-        if ((ptr = strstr(line, "btime")) && board.side_to_move()) {
-            time = atoi(ptr + 6);
-        }
+            else if (token == "btime" && board.side_to_move()) {
+                stream >> time;
+            }
 
-        if ((ptr = strstr(line, "wtime")) && !board.side_to_move()) {
-            time = atoi(ptr + 6);
-        }
+            else if (token ==  "wtime" && !board.side_to_move()) {
+                stream >> time;
+            }
 
-        if ((ptr = strstr(line, "binc")) && board.side_to_move()) {
-            increment = atoi(ptr + 5);
-        }
+            else if (token == "binc" && board.side_to_move()) {
+                stream >> increment;
+            }
 
-        if ((ptr = strstr(line, "winc")) && !board.side_to_move()) {
-            increment = atoi(ptr + 5);
-        }
+            else if (token == "winc" && !board.side_to_move()) {
+                stream >> increment;
+            }
 
-        if ((ptr = strstr(line, "movestogo"))) {
-            mtg = atoi(ptr + 10);
-        }
+            else if (token == "movestogo") {
+                stream >> mtg;
+            }
 
-        if ((ptr = strstr(line, "movetime"))) {
-            moveTime = atoi(ptr + 9);
-        }
+            else if (token == "movetime") {
+                stream >> moveTime;
+            }
 
-        if ((ptr = strstr(line, "depth"))) {
-            depth = atoi(ptr + 6);
+            else if (token == "depth") {
+                stream >> depth;
+            }
         }
 
         if (moveTime != -1) {
@@ -623,58 +462,40 @@ namespace UCI {
         }
     }
 
-    void parsePosition(char* line, libchess::Position &board) {
-        // first move the pointer past the "position" token
-        line += 9;
+    void parsePosition(std::stringstream &stream, libchess::Position &board) {
+        std::string token, fen;
 
-        // save the start position for the pointer
-        char *ptrToken = line;
+        // grab the first part of the command
+        stream >> token;
 
         // instructions for different commands we could receive
-        if (strncmp(line, "startpos", 8) == 0) {
+        if (token == "startpos") {
             board = *libchess::Position::from_fen(StartFEN);
+            // consume the "moves" token
+            stream >> token;
+        }
+        else if (token == "fen") {
+            // grab the fen string
+            while (stream >> token && token != "moves") {
+                fen += token + " ";
+            }
+            board = *libchess::Position::from_fen(fen);
         }
         else {
-            ptrToken = strstr(line, "fen");
-            if (ptrToken == NULL) {
-                board = *libchess::Position::from_fen(StartFEN);
-            }
-            else {
-                ptrToken += 4;
-                board = *libchess::Position::from_fen(ptrToken);
-            }
+            return;
         }
 
         // set up the variable for parsing the moves
-        ptrToken = strstr(line, "moves");
-        libchess::Move move(0);
-
-        // parse the moves the GUI sent
-        if (ptrToken != NULL) {
-            ptrToken += 6;
-            while (*ptrToken) {
-                std::string moveStr;
-                if (ptrToken[4] == ' ' || ptrToken[4] == '\n') {
-                    moveStr = std::string(ptrToken, 4);
-                }
-                else {
-                    moveStr = std::string(ptrToken, 5);
-                }
-                move = *libchess::Move::from(moveStr);
-                if (move.value() == 0) { break; }
-                board.make_move(move);
-                while (*ptrToken && *ptrToken != ' ') {
-                    ptrToken++;
-                }
-                ptrToken++;
-            }
+        std::vector<std::string> moves;
+        while (stream >> token) {
+            moves.push_back(token);
         }
 
-        /*
-        Game::displayBoard(board);
-        std::cout << "Board FEN: " << board.ForsythPublish() << std::endl;
-        std::cout << (board.WhiteToPlay() ? "White to move" : "Black to move") << std::endl;
-         */
+        // set up the board
+        for (auto &i : moves) {
+            libchess::Move move = *libchess::Move::from(i);
+            board.make_move(move);
+        }
     }
 
 }  // namespace UCI

@@ -15,13 +15,13 @@ namespace UCI {
     void loop(int argc, char* argv[]);
 
     // parses the go command from the GUI
-    void parseGo(char* line, libchess::Position &board, Book &openingBook, bool &bookOpen);
+    void parseGo(std::stringstream &stream, libchess::Position &board, Book &openingBook, bool &bookOpen);
 
     // parses position commands from the GUI
-    void parsePosition(char* line, libchess::Position &board);
+    void parsePosition(std::stringstream &stream, libchess::Position &board);
 
     // parses options
-    void parseOption(char* line, libchess::Position &board, bool &bookOpen);
+    void parseOption(std::stringstream &stream, libchess::Position &board, bool &bookOpen);
 
     static int queenOrderVal = 50000;
     static int rookOrderVal =  25000;
