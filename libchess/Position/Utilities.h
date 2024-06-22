@@ -36,10 +36,12 @@ inline void Position::display_raw(std::ostream& ostream) const {
 }
 
 inline void Position::display(std::ostream& ostream) const {
+    ostream << "8 ";
     for (Square square : constants::SQUARES) {
         Square sq = square;
         if (sq && !(sq & 7)) {
             ostream << "\n";
+            ostream << 8 - sq.rank() << " ";
         }
         auto piece = piece_on(sq.flipped());
         if (!piece) {
@@ -48,6 +50,7 @@ inline void Position::display(std::ostream& ostream) const {
             ostream << *piece << " ";
         }
     }
+    ostream << "\n" << "  A B C D E F G H";
     ostream << "\n";
 }
 
