@@ -117,15 +117,6 @@ public:
     // time we should stop the search
     std::chrono::time_point<std::chrono::steady_clock> stopTime;
 
-    // values for CLOP to tune
-    int svq = -171;
-    int pcc = 148;
-    int pci = 68;
-    int fpc = 148;
-    int fpm = 78;
-    int smq = -112;
-    int smt = -48;
-
     // endgame values used for qsearch
     static int pieceValues[16];
 

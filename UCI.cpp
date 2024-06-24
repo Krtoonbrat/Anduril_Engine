@@ -50,6 +50,15 @@ extern int sec;
 extern int sem;
 extern int sed;
 
+extern int fth;
+extern int svq;
+extern int pcc;
+extern int pci;
+extern int fpc;
+extern int fpm;
+extern int smq;
+extern int smt;
+
 namespace NNUE {
     extern char nnue_path[256];
     extern char nnue_library_path[256];
@@ -192,6 +201,15 @@ namespace UCI {
                 std::cout << "option name sec type string default 178" << std::endl;
                 std::cout << "option name sem type string default 54" << std::endl;
                 std::cout << "option name sed type string default 64" << std::endl;
+
+                std::cout << "option name fth type string default 200" << std::endl;
+                std::cout << "option name svq type string default -171" << std::endl;
+                std::cout << "option name pcc type string default 148" << std::endl;
+                std::cout << "option name pci type string default 68" << std::endl;
+                std::cout << "option name fpc type string default 148" << std::endl;
+                std::cout << "option name fpm type string default 78" << std::endl;
+                std::cout << "option name smq type string default -112" << std::endl;
+                std::cout << "option name smt type string default -48" << std::endl;
 /*
                 std::cout << "option name pMG type string default 115" << std::endl;
                 std::cout << "option name pEG type string default 148" << std::endl;
@@ -365,6 +383,39 @@ namespace UCI {
         else if (token == "sem") {
             stream >> sem;
         }
+
+        else if (token == "fth") {
+            stream >> fth;
+        }
+
+        else if (token == "svq") {
+            stream >> svq;
+        }
+
+        else if (token == "pcc") {
+            stream >> pcc;
+        }
+
+        else if (token == "pci") {
+            stream >> pci;
+        }
+
+        else if (token == "fpc") {
+            stream >> fpc;
+        }
+
+        else if (token == "fpm") {
+            stream >> fpm;
+        }
+
+        else if (token == "smq") {
+            stream >> smq;
+        }
+
+        else if (token == "smt") {
+            stream >> smt;
+        }
+
     }
 
     void parseGo(std::stringstream &stream, libchess::Position &board, Book &openingBook, bool &bookOpen) {

@@ -42,6 +42,15 @@ int sec = 178;
 int sem = 54;
 int sed = 64;
 
+int fth = 200;
+int svq = -171;
+int pcc = 148;
+int pci = 68;
+int fpc = 148;
+int fpm = 78;
+int smq = -112;
+int smt = -48;
+
 extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
@@ -183,7 +192,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         }
 
         // calculate futility threshold
-        futility = bestScore + 200;
+        futility = bestScore + fth;
     }
 
     // holds the continuation history from previous moves
