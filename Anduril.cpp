@@ -878,11 +878,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 reduction--;
             }
 
-            // increase reduction on repetition
-            if (move == *board.previousMove(ply - 3) && board.is_repeat()) {
-                reduction += 2;
-            }
-
             // decrease reduction on tactical moves
             if (capture || givesCheck || promotion) {
                 reduction--;
