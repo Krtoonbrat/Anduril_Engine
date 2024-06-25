@@ -172,6 +172,8 @@ class Position {
     Position() : side_to_move_(constants::WHITE), ply_(0) {
     }
 
+    static constexpr int STATE_SIZE = 1000;
+
     struct State {
         CastlingRights castling_rights_;
         std::optional<Square> enpassant_square_;
@@ -205,17 +207,6 @@ class Position {
         FIFTY_MOVES
     };
 
-    /*
-    Bitboard piece_type_bb_[6];
-    Bitboard color_bb_[2];
-    Color side_to_move_;
-    int fullmoves_;
-    int ply_;
-    std::unique_ptr<State[]> history_;
-
-    std::string start_fen_;
-     */
-
     Position(const Position& cpy) : Position() {
         for (int i = 0; i < 6; i++) {
             piece_type_bb_[i] = cpy.piece_type_bb_[i];
@@ -227,7 +218,7 @@ class Position {
         fullmoves_ = cpy.fullmoves_;
         ply_ = cpy.ply_;
         createHistory();
-        std::memcpy(history_.get(), cpy.history_.get(), 1000 * sizeof(State));
+        std::memcpy(history_.get(), cpy.history_.get(), STATE_SIZE * sizeof(State));
         start_fen_ = cpy.start_fen_;
     }
 
@@ -243,7 +234,7 @@ class Position {
         p.fullmoves_ = cpy.fullmoves_;
         p.ply_ = cpy.ply_;
         p.createHistory();
-        std::memcpy(p.history_.get(), cpy.history_.get(), 1000 * sizeof(State));
+        std::memcpy(p.history_.get(), cpy.history_.get(), STATE_SIZE * sizeof(State));
         p.start_fen_ = cpy.start_fen_;
         return *this;
     }
@@ -397,7 +388,7 @@ protected:
         return history_[ply + 7];
     }
     void createHistory() {
-        history_ = std::make_unique<State[]>(1000);
+        history_ = std::make_unique<State[]>(STATE_SIZE);
     }
     [[nodiscard]] hash_type calculate_hash() const {
         hash_type hash_value = 0;
