@@ -1061,7 +1061,7 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
     }
     else {
         int capturedIndex = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
-        captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] += largerBonus - captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] * abs(bonus) / maxCaptureVal;
+        captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] += largerBonus - captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] * abs(largerBonus) / maxCaptureVal;
     }
 
     // extra penalty for early move that was not a transposition or main killer in previous ply
