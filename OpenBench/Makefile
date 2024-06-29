@@ -11,7 +11,7 @@ CXX=clang++
 # Flags
 # Currently requires at least BMI2 and AVX2
 CXXFLAGS=-std=c++20 -Wall -Wextra -Ofast -march=native -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2 -mbmi2 -static
-CXXFLAGS+=-DUSE_AVX2 -DUSE_SSE41 -DUSE_SSE3 -DUSE_SSSE3 -DUSE_SSE2 -DUSE_SSE -DUSE_PEXT -DNDEBUG
+CXXFLAGS+=-DUSE_AVX2 -DUSE_SSE41 -DUSE_SSE3 -DUSE_SSSE3 -DUSE_SSE2 -DUSE_SSE -DUSE_PEXT -DNDEBUG -DIS_64BIT
 
 # Source files
 SRC=../Anduril.cpp ../evaluation.cpp ../main.cpp ../misc.cpp ../MovePicker.cpp ../PolyglotBook.cpp ../Thread.cpp ../TranspositionTable.cpp ../UCI.cpp ../ZobristHasher.cpp ../nnue-probe/misc.cpp ../nnue-probe/nnue.cpp
