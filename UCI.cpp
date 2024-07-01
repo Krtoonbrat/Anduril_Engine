@@ -20,9 +20,9 @@ int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
 int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
                                  148,  490,  518,  878,  1749, 0, 0, 0};
 
-int maxHistoryVal = 14362;
-int maxContinuationVal = 19552;
-int maxCaptureVal = 17872;
+int maxHistoryVal = 8801;
+int maxContinuationVal = 25336;
+int maxCaptureVal = 12809;
 
 extern int BlockedPawnMG[2];
 extern int BlockedPawnEG[2];
@@ -169,8 +169,8 @@ namespace UCI {
                 std::cout << "option name MOV type spin default 15000 min 0 max 1000000" << std::endl;
                  */
 
-                std::cout << "option name neb type string default -0.565281" << std::endl;
-                std::cout << "option name nem type string default 1.87106" << std::endl;
+                std::cout << "option name neb type string default -0.5656" << std::endl;
+                std::cout << "option name nem type string default 3.5782" << std::endl;
 
                 std::cout << "option name bm5 type string default 20" << std::endl;
                 std::cout << "option name bm6 type string default 63" << std::endl;
@@ -182,34 +182,34 @@ namespace UCI {
                 std::cout << "option name ppm type string default 13" << std::endl;
                 std::cout << "option name ppe type string default 11" << std::endl;
 
-                std::cout << "option name sbc type string default 93" << std::endl;
-                std::cout << "option name sbm type string default 284" << std::endl;
-                std::cout << "option name msb type string default 5699" << std::endl;
-                std::cout << "option name lsb type string default 147" << std::endl;
-                std::cout << "option name lbc type string default 65" << std::endl;
-                std::cout << "option name mhv type string default 14362" << std::endl;
-                std::cout << "option name mcv type string default 19552" << std::endl;
-                std::cout << "option name cpm type string default 17872" << std::endl;
-                std::cout << "option name hpv type string default -5928" << std::endl;
-                std::cout << "option name hrv type string default 26602" << std::endl;
-                std::cout << "option name qte type string default 4500" << std::endl;
+                std::cout << "option name sbc type string default -122" << std::endl;
+                std::cout << "option name sbm type string default 288" << std::endl;
+                std::cout << "option name msb type string default 7393" << std::endl;
+                std::cout << "option name lsb type string default 87" << std::endl;
+                std::cout << "option name lbc type string default 68" << std::endl;
+                std::cout << "option name mhv type string default 8801" << std::endl;
+                std::cout << "option name mcv type string default 25336" << std::endl;
+                std::cout << "option name cpm type string default 12809" << std::endl;
+                std::cout << "option name hpv type string default -12254" << std::endl;
+                std::cout << "option name hrv type string default 16749" << std::endl;
+                std::cout << "option name qte type string default 4475" << std::endl;
 
-                std::cout << "option name rvc type string default 460" << std::endl;
-                std::cout << "option name rvs type string default 148" << std::endl;
-                std::cout << "option name rfm type string default 200" << std::endl;
+                std::cout << "option name rvc type string default 582" << std::endl;
+                std::cout << "option name rvs type string default 162" << std::endl;
+                std::cout << "option name rfm type string default 243" << std::endl;
 
-                std::cout << "option name sec type string default 178" << std::endl;
-                std::cout << "option name sem type string default 54" << std::endl;
+                std::cout << "option name sec type string default 162" << std::endl;
+                std::cout << "option name sem type string default 28" << std::endl;
                 std::cout << "option name sed type string default 64" << std::endl;
 
-                std::cout << "option name fth type string default 200" << std::endl;
-                std::cout << "option name svq type string default -171" << std::endl;
-                std::cout << "option name pcc type string default 148" << std::endl;
-                std::cout << "option name pci type string default 68" << std::endl;
-                std::cout << "option name fpc type string default 148" << std::endl;
-                std::cout << "option name fpm type string default 78" << std::endl;
-                std::cout << "option name smq type string default -112" << std::endl;
-                std::cout << "option name smt type string default -48" << std::endl;
+                std::cout << "option name fth type string default 230" << std::endl;
+                std::cout << "option name svq type string default -113" << std::endl;
+                std::cout << "option name pcc type string default 269" << std::endl;
+                std::cout << "option name pci type string default 152" << std::endl;
+                std::cout << "option name fpc type string default 294" << std::endl;
+                std::cout << "option name fpm type string default 70" << std::endl;
+                std::cout << "option name smq type string default -39" << std::endl;
+                std::cout << "option name smt type string default -5" << std::endl;
 /*
                 std::cout << "option name pMG type string default 115" << std::endl;
                 std::cout << "option name pEG type string default 148" << std::endl;
