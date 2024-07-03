@@ -123,6 +123,11 @@ namespace UCI {
             else if (token == "go") {
                 parseGo(stream, board, openingBook, bookOpen);
             }
+            else if (token == "perft") {
+                int d;
+                stream >> d;
+                gondor.mainThread()->engine->perft(board, d);
+            }
             else if (token == "stop") {
                 gondor.stop = true;
             }

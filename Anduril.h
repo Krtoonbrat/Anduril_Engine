@@ -59,6 +59,9 @@ public:
     // benchmarks the engine
     void bench(libchess::Position &board);
 
+    // runs perft to verify move generation
+    void perft(libchess::Position &board, int depth);
+
     inline void setMovesExplored(int moves) { movesExplored = moves; }
 
     // reset the ply
@@ -156,6 +159,10 @@ private:
     // list of moves at root position
     libchess::MoveList rootMoves;
     libchess::Move *currRootMove;
+
+    // this version actually performs the perft search
+    template<bool root>
+    uint64_t perft(libchess::Position &board, int depth);
 
     // returns the amount of non pawn material (excluding kings)
     int nonPawnMaterial(bool whiteToPlay, libchess::Position &board);
