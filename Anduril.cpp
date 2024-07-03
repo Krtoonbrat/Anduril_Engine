@@ -1043,9 +1043,7 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
                                libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched, int captureCount) {
     int largerBonus = stat_bonus(depth + 1);
     int bonus = bestScore > beta + lbc ? largerBonus : stat_bonus(depth);
-    int orderPenalty;
-    libchess::Piece movedPiece = *board.piece_on(bestMove.from_square());
-    libchess::PieceType capturedPiece(0);
+    int nonBestPenalty;
 
     if (!board.is_capture_move(bestMove)) {
 
@@ -1053,9 +1051,9 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
 
         // decrease stats for non-best quiets
         for (int i = 0; i < quietCount; i++) {
-            orderPenalty = -bonus;
-            updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), orderPenalty);
-            moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += orderPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(orderPenalty) / maxHistoryVal;
+            nonBestPenalty = -bonus;
+            updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), nonBestPenalty);
+            moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += nonBestPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(nonBestPenalty) / maxHistoryVal;
         }
     }
     else {
@@ -1069,10 +1067,10 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
     }
 
     for (int i = 0; i < captureCount; i++) {
-        orderPenalty = -largerBonus;
+        nonBestPenalty = -largerBonus;
         int movedPieceIdx = board.piece_on(capturesSearched[i].from_square())->to_nnue();
         int capturedType = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
-        captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] += orderPenalty - captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] * abs(orderPenalty) / maxCaptureVal;
+        captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] += nonBestPenalty - captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] * abs(nonBestPenalty) / maxCaptureVal;
     }
 }
 
@@ -1100,7 +1098,6 @@ void Anduril::updateContinuationHistory(libchess::Position &board, libchess::Pie
         // we index ply - i + 1 because we need to check that the ply we are looking at wasn't null, so we have to access the next ply's previous move
         if (board.prevMoveType(ply - start - i + 1) != libchess::Move::Type::NONE) {
             (*board.continuationHistory(ply - start - i))[piece.value()][to] += bonus - (*board.continuationHistory(ply - start - i))[piece.value()][to] * abs(bonus) / maxContinuationVal;
-            //(*board.continuationHistory(ply - i))[piece.value()][to] = std::clamp((*board.continuationHistory(ply - i))[piece.value()][to] + bonus, -UCI::maxContinuationVal, UCI::maxContinuationVal);
         }
     }
 }

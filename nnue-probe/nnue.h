@@ -1,12 +1,6 @@
 #ifndef NNUE_H
 #define NNUE_H
 
-#ifndef __cplusplus
-#ifndef _MSC_VER
-#include <stdalign.h>
-#endif
-#endif
-
 /**
 * Calling convention
 */
@@ -18,6 +12,8 @@
 #else
 #   define _CDECL
 #endif
+
+constexpr size_t CacheLineSize = 64;
 
 /**
 * Internal piece representation
@@ -47,7 +43,7 @@ typedef struct DirtyPiece {
 } DirtyPiece;
 
 typedef struct Accumulator {
-  alignas(64) int16_t accumulation[2][256];
+  alignas(CacheLineSize) int16_t accumulation[2][256];
   int computedAccumulation;
 } Accumulator;
 

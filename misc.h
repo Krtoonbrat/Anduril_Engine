@@ -12,14 +12,6 @@
 #include <cstdlib>
 #include "nnue-probe/nnue.h"
 
-#define CACHE_LINE_SIZE  64
-
-#if defined (__GNUC__)
-#   define CACHE_ALIGN  __attribute__ ((aligned(CACHE_LINE_SIZE)))
-#else
-#   define CACHE_ALIGN __declspec(align(CACHE_LINE_SIZE))
-#endif
-
 namespace NNUE {
 
     void LoadNNUE();
