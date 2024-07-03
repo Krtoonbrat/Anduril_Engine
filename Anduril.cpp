@@ -40,7 +40,6 @@ int qte = 4475;
 // singular extension values
 int sec = 162;
 int sem = 28;
-int sed = 64;
 
 int fth = 230;
 int svq = -113;
@@ -51,9 +50,9 @@ int fpm = 70;
 int smq = -39;
 int smt = -5;
 
-extern int maxHistoryVal;
-extern int maxContinuationVal;
-extern int maxCaptureVal;
+int maxHistoryVal = 8801;
+int maxContinuationVal = 25336;
+int maxCaptureVal = 12809;
 
 // our thread pool
 extern ThreadPool gondor;
@@ -760,7 +759,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 && abs(nScore) < 31000
                 && (nType & 2)
                 && nDepth >= depth - 3) {
-                int singleBeta = nScore - (sec + sem * (nType == 3 && !PvNode)) * depth / sed;
+                int singleBeta = nScore - (sec + sem * (nType == 3 && !PvNode)) * depth / 64;
                 int singleDepth = (depth - 1) / 2;
                 singularAttempts++;
 

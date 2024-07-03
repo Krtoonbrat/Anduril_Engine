@@ -20,15 +20,9 @@ int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
 int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
                                  148,  490,  518,  878,  1749, 0, 0, 0};
 
-int maxHistoryVal = 8801;
-int maxContinuationVal = 25336;
-int maxCaptureVal = 12809;
-
-extern int BlockedPawnMG[2];
-extern int BlockedPawnEG[2];
-
-extern int threatBySafePawn[2];
-extern int threatByPawnPush[2];
+extern int maxHistoryVal;
+extern int maxContinuationVal;
+extern int maxCaptureVal;
 
 extern int sbc;
 extern int sbm;
@@ -48,7 +42,6 @@ extern int qte;
 
 extern int sec;
 extern int sem;
-extern int sed;
 
 extern int fth;
 extern int svq;
@@ -61,7 +54,6 @@ extern int smt;
 
 namespace NNUE {
     extern char nnue_path[256];
-    extern char nnue_library_path[256];
 }
 
 ThreadPool gondor;
@@ -148,34 +140,9 @@ namespace UCI {
                 std::cout << "option name OwnBook type check default false" << std::endl;
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
-                std::cout << "option name nnue_library_path type string default " << NNUE::nnue_library_path << std::endl;
-                /*
-                std::cout << "option name kMG type spin default 446 min -40000 max 40000" << std::endl;
-                std::cout << "option name kEG type spin default 490 min -40000 max 40000" << std::endl;
-                std::cout << "option name tMG type spin default 150 min -10000 max 10000" << std::endl;
-                std::cout << "option name tEG type spin default 150 min -10000 max 10000" << std::endl;
-                std::cout << "option name bpM type spin default 10  min -1000  max 1000"  << std::endl;
-                std::cout << "option name bpE type spin default 30  min -1000  max 1000"  << std::endl;
-                std::cout << "option name spc type spin default 47  min -1000  max 1000"  << std::endl;
-
-                std::cout << "option name bMG type spin default 502 min -40000 max 40000" << std::endl;
-                std::cout << "option name bEG type spin default 518 min -40000 max 40000" << std::endl;
-
-                std::cout << "option name rMG type spin default 649 min -40000 max 40000" << std::endl;
-                std::cout << "option name rEG type spin default 878 min -40000 max 40000" << std::endl;
-
-                std::cout << "option name QOV type spin default 50000 min 0 max 1000000" << std::endl;
-                std::cout << "option name ROV type spin default 25000 min 0 max 1000000" << std::endl;
-                std::cout << "option name MOV type spin default 15000 min 0 max 1000000" << std::endl;
-                 */
 
                 std::cout << "option name neb type string default -0.5656" << std::endl;
                 std::cout << "option name nem type string default 3.5782" << std::endl;
-
-                std::cout << "option name bm5 type string default 20" << std::endl;
-                std::cout << "option name bm6 type string default 63" << std::endl;
-                std::cout << "option name be5 type string default 13" << std::endl;
-                std::cout << "option name be6 type string default 94" << std::endl;
 
                 std::cout << "option name spm type string default 48" << std::endl;
                 std::cout << "option name spe type string default 26" << std::endl;
@@ -200,7 +167,6 @@ namespace UCI {
 
                 std::cout << "option name sec type string default 162" << std::endl;
                 std::cout << "option name sem type string default 28" << std::endl;
-                std::cout << "option name sed type string default 64" << std::endl;
 
                 std::cout << "option name fth type string default 230" << std::endl;
                 std::cout << "option name svq type string default -113" << std::endl;
@@ -210,33 +176,6 @@ namespace UCI {
                 std::cout << "option name fpm type string default 70" << std::endl;
                 std::cout << "option name smq type string default -39" << std::endl;
                 std::cout << "option name smt type string default -5" << std::endl;
-/*
-                std::cout << "option name pMG type string default 115" << std::endl;
-                std::cout << "option name pEG type string default 148" << std::endl;
-                std::cout << "option name kMG type string default 446" << std::endl;
-                std::cout << "option name kEG type string default 490" << std::endl;
-                std::cout << "option name bMG type string default 502" << std::endl;
-                std::cout << "option name bEG type string default 518" << std::endl;
-                std::cout << "option name rMG type string default 649" << std::endl;
-                std::cout << "option name rEG type string default 878" << std::endl;
-                std::cout << "option name qMG type string default 1332" << std::endl;
-                std::cout << "option name qEG type string default 1749" << std::endl;
-
-                /*
-                std::cout << "option name svq type spin default -171 min -10000 max 10000" << std::endl;
-                std::cout << "option name rvc type spin default 460 min -10000 max 10000" << std::endl;
-                std::cout << "option name rvs type spin default 115 min -10000 max 10000" << std::endl;
-                std::cout << "option name pcc type spin default 148 min -10000 max 10000" << std::endl;
-                std::cout << "option name pci type spin default 68 min -10000 max 10000" << std::endl;
-                std::cout << "option name fpc type spin default 148 min -10000 max 10000" << std::endl;
-                std::cout << "option name fpm type spin default 78 min -10000 max 10000" << std::endl;
-                std::cout << "option name hpv type spin default -5928 min -50000 max 50000" << std::endl;
-                std::cout << "option name smq type spin default -112 min -10000 max 10000" << std::endl;
-                std::cout << "option name smt type spin default -48 min -10000 max 10000" << std::endl;
-                std::cout << "option name sec type spin default 22 min -10000 max 10000" << std::endl;
-                std::cout << "option name sem type spin default 18 min -10000 max 10000" << std::endl;
-                std::cout << "option name sed type spin default 20 min -10000 max 10000" << std::endl;
-                */
 
                 std::cout << "uciok" << std::endl;
 
