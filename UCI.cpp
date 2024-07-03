@@ -144,11 +144,6 @@ namespace UCI {
                 std::cout << "option name neb type string default -0.5656" << std::endl;
                 std::cout << "option name nem type string default 3.5782" << std::endl;
 
-                std::cout << "option name spm type string default 48" << std::endl;
-                std::cout << "option name spe type string default 26" << std::endl;
-                std::cout << "option name ppm type string default 13" << std::endl;
-                std::cout << "option name ppe type string default 11" << std::endl;
-
                 std::cout << "option name sbc type string default -122" << std::endl;
                 std::cout << "option name sbm type string default 288" << std::endl;
                 std::cout << "option name msb type string default 7393" << std::endl;
