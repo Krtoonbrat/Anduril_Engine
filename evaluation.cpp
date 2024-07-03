@@ -152,9 +152,6 @@ int nnue(libchess::Position &board) {
 
     // call incremental nnue function
     return NNUE::NNUE_incremental(board.side_to_move().value(), piece, square, &data[0]);
-
-    // call the nnue function
-    //return NNUE::NNUE_evaluate(board.side_to_move().value(), piece, square);
 }
 
 // generates a static evaluation of the board

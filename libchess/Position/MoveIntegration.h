@@ -378,57 +378,57 @@ inline void Position::make_move(Move move) {
 
     // update nnue data
     NNUEdata& nnue_next = next_state.nnue;
-    DirtyPiece *dp = &(nnue_next.dirtyPiece);
+    DirtyPiece &dp = nnue_next.dirtyPiece;
     nnue_next.accumulator.computedAccumulation = 0;
-    dp->dirtyNum = 0;
+    dp.dirtyNum = 0;
 
     // move piece
-    dp->pc[0] = piece_on(from_square)->to_nnue();
-    dp->from[0] = from_square.value();
-    dp->to[0] = to_square.value();
-    dp->dirtyNum++;
+    dp.pc[dp.dirtyNum] = piece_on(from_square)->to_nnue();
+    dp.from[dp.dirtyNum] = from_square.value();
+    dp.to[dp.dirtyNum] = to_square.value();
+    dp.dirtyNum++;
 
     // remove captured piece
     if (captured_pt) {
-        dp->pc[1] = piece_on(to_square)->to_nnue();
-        dp->from[1] = move_type == Move::Type::ENPASSANT ? epCapSquare.value() : to_square.value();
-        dp->to[1] = 64;
-        dp->dirtyNum++;
+        dp.pc[dp.dirtyNum] = piece_on(to_square)->to_nnue();
+        dp.from[dp.dirtyNum] = move_type == Move::Type::ENPASSANT ? epCapSquare.value() : to_square.value();
+        dp.to[dp.dirtyNum] = 64;
+        dp.dirtyNum++;
     }
 
     // promotion
     if (promotion_pt) {
-        dp->to[0] = 64;
-        dp->pc[2] = Piece::from(promotion_pt, stm)->to_nnue();
-        dp->from[2] = 64;
-        dp->to[2] = to_square.value();
-        dp->dirtyNum++;
+        dp.to[0] = 64;
+        dp.pc[dp.dirtyNum] = Piece::from(promotion_pt, stm)->to_nnue();
+        dp.from[dp.dirtyNum] = 64;
+        dp.to[dp.dirtyNum] = to_square.value();
+        dp.dirtyNum++;
     }
 
     // castling
     if (move_type == Move::Type::CASTLING) {
-        dp->pc[1] = Piece::from(constants::ROOK, stm)->to_nnue();
+        dp.pc[dp.dirtyNum] = Piece::from(constants::ROOK, stm)->to_nnue();
         switch (to_square) {
             case constants::C1:
-                dp->from[1] = constants::A1.value();
-                dp->to[1] = constants::D1.value();
+                dp.from[dp.dirtyNum] = constants::A1.value();
+                dp.to[dp.dirtyNum] = constants::D1.value();
                 break;
             case constants::G1:
-                dp->from[1] = constants::H1.value();
-                dp->to[1] = constants::F1.value();
+                dp.from[dp.dirtyNum] = constants::H1.value();
+                dp.to[dp.dirtyNum] = constants::F1.value();
                 break;
             case constants::C8:
-                dp->from[1] = constants::A8.value();
-                dp->to[1] = constants::D8.value();
+                dp.from[dp.dirtyNum] = constants::A8.value();
+                dp.to[dp.dirtyNum] = constants::D8.value();
                 break;
             case constants::G8:
-                dp->from[1] = constants::H8.value();
-                dp->to[1] = constants::F8.value();
+                dp.from[dp.dirtyNum] = constants::H8.value();
+                dp.to[dp.dirtyNum] = constants::F8.value();
                 break;
             default:
                 break;
         }
-        dp->dirtyNum++;
+        dp.dirtyNum++;
     }
 
     switch (move_type) {
@@ -574,8 +574,8 @@ inline void Position::make_null_move() {
 
     // update nnue data
     memcpy(&next.nnue.accumulator, &prev.nnue.accumulator, sizeof(Accumulator));
-    DirtyPiece *dp = &(next.nnue.dirtyPiece);
-    dp->dirtyNum = 0;
+    DirtyPiece &dp = next.nnue.dirtyPiece;
+    dp.dirtyNum = 0;
 }
 
 }  // namespace libchess
