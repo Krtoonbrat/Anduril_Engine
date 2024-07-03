@@ -400,6 +400,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     bool improving;
     int improvement;
 
+    libchess::Square prevMoveSq = board.prevMoveType(ply) == libchess::Move::Type::NONE ? libchess::Square(-1) : board.previous_move()->to_square();
+
     // transposition lookup
     uint64_t hash = board.hash();
     Node *node = table.probe(hash, board.found());
@@ -426,9 +428,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 }
 
                 // extra penalty for early quiet moves on the previous ply
-                if (board.prevMoveType(ply) != libchess::Move::Type::NONE && board.moveCount(ply - 1) <= 2 && !board.previously_captured_piece()) {
+                if (prevMoveSq.value() != -1 && board.moveCount(ply - 1) <= 2 && !board.previously_captured_piece()) {
                     int bonus = -stat_bonus(depth + 1);
-                    updateContinuationHistory(board,*board.piece_on(board.previous_move()->to_square()),board.previous_move()->to_square(), bonus,1);
+                    updateContinuationHistory(board,*board.piece_on(prevMoveSq),prevMoveSq, bonus,1);
                 }
 
             }
@@ -632,7 +634,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                                          nullptr                               , board.continuationHistory(ply - 4),
                                          nullptr                               , board.continuationHistory(ply - 6)};
 
-    libchess::Move counterMove = board.previous_move() ? counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] : libchess::Move(0);
+    libchess::Move counterMove = prevMoveSq != -1 ? counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] : libchess::Move(0);
 
     // get a move picker
     MovePicker picker(board, nMove, killers[ply - rootPly],
@@ -698,9 +700,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         bool capture = board.is_capture_move(move);
         bool promotion = board.is_promotion_move(move);
         bool givesCheck = board.gives_check(move);
-        hist = (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()]
-                + (*contHistory[1])[board.piece_on(move.from_square())->value()][move.to_square()]
-                + (*contHistory[3])[board.piece_on(move.from_square())->value()][move.to_square()];
+        int movePieceType = board.piece_on(move.from_square())->value();
+        hist = (*contHistory[0])[movePieceType][move.to_square()]
+                + (*contHistory[1])[movePieceType][move.to_square()]
+                + (*contHistory[3])[movePieceType][move.to_square()];
 
         // quiet move pruning and move count pruning
         if (!rootNode
@@ -805,7 +808,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             else if (PvNode
                      && move == nMove
                      && move == killers[ply - rootPly][0]
-                      && (*contHistory[0])[board.piece_on(move.from_square())->value()][move.to_square()] >= qte) {
+                      && (*contHistory[0])[movePieceType][move.to_square()] >= qte) {
                 extension = 1;
             }
 
@@ -814,7 +817,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                      && capture
                      && board.previous_move()
                      && board.is_capture_move(*board.previous_move())
-                     && move.to_square() == board.previous_move()->to_square()) {
+                     && move.to_square() == prevMoveSq) {
                 extension = 1;
             }
 
@@ -826,7 +829,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         // update continuation history (must be done after singular extensions)
         board.continuationHistory() = &continuationHistory[check]
                                                           [capture]
-                                                          [board.piece_on(move.from_square())->value()]
+                                                          [movePieceType]
                                                           [move.to_square()];
 
         // prefetch before we make a move
@@ -906,7 +909,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             int bonus = score <= alpha ? -stat_bonus(actualDepth)
                       : score >= beta  ? stat_bonus(actualDepth)
                                        : 0;
-            updateContinuationHistory(board, *board.piece_on(move.to_square()), move.to_square(), bonus);
+            updateContinuationHistory(board, libchess::Piece(movePieceType), move.to_square(), bonus);
         }
         else if (!PvNode || moveCounter > 1) {
             incPly();
@@ -972,9 +975,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
 
     // bonus for prior move that caused fail low
-    else if (!board.previously_captured_piece() && board.previous_move()) {
+    else if (!board.previously_captured_piece() && prevMoveSq.value() != -1) {
         int bonus = (depth > 5) + (PvNode || cutNode) + (bestScore < alpha - 25 * depth) + (board.moveCount(ply - 1) > 10);
-        updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), stat_bonus(depth) * bonus, 1);
+        updateContinuationHistory(board, *board.piece_on(prevMoveSq), prevMoveSq, stat_bonus(depth) * bonus, 1);
     }
 
     if (excludedMove.value() == 0) {

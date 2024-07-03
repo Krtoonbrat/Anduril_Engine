@@ -10,6 +10,8 @@ class Piece {
    public:
     using value_type = int;
 
+    constexpr Piece(value_type value) : value_(value) {}
+
     constexpr Piece(PieceType piece_type, Color piece_color)
         : value_(piece_type.value() | (piece_color.value() << 3)) {
     }
