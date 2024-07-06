@@ -4,9 +4,6 @@ project(Anduril_Engine)
 set(CMAKE_CXX_STANDARD 20)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
 
-# set the compile to be statically linked
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
-
 # add warning flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
@@ -14,6 +11,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 # First set architecture: x86, apple-silicon, arm neon, arm dotprod
 # Second set extra hardware extensions: BMI2, AVXVNNI, AVX-152, VNNI512
 if(x86)
+
+    # set the compile to be statically linked
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 
     # minimum requirements: AVX2, 64 bit, popcount, sse, sse3, sse3 sse4.1, ssse3
     add_compile_options(-march=native -mpopcnt -msse -msse2 -msse3 -msse4.1 -mssse3 -mavx2 -mbmi)
@@ -73,7 +73,9 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-Ofast -flto -fuse-linker-plugin)
     add_compile_definitions(NDEBUG)
-    add_link_options(-fuse-ld=lld)
+    if (!apple-silicon)
+        add_link_options(-fuse-ld=lld)
+    endif ()
 endif()
 
 # add profile generation
