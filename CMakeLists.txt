@@ -43,7 +43,7 @@ if(x86)
 
 elseif (apple-silicon)
 
-    add_compile_options(-march=arm8.2-a+dotprod -mfpu=neon)
+    add_compile_options(-march=native -mfpu=neon)
     add_compile_definitions(IS_64BIT USE_NEON=8 USE_NEON_DOTPROD)
 
 elseif (arm-neon)
