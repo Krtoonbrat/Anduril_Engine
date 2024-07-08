@@ -54,6 +54,11 @@ int maxHistoryVal = 8171;
 int maxContinuationVal = 29871;
 int maxCaptureVal = 7324;
 
+extern int baseNullReduction;
+extern int reductionDepthDividend;
+extern int reductionEvalModifierMin;
+extern int reductionEvalModifierDividend;
+
 // our thread pool
 extern ThreadPool gondor;
 
@@ -535,7 +540,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && (ply - rootPly) >= minNullPly) {
 
         // set reduction based on depth, eval, and whether the last move made was tactical
-        int R = 4 + depth / 5 + std::min(3, (staticEval - beta) / 50) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
+        int R = baseNullReduction + depth / reductionDepthDividend + std::min(reductionEvalModifierMin, (staticEval - beta) / reductionEvalModifierDividend) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
 
         board.continuationHistory() = &continuationHistory[0][0][15][0]; // no piece has a value of 15 so we can use that as our "null" flag
 

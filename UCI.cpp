@@ -52,6 +52,11 @@ extern int fpm;
 extern int smq;
 extern int smt;
 
+int baseNullReduction = 4;
+int reductionDepthDividend = 5;
+int reductionEvalModifierMin = 3;
+int reductionEvalModifierDividend = 50;
+
 namespace NNUE {
     extern char nnue_path[256];
 }
@@ -176,6 +181,11 @@ namespace UCI {
                 std::cout << "option name fpm type string default 70" << std::endl;
                 std::cout << "option name smq type string default -52" << std::endl;
                 std::cout << "option name smt type string default -21" << std::endl;
+
+                std::cout << "option name baseNullReduction type string default 4" << std::endl;
+                std::cout << "option name reductionDepthDividend type string default 5" << std::endl;
+                std::cout << "option name reductionEvalModifierMin type string default 3" << std::endl;
+                std::cout << "option name reductionEvalModifierDividend type string default 50" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -353,6 +363,22 @@ namespace UCI {
 
         else if (token == "smt") {
             stream >> smt;
+        }
+
+        else if (token == "baseNullReduction") {
+            stream >> baseNullReduction;
+        }
+
+        else if (token == "reductionDepthDividend") {
+            stream >> reductionDepthDividend;
+        }
+
+        else if (token == "reductionEvalModifierMin") {
+            stream >> reductionEvalModifierMin;
+        }
+
+        else if (token == "reductionEvalMoifierDividend") {
+            stream >> reductionEvalModifierDividend;
         }
 
     }
