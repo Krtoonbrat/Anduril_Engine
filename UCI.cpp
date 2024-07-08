@@ -146,19 +146,19 @@ namespace UCI {
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
 
-                std::cout << "option name neb type string default -0.5656" << std::endl;
-                std::cout << "option name nem type string default 3.5782" << std::endl;
+                std::cout << "option name neb type string default -0.5713" << std::endl;
+                std::cout << "option name nem type string default 3.3186" << std::endl;
 
-                std::cout << "option name sbc type string default -122" << std::endl;
-                std::cout << "option name sbm type string default 288" << std::endl;
-                std::cout << "option name msb type string default 7393" << std::endl;
-                std::cout << "option name lsb type string default 87" << std::endl;
-                std::cout << "option name lbc type string default 68" << std::endl;
-                std::cout << "option name mhv type string default 8801" << std::endl;
-                std::cout << "option name mcv type string default 25336" << std::endl;
-                std::cout << "option name cpm type string default 12809" << std::endl;
-                std::cout << "option name hpv type string default -12254" << std::endl;
-                std::cout << "option name hrv type string default 16749" << std::endl;
+                std::cout << "option name sbc type string default 159" << std::endl;
+                std::cout << "option name sbm type string default 386" << std::endl;
+                std::cout << "option name msb type string default 6664" << std::endl;
+                std::cout << "option name lsb type string default 199" << std::endl;
+                std::cout << "option name lbc type string default 52" << std::endl;
+                std::cout << "option name mhv type string default 8171" << std::endl;
+                std::cout << "option name mcv type string default 29871" << std::endl;
+                std::cout << "option name cpm type string default 7324" << std::endl;
+                std::cout << "option name hpv type string default -14868" << std::endl;
+                std::cout << "option name hrv type string default 22690" << std::endl;
                 std::cout << "option name qte type string default 4475" << std::endl;
 
                 std::cout << "option name rvc type string default 582" << std::endl;
@@ -174,8 +174,8 @@ namespace UCI {
                 std::cout << "option name pci type string default 152" << std::endl;
                 std::cout << "option name fpc type string default 294" << std::endl;
                 std::cout << "option name fpm type string default 70" << std::endl;
-                std::cout << "option name smq type string default -39" << std::endl;
-                std::cout << "option name smt type string default -5" << std::endl;
+                std::cout << "option name smq type string default -52" << std::endl;
+                std::cout << "option name smt type string default -21" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 

@@ -17,13 +17,13 @@
 int reductions[150][150];
 
 // stat bonus values
-int sbc = -122;
-int sbm = 288;
-int msb = 7393;
-int lsb = 87;
+int sbc = 159;
+int sbm = 386;
+int msb = 6664;
+int lsb = 199;
 
 // this is the value we add to beta to determine if we use the larger bonus when updating the history tables
-int lbc = 68;
+int lbc = 52;
 
 // razoring values
 int rvc = 582;
@@ -33,8 +33,8 @@ int rvs = 162;
 int rfm = 243;
 
 // history pruning value
-int hpv = -12254;
-int hrv = 16749;
+int hpv = -14868;
+int hrv = 22690;
 int qte = 4475;
 
 // singular extension values
@@ -47,12 +47,12 @@ int pcc = 269;
 int pci = 152;
 int fpc = 294;
 int fpm = 70;
-int smq = -39;
-int smt = -5;
+int smq = -52;
+int smt = -21;
 
-int maxHistoryVal = 8801;
-int maxContinuationVal = 25336;
-int maxCaptureVal = 12809;
+int maxHistoryVal = 8171;
+int maxContinuationVal = 29871;
+int maxCaptureVal = 7324;
 
 // our thread pool
 extern ThreadPool gondor;
@@ -61,7 +61,12 @@ extern ThreadPool gondor;
 void initReductions(double nem, double neb) {
     for (int i = 0; i < 150; i++) {
         for (int j = 0; j < 150; j++) {
-            reductions[i][j] = int(neb + (log(i) * log(j) / nem));
+            if (i == 0 || j == 0) {
+                reductions[i][j] = 0;
+            }
+            else {
+                reductions[i][j] = int(neb + (log(i) * log(j) / nem));
+            }
         }
     }
 }

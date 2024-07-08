@@ -27,8 +27,8 @@ namespace UCI {
     static int rookOrderVal =  25000;
     static int minorOrderVal = 15000;
 
-    static double nem = 3.5782;
-    static double neb = -0.5656;
+    static double nem = 3.3186;
+    static double neb = -0.5713;
 }
 
 #endif //ANDURIL_ENGINE_UCI_H
