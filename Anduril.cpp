@@ -60,6 +60,7 @@ extern int reductionEvalModifierMin;
 extern int reductionEvalModifierDividend;
 extern int verificationMultiplier;
 extern int verificationDividend;
+extern int minVerificationDepth;
 
 // our thread pool
 extern ThreadPool gondor;
@@ -556,7 +557,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         if (nullScore >= beta && nullScore < 31507) {
 
-            if (minNullPly || depth < 12) {
+            if (minNullPly || depth < minVerificationDepth) {
                 return nullScore;
             }
 
