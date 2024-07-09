@@ -513,7 +513,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && staticEval < alpha - rvc - rvs * depth * depth) {
         // verification that the value is indeed less than alpha
         score = quiescence<NonPV>(board, alpha - 1, alpha);
-        if (score < alpha) {
+        if (score < alpha && abs(beta) < 31507) {
             return score;
         }
     }
@@ -581,7 +581,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     if (!PvNode
         && depth > 3
         && !check
-        && abs(beta) < 31000
+        && abs(beta) < 31507
         && !(board.found()
         && nDepth >= depth - 3
         && nScore != -32001
