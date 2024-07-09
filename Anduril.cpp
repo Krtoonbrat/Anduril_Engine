@@ -58,6 +58,8 @@ extern int baseNullReduction;
 extern int reductionDepthDividend;
 extern int reductionEvalModifierMin;
 extern int reductionEvalModifierDividend;
+extern int verificationMultiplier;
+extern int verificationDividend;
 
 // our thread pool
 extern ThreadPool gondor;
@@ -533,11 +535,10 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && beta > -30000
         && board.prevMoveType(ply) != libchess::Move::Type::NONE
         && staticEval >= beta
-        && staticEval >= board.staticEval()
-        && depth >= 2
         && excludedMove.value() == 0
         && nonPawnMaterial(!board.side_to_move(), board)
-        && (ply - rootPly) >= minNullPly) {
+        && (ply - rootPly) >= minNullPly
+        && (!board.found() || nScore >= beta)) {
 
         // set reduction based on depth, eval, and whether the last move made was tactical
         int R = baseNullReduction + depth / reductionDepthDividend + std::min(reductionEvalModifierMin, (staticEval - beta) / reductionEvalModifierDividend) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
@@ -560,7 +561,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
 
             // verification search at high depths, null pruning disabled until minNullPly is reached
-            minNullPly = (ply - rootPly) + 3 * (depth - R) / 4;
+            minNullPly = (ply - rootPly) + verificationMultiplier * (depth - R) / verificationDividend;
 
             int s = negamax<NonPV>(board, depth - R, beta - 1, beta, false);
 

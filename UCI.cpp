@@ -56,6 +56,8 @@ int baseNullReduction = 4;
 int reductionDepthDividend = 5;
 int reductionEvalModifierMin = 3;
 int reductionEvalModifierDividend = 50;
+int verificationMultiplier = 3;
+int verificationDividend = 4;
 
 namespace NNUE {
     extern char nnue_path[256];
@@ -186,6 +188,8 @@ namespace UCI {
                 std::cout << "option name reductionDepthDividend type string default 5" << std::endl;
                 std::cout << "option name reductionEvalModifierMin type string default 3" << std::endl;
                 std::cout << "option name reductionEvalModifierDividend type string default 50" << std::endl;
+                std::cout << "option name verificationMultiplier type string default 3" << std::endl;
+                std::cout << "option name verificaitonDividend type string default 4" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -379,6 +383,14 @@ namespace UCI {
 
         else if (token == "reductionEvalMoifierDividend") {
             stream >> reductionEvalModifierDividend;
+        }
+
+        else if (token == "verificationMultiplier") {
+            stream >> verificationMultiplier;
+        }
+
+        else if (token == "verificationDividend") {
+            stream >> verificationDividend;
         }
 
     }
