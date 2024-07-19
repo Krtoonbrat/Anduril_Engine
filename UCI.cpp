@@ -52,13 +52,13 @@ extern int fpm;
 extern int smq;
 extern int smt;
 
-int baseNullReduction = 1;
-int reductionDepthDividend = 4;
+int baseNullReduction = 4;
+int reductionDepthDividend = 5;
 int reductionEvalModifierMin = 3;
-int reductionEvalModifierDividend = 87;
-int verificationMultiplier = 2;
-int verificationDividend = 3;
-int minVerificationDepth = 8;
+int reductionEvalModifierDividend = 50;
+int verificationMultiplier = 3;
+int verificationDividend = 4;
+int minVerificationDepth = 12;
 int singleDepthDividend = 2;
 int singleDepthMultiplier = 1;
 

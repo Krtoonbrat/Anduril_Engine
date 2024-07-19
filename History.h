@@ -7,6 +7,8 @@
 
 #include <array>
 
+#include "libchess/Move.h"
+
 // this is the type for our main history table
 using ButterflyHistory = std::array<std::array<std::array<int16_t, 64>, 64>, 2>;
 
@@ -19,6 +21,11 @@ using ContinuationHistory = std::array<std::array<PieceHistory, 64>, 16>;
 
 // this is the type for the capture history table
 using CaptureHistory = std::array<std::array<std::array<int16_t, 5>, 64>, 13>;
+
+// this is the type for our killer moves array
+using KillerMoves = std::array<std::array<libchess::Move, 2>, 200>;
+
+using CounterMoves = std::array<std::array<libchess::Move, 64>, 64>;
 
 
 #endif //ANDURIL_ENGINE_HISTORY_H

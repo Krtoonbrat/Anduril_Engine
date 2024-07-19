@@ -304,8 +304,7 @@ INLINE int32_t affine_propagate(clipped_t *input, int32_t *biases,
   __m256i prod = _mm256_maddubs_epi16(iv[0], row[0]);
   prod = _mm256_madd_epi16(prod, _mm256_set1_epi16(1));
 #endif
-  __m128i sum = _mm_add_epi32(
-      _mm256_castsi256_si128(prod), _mm256_extracti128_si256(prod, 1));
+  __m128i sum = _mm_add_epi32(_mm256_castsi256_si128(prod), _mm256_extracti128_si256(prod, 1));
   sum = _mm_add_epi32(sum, _mm_shuffle_epi32(sum, 0x1b));
   return _mm_cvtsi128_si32(sum) + _mm_extract_epi32(sum, 1) + biases[0];
 
@@ -447,8 +446,7 @@ INLINE void affine_txfm(int8_t *input, void *output, unsigned inDims,
 
   __m256i *outVec = (__m256i *)output;
   const __m256i kZero256 = _mm256_setzero_si256();
-  outVec[0] = _mm256_packs_epi16(
-      _mm512_castsi512_si256(out16),_mm512_extracti64x4_epi64(out16, 1));
+  outVec[0] = _mm256_packs_epi16(_mm512_castsi512_si256(out16),_mm512_extracti64x4_epi64(out16, 1));
   if (pack8_and_calc_mask)
     outMask[0] = (uint32_t)_mm256_movemask_epi8(_mm256_cmpgt_epi8(outVec[0], kZero256));
   else

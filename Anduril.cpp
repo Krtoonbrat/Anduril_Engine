@@ -652,7 +652,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     libchess::Move counterMove = prevMoveSq != -1 ? counterMoves[board.previous_move()->from_square()][board.previous_move()->to_square()] : libchess::Move(0);
 
     // get a move picker
-    MovePicker picker(board, nMove, killers[ply - rootPly],
+    MovePicker picker(board, nMove, killers[ply - rootPly].data(),
                       counterMove,
                       &moveHistory, contHistory, &captureHistory);
 
