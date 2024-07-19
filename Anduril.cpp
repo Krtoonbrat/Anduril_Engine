@@ -197,7 +197,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         // adjust alpha and beta based on the stand pat
         if (bestScore >= beta) {
 			if (!board.found()) {
-                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, board.staticEval());
+                node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, board.staticEval(), false);
 			}
             return bestScore;
         }
@@ -331,7 +331,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
         return -32000 + (ply - rootPly);
     }
 
-    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 1, tDepth, bestMove.to_table(), board.staticEval());
+    node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : 1, tDepth, bestMove.to_table(), board.staticEval(), board.found());
     return bestScore;
 
 }
@@ -425,6 +425,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = board.found() ? board.from_table(node->bestMove) : libchess::Move(0);
     bool transpositionCapture = board.found() && board.is_capture_move(nMove);
+    board.ttPv() = excludedMove.value() != 0 ? board.ttPv() : PvNode || (board.found() && node->nodeTypeGenBound & 0x4);
 
 	if (!PvNode
 		&& board.found()
@@ -494,7 +495,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
     else {
         board.staticEval() = staticEval = evaluateBoard(board);
-        node->save(hash, -32001, 0, -99, 0, staticEval);
+        node->save(hash, -32001, 0, -99, 0, staticEval, board.ttPv());
     }
 
     // set up the improvement variable, which is the difference in static evals between the current turn and
@@ -626,7 +627,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
             if (score >= probCutBeta) {
                 // write to the node
-                node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.to_table(), board.staticEval());
+                node->save(hash, tableScore(score, (ply - rootPly)), 2, depth - 3, move.to_table(), board.staticEval(), board.ttPv());
                 cutNodes++;
                 return score;
             }
@@ -770,13 +771,13 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             // Singular extension search
             // based on the stockfish implementation
             if (!rootNode
-                && depth >= 4 - (rDepth > 21) + 2 * (PvNode && nType == 3)
+                && depth >= 4 - (rDepth > 21) + (PvNode && board.ttPv())
                 && move == nMove
                 && excludedMove.value() == 0
                 && abs(nScore) < 31000
                 && (nType & 2)
                 && nDepth >= depth - 3) {
-                int singleBeta = nScore - (sec + sem * (nType == 3 && !PvNode)) * depth / 64;
+                int singleBeta = nScore - (sec + sem * (board.ttPv() && !PvNode)) * depth / 64;
                 int singleDepth = (depth - 1) * singleDepthMultiplier / singleDepthDividend;
                 singularAttempts++;
 
@@ -879,9 +880,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 reduction++;
             }
 
-            // decrease reduction for PvNodes based on depth (values from stockfish)
+            // decrease reduction for PvNodes
             if (PvNode) {
-                reduction -= 1 + 11 / (3 + depth);
+                reduction--;
             }
 
             // decrease reduction if the transposition move has been singularly extended
@@ -978,12 +979,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         }
     }
 
+    // check for mate and stalemate
     if (moveCounter == 0) {
         bestScore = excludedMove.value() != 0 ? alpha :
                     check                     ? -32000 + (ply - rootPly)
                                               : 0;
     }
 
+    // update statistics if we found a move that exceeds alpha
     else if (bestMove.value() != 0) {
         updateStatistics(board, bestMove, bestScore, depth, beta, quietMoves, quietCount, captureMoves, captureCount);
     }
@@ -994,8 +997,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         updateContinuationHistory(board, *board.piece_on(prevMoveSq), prevMoveSq, stat_bonus(depth) * bonus, 1);
     }
 
+    // If no good move is found and the previous position was ttPv, then the previous
+    // opponent move is probably good and the new position is added to the search tree.
+    if (bestScore <= alpha) {
+        board.ttPv() = board.ttPv() || (board.ttPv(ply - rootPly - 1) && depth > 3);
+    }
+
+    // save the node
     if (excludedMove.value() == 0) {
-        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange && PvNode ? 3 : 1, depth, bestMove.to_table(), board.staticEval());
+        node->save(hash, tableScore(bestScore, (ply - rootPly)), bestScore >= beta ? 2 : alphaChange && PvNode ? 3 : 1, depth, bestMove.to_table(), board.staticEval(), board.ttPv());
     }
     return bestScore;
 
