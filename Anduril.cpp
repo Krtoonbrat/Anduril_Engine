@@ -62,6 +62,7 @@ extern int verificationMultiplier;
 extern int verificationDividend;
 extern int minVerificationDepth;
 extern int singleDepthDividend;
+extern int singleDepthMultiplier;
 
 // our thread pool
 extern ThreadPool gondor;
@@ -776,7 +777,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 && (nType & 2)
                 && nDepth >= depth - 3) {
                 int singleBeta = nScore - (sec + sem * (nType == 3 && !PvNode)) * depth / 64;
-                int singleDepth = (depth - 1) / singleDepthDividend;
+                int singleDepth = (depth - 1) * singleDepthMultiplier / singleDepthDividend;
                 singularAttempts++;
 
                 board.setExcluded(move);

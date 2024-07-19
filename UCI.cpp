@@ -60,6 +60,7 @@ int verificationMultiplier = 2;
 int verificationDividend = 3;
 int minVerificationDepth = 8;
 int singleDepthDividend = 2;
+int singleDepthMultiplier = 1;
 
 namespace NNUE {
     extern char nnue_path[256];
@@ -194,6 +195,7 @@ namespace UCI {
                 std::cout << "option name verificaitonDividend type string default " << verificationDividend << std::endl;
                 std::cout << "option name minVerificationDepth type string default " << minVerificationDepth << std::endl;
                 std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
+                std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -399,6 +401,14 @@ namespace UCI {
 
         else if (token == "minVerificationDepth") {
             stream >> minVerificationDepth;
+        }
+
+        else if (token == "singleDepthDividend") {
+            stream >> singleDepthDividend;
+        }
+
+        else if (token == "singleDepthMultiplier") {
+            stream >> singleDepthMultiplier;
         }
 
     }
