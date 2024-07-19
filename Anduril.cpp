@@ -860,8 +860,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if (depth >= 2
             && moveCounter > 2
             && (!PvNode     // at PV nodes, we want to make sure we don't reduce tactical moves.  At non-PV nodes, we don't care
-            || !capture
-            || (cutNode && board.moveCount(ply - 1)  > 1))) {
+            || (!capture && !givesCheck && !promotion))) {
             // find our reduction
             int reduction = reductions[depth][moveCounter];
 
