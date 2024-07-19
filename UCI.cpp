@@ -192,7 +192,7 @@ namespace UCI {
                 std::cout << "option name reductionEvalModifierMin type string default " << reductionEvalModifierMin << std::endl;
                 std::cout << "option name reductionEvalModifierDividend type string default " << reductionEvalModifierDividend << std::endl;
                 std::cout << "option name verificationMultiplier type string default " << verificationMultiplier << std::endl;
-                std::cout << "option name verificaitonDividend type string default " << verificationDividend << std::endl;
+                std::cout << "option name verificationDividend type string default " << verificationDividend << std::endl;
                 std::cout << "option name minVerificationDepth type string default " << minVerificationDepth << std::endl;
                 std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
                 std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
