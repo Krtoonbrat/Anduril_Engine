@@ -52,15 +52,15 @@ extern int fpm;
 extern int smq;
 extern int smt;
 
-int baseNullReduction = 4;
-int reductionDepthDividend = 5;
-int reductionEvalModifierMin = 3;
-int reductionEvalModifierDividend = 50;
-int verificationMultiplier = 3;
-int verificationDividend = 4;
-int minVerificationDepth = 12;
-int singleDepthDividend = 2;
-int singleDepthMultiplier = 1;
+int baseNullReduction = 2;
+int reductionDepthDividend = 4;
+int reductionEvalModifierMin = 4;
+int reductionEvalModifierDividend = 255;
+int verificationMultiplier = 261;
+int verificationDividend = 492;
+int minVerificationDepth = 13;
+int singleDepthDividend = 26;
+int singleDepthMultiplier = 15;
 
 namespace NNUE {
     extern char nnue_path[256];

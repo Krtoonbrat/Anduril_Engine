@@ -34,12 +34,12 @@ int rfm = 243;
 
 // history pruning value
 int hpv = -14868;
-int hrv = 22690;
+int hrv = 21843;
 int qte = 4475;
 
 // singular extension values
-int sec = 162;
-int sem = 28;
+int sec = 159;
+int sem = 11;
 
 int fth = 230;
 int svq = -113;
