@@ -54,13 +54,6 @@ int maxHistoryVal = 8171;
 int maxContinuationVal = 29871;
 int maxCaptureVal = 7324;
 
-extern int baseNullReduction;
-extern int reductionDepthDividend;
-extern int reductionEvalModifierMin;
-extern int reductionEvalModifierDividend;
-extern int verificationMultiplier;
-extern int verificationDividend;
-extern int minVerificationDepth;
 extern int singleDepthDividend;
 extern int singleDepthMultiplier;
 
@@ -512,9 +505,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     improving = !check && improvement > 0; // if we are currently in check, we assume we are not improving
 
     // razoring
-    // TODO: change after CLOP tuning
     if (!check
-        && staticEval < alpha - rvc - rvs * depth * depth) {
+        && staticEval < alpha - 582 - 162 * depth * depth) {
         // verification that the value is indeed less than alpha
         score = quiescence<NonPV>(board, alpha - 1, alpha);
         if (score < alpha && abs(score) < 31507) {
@@ -545,7 +537,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && (!board.found() || nScore >= beta)) {
 
         // set reduction based on depth, eval, and whether the last move made was tactical
-        int R = baseNullReduction + depth / reductionDepthDividend + std::min(reductionEvalModifierMin, (staticEval - beta) / reductionEvalModifierDividend) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
+        int R = 2 + depth / 4 + std::min(4, (staticEval - beta) / 255) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
 
         board.continuationHistory() = &continuationHistory[0][0][15][0]; // no piece has a value of 15 so we can use that as our "null" flag
 
@@ -560,12 +552,12 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         if (nullScore >= beta && nullScore < 31507) {
 
-            if (minNullPly || depth < minVerificationDepth) {
+            if (minNullPly || depth < 13) {
                 return nullScore;
             }
 
             // verification search at high depths, null pruning disabled until minNullPly is reached
-            minNullPly = (ply - rootPly) + verificationMultiplier * (depth - R) / verificationDividend;
+            minNullPly = (ply - rootPly) + 261 * (depth - R) / 492;
 
             int s = negamax<NonPV>(board, depth - R, beta - 1, beta, false);
 
@@ -1068,7 +1060,7 @@ int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
 void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
                                libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched, int captureCount) {
     int largerBonus = stat_bonus(depth + 1);
-    int bonus = bestScore > beta + lbc ? largerBonus : stat_bonus(depth);
+    int bonus = bestScore > beta + 52 ? largerBonus : stat_bonus(depth);
     int nonBestPenalty;
 
     if (!board.is_capture_move(bestMove)) {

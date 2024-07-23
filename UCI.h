@@ -23,10 +23,6 @@ namespace UCI {
     // parses options
     void parseOption(std::stringstream &stream, libchess::Position &board, bool &bookOpen);
 
-    static int queenOrderVal = 50000;
-    static int rookOrderVal =  25000;
-    static int minorOrderVal = 15000;
-
     static double nem = 2.4246;
     static double neb = -1.1279;
 }

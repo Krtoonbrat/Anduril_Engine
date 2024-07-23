@@ -24,6 +24,10 @@ extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
 
+extern int queenOrderVal;
+extern int rookOrderVal;
+extern int minorOrderVal;
+
 extern int sbc;
 extern int sbm;
 extern int msb;
@@ -52,13 +56,6 @@ extern int fpm;
 extern int smq;
 extern int smt;
 
-int baseNullReduction = 2;
-int reductionDepthDividend = 4;
-int reductionEvalModifierMin = 4;
-int reductionEvalModifierDividend = 255;
-int verificationMultiplier = 261;
-int verificationDividend = 492;
-int minVerificationDepth = 13;
 int singleDepthDividend = 26;
 int singleDepthMultiplier = 15;
 
@@ -156,8 +153,8 @@ namespace UCI {
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
 
-                std::cout << "option name neb type string default -0.5713" << std::endl;
-                std::cout << "option name nem type string default 3.3186" << std::endl;
+                std::cout << "option name neb type string default -1.1279" << std::endl;
+                std::cout << "option name nem type string default 2.4246" << std::endl;
 
                 std::cout << "option name sbc type string default 159" << std::endl;
                 std::cout << "option name sbm type string default 386" << std::endl;
@@ -167,16 +164,19 @@ namespace UCI {
                 std::cout << "option name mhv type string default 8171" << std::endl;
                 std::cout << "option name mcv type string default 29871" << std::endl;
                 std::cout << "option name cpm type string default 7324" << std::endl;
+                std::cout << "option name queenOrderVal type string default 50000" << std::endl;
+                std::cout << "option name rookOrderVal type string default 25000" << std::endl;
+                std::cout << "option name minorOrderVal type string default 15000" << std::endl;
                 std::cout << "option name hpv type string default -14868" << std::endl;
-                std::cout << "option name hrv type string default 22690" << std::endl;
+                std::cout << "option name hrv type string default 21843" << std::endl;
                 std::cout << "option name qte type string default 4475" << std::endl;
 
                 std::cout << "option name rvc type string default 582" << std::endl;
                 std::cout << "option name rvs type string default 162" << std::endl;
                 std::cout << "option name rfm type string default 243" << std::endl;
 
-                std::cout << "option name sec type string default 162" << std::endl;
-                std::cout << "option name sem type string default 28" << std::endl;
+                std::cout << "option name sec type string default 159" << std::endl;
+                std::cout << "option name sem type string default 11" << std::endl;
 
                 std::cout << "option name fth type string default 230" << std::endl;
                 std::cout << "option name svq type string default -113" << std::endl;
@@ -187,15 +187,19 @@ namespace UCI {
                 std::cout << "option name smq type string default -52" << std::endl;
                 std::cout << "option name smt type string default -21" << std::endl;
 
-                std::cout << "option name baseNullReduction type string default " << baseNullReduction << std::endl;
-                std::cout << "option name reductionDepthDividend type string default " << reductionDepthDividend << std::endl;
-                std::cout << "option name reductionEvalModifierMin type string default " << reductionEvalModifierMin << std::endl;
-                std::cout << "option name reductionEvalModifierDividend type string default " << reductionEvalModifierDividend << std::endl;
-                std::cout << "option name verificationMultiplier type string default " << verificationMultiplier << std::endl;
-                std::cout << "option name verificationDividend type string default " << verificationDividend << std::endl;
-                std::cout << "option name minVerificationDepth type string default " << minVerificationDepth << std::endl;
                 std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
                 std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
+
+                std::cout << "option name pMG type string default 115" << std::endl;
+                std::cout << "option name kMG type string default 446" << std::endl;
+                std::cout << "option name bMG type string default 502" << std::endl;
+                std::cout << "option name rMG type string default 649" << std::endl;
+                std::cout << "option name qMG type string default 1332" << std::endl;
+                std::cout << "option name pEG type string default 148" << std::endl;
+                std::cout << "option name kEG type string default 490" << std::endl;
+                std::cout << "option name bEG type string default 518" << std::endl;
+                std::cout << "option name rEG type string default 878" << std::endl;
+                std::cout << "option name qEG type string default 1749" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -323,6 +327,18 @@ namespace UCI {
             stream >> maxContinuationVal;
         }
 
+        else if (token == "queenOrderVal") {
+            stream >> queenOrderVal;
+        }
+
+        else if (token == "rookOrderVal") {
+            stream >> rookOrderVal;
+        }
+
+        else if (token == "minorOrderVal") {
+            stream >> minorOrderVal;
+        }
+
         else if (token == "hpv") {
             stream >> hpv;
         }
@@ -375,40 +391,57 @@ namespace UCI {
             stream >> smt;
         }
 
-        else if (token == "baseNullReduction") {
-            stream >> baseNullReduction;
-        }
-
-        else if (token == "reductionDepthDividend") {
-            stream >> reductionDepthDividend;
-        }
-
-        else if (token == "reductionEvalModifierMin") {
-            stream >> reductionEvalModifierMin;
-        }
-
-        else if (token == "reductionEvalMoifierDividend") {
-            stream >> reductionEvalModifierDividend;
-        }
-
-        else if (token == "verificationMultiplier") {
-            stream >> verificationMultiplier;
-        }
-
-        else if (token == "verificationDividend") {
-            stream >> verificationDividend;
-        }
-
-        else if (token == "minVerificationDepth") {
-            stream >> minVerificationDepth;
-        }
-
         else if (token == "singleDepthDividend") {
             stream >> singleDepthDividend;
         }
 
         else if (token == "singleDepthMultiplier") {
             stream >> singleDepthMultiplier;
+        }
+
+        else if (token == "pMG") {
+            stream >> libchess::Position::pieceValuesMG[0];
+        }
+
+        else if (token == "kMG") {
+            stream >> libchess::Position::pieceValuesMG[1];
+        }
+
+        else if (token == "bMG") {
+            stream >> libchess::Position::pieceValuesMG[2];
+        }
+
+        else if (token == "rMG") {
+            stream >> libchess::Position::pieceValuesMG[3];
+        }
+
+        else if (token == "qMG") {
+            stream >> libchess::Position::pieceValuesMG[4];
+        }
+
+        else if (token == "pEG") {
+            stream >> libchess::Position::pieceValuesEG[0];
+            Anduril::pieceValues[0] = Anduril::pieceValues[8] = libchess::Position::pieceValuesEG[0];
+        }
+
+        else if (token == "kEG") {
+            stream >> libchess::Position::pieceValuesEG[1];
+            Anduril::pieceValues[1] = Anduril::pieceValues[9] = libchess::Position::pieceValuesEG[1];
+        }
+
+        else if (token == "bEG") {
+            stream >> libchess::Position::pieceValuesEG[2];
+            Anduril::pieceValues[2] = Anduril::pieceValues[10] = libchess::Position::pieceValuesEG[2];
+        }
+
+        else if (token == "rEG") {
+            stream >> libchess::Position::pieceValuesEG[3];
+            Anduril::pieceValues[3] = Anduril::pieceValues[11] = libchess::Position::pieceValuesEG[3];
+        }
+
+        else if (token == "qEG") {
+            stream >> libchess::Position::pieceValuesEG[4];
+            Anduril::pieceValues[4] = Anduril::pieceValues[12] = libchess::Position::pieceValuesEG[4];
         }
 
     }
