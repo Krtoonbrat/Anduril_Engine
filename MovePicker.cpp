@@ -5,9 +5,9 @@
 #include "MovePicker.h"
 #include "UCI.h"
 
-int queenOrderVal = 50000;
-int rookOrderVal =  25000;
-int minorOrderVal = 15000;
+int queenOrderVal = 51010;
+int rookOrderVal =  25054;
+int minorOrderVal = 14222;
 
 // constructor for main search
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,

@@ -17,42 +17,42 @@
 int reductions[150][150];
 
 // stat bonus values
-int sbc = 159;
-int sbm = 386;
-int msb = 6664;
-int lsb = 199;
+int sbc = 156;
+int sbm = 372;
+int msb = 6938;
+int lsb = 212;
 
 // this is the value we add to beta to determine if we use the larger bonus when updating the history tables
 int lbc = 52;
 
 // razoring values
-int rvc = 582;
-int rvs = 162;
+int rvc = 584;
+int rvs = 170;
 
 // reverse futility margin
-int rfm = 243;
+int rfm = 255;
 
 // history pruning value
-int hpv = -14868;
-int hrv = 21843;
-int qte = 4475;
+int hpv = -14567;
+int hrv = 21837;
+int qte = 4283;
 
 // singular extension values
-int sec = 159;
-int sem = 11;
+int sec = 148;
+int sem = 23;
 
-int fth = 230;
-int svq = -113;
-int pcc = 269;
-int pci = 152;
-int fpc = 294;
-int fpm = 70;
-int smq = -52;
-int smt = -21;
+int fth = 232;
+int svq = -99;
+int pcc = 272;
+int pci = 160;
+int fpc = 292;
+int fpm = 72;
+int smq = -42;
+int smt = -12;
 
-int maxHistoryVal = 8171;
-int maxContinuationVal = 29871;
-int maxCaptureVal = 7324;
+int maxHistoryVal = 8194;
+int maxContinuationVal = 31080;
+int maxCaptureVal = 7306;
 
 extern int singleDepthDividend;
 extern int singleDepthMultiplier;
