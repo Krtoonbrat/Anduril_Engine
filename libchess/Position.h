@@ -190,6 +190,7 @@ class Position {
         PieceHistory *continuationHistory;
         int pliesSinceNull = 0;
         NNUEdata nnue;
+        bool ttPv = false;
     };
 
    public:
@@ -352,6 +353,9 @@ class Position {
     std::optional<Move> previousMove(int ply) { return state(ply).previous_move_; }
     NNUEdata& nnue() { return state_mut_ref().nnue; }
     NNUEdata& nnue(int ply) { return state_mut_ref(ply).nnue; }
+    bool& ttPv() { return state_mut_ref().ttPv; }
+    bool& ttPv(int ply) { return state_mut_ref(ply).ttPv; }
+
 
 
     [[nodiscard]] int ply() const {

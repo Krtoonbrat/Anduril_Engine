@@ -16,7 +16,7 @@ TranspositionTable table;
 extern ThreadPool gondor;
 
 // saves the information passed to the node, possibly overwriting the old position
-void Node::save(uint64_t k, int s, int t, int d, uint16_t m, int ev) {
+void Node::save(uint64_t k, int s, int t, int d, uint16_t m, int ev, bool pv) {
     // keep the move the same for the same position
     if (m != 0 || uint16_t(k) != key) {
         bestMove = m;
@@ -30,7 +30,7 @@ void Node::save(uint64_t k, int s, int t, int d, uint16_t m, int ev) {
         nodeScore = int16_t(s);
         nodeEval = int16_t(ev);
         nodeDepth = int8_t(d);
-        nodeTypeGenBound = uint8_t(table.generation8 | t);
+        nodeTypeGenBound = uint8_t(table.generation8 | t | uint8_t(pv) << 2);
 
     }
 

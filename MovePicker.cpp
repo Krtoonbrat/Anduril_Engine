@@ -5,6 +5,10 @@
 #include "MovePicker.h"
 #include "UCI.h"
 
+int queenOrderVal = 51010;
+int rookOrderVal =  25054;
+int minorOrderVal = 14222;
+
 // constructor for main search
 MovePicker::MovePicker(libchess::Position &b, libchess::Move &ttm, libchess::Move *k, libchess::Move &cm,
                        ButterflyHistory *his, const PieceHistory **contHis, const CaptureHistory *capHis)
@@ -108,9 +112,9 @@ void MovePicker::score() {
         }
         else if constexpr(type == QUIETS) {
             m.score =  (threatenedPieces & libchess::lookups::square(m.from_square()) ?
-                       (*board.piece_type_on(m.from_square()) == libchess::constants::QUEEN && !(libchess::lookups::square(m.to_square()) & rookThreat ) ? UCI::queenOrderVal
-                      : *board.piece_type_on(m.from_square()) == libchess::constants::ROOK  && !(libchess::lookups::square(m.to_square()) & minorThreat) ? UCI::rookOrderVal
-                      :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? UCI::minorOrderVal
+                       (*board.piece_type_on(m.from_square()) == libchess::constants::QUEEN && !(libchess::lookups::square(m.to_square()) & rookThreat ) ? queenOrderVal
+                      : *board.piece_type_on(m.from_square()) == libchess::constants::ROOK  && !(libchess::lookups::square(m.to_square()) & minorThreat) ? rookOrderVal
+                      :                                                                              !(libchess::lookups::square(m.to_square()) & pawnThreat)  ? minorOrderVal
                       :                                                                                                                                    0)
                       :                                                                                                                                    0)
                       +  moveHistory->at(board.side_to_move()).at(m.from_square()).at(m.to_square())

@@ -15,14 +15,18 @@
 #include "Thread.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {115, 446, 502, 649, 1332, 0};
-int libchess::Position::pieceValuesEG[6] = {148, 490, 518, 878, 1749, 0};
-int Anduril::pieceValues[16] = { 148,  490,  518,  878,  1749, 0, 0, 0,
-                                 148,  490,  518,  878,  1749, 0, 0, 0};
+int libchess::Position::pieceValuesMG[6] = {118, 453, 487, 671, 1464, 0};
+int libchess::Position::pieceValuesEG[6] = {146, 489, 516, 917, 1785, 0};
+int Anduril::pieceValues[16] = { 146,  489,  516,  917,  1785, 0, 0, 0,
+                                 146,  489,  516,  917,  1785, 0, 0, 0};
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
+
+extern int queenOrderVal;
+extern int rookOrderVal;
+extern int minorOrderVal;
 
 extern int sbc;
 extern int sbm;
@@ -51,6 +55,9 @@ extern int fpc;
 extern int fpm;
 extern int smq;
 extern int smt;
+
+int singleDepthDividend = 25;
+int singleDepthMultiplier = 16;
 
 namespace NNUE {
     extern char nnue_path[256];
@@ -146,27 +153,30 @@ namespace UCI {
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
 
-                std::cout << "option name neb type string default -0.5656" << std::endl;
-                std::cout << "option name nem type string default 3.5782" << std::endl;
+                std::cout << "option name neb type string default -1.1279" << std::endl;
+                std::cout << "option name nem type string default 2.4246" << std::endl;
 
-                std::cout << "option name sbc type string default -122" << std::endl;
-                std::cout << "option name sbm type string default 288" << std::endl;
-                std::cout << "option name msb type string default 7393" << std::endl;
-                std::cout << "option name lsb type string default 87" << std::endl;
-                std::cout << "option name lbc type string default 68" << std::endl;
-                std::cout << "option name mhv type string default 8801" << std::endl;
-                std::cout << "option name mcv type string default 25336" << std::endl;
-                std::cout << "option name cpm type string default 12809" << std::endl;
-                std::cout << "option name hpv type string default -12254" << std::endl;
-                std::cout << "option name hrv type string default 16749" << std::endl;
+                std::cout << "option name sbc type string default 159" << std::endl;
+                std::cout << "option name sbm type string default 386" << std::endl;
+                std::cout << "option name msb type string default 6664" << std::endl;
+                std::cout << "option name lsb type string default 199" << std::endl;
+                std::cout << "option name lbc type string default 52" << std::endl;
+                std::cout << "option name mhv type string default 8171" << std::endl;
+                std::cout << "option name mcv type string default 29871" << std::endl;
+                std::cout << "option name cpm type string default 7324" << std::endl;
+                std::cout << "option name queenOrderVal type string default 50000" << std::endl;
+                std::cout << "option name rookOrderVal type string default 25000" << std::endl;
+                std::cout << "option name minorOrderVal type string default 15000" << std::endl;
+                std::cout << "option name hpv type string default -14868" << std::endl;
+                std::cout << "option name hrv type string default 21843" << std::endl;
                 std::cout << "option name qte type string default 4475" << std::endl;
 
                 std::cout << "option name rvc type string default 582" << std::endl;
                 std::cout << "option name rvs type string default 162" << std::endl;
                 std::cout << "option name rfm type string default 243" << std::endl;
 
-                std::cout << "option name sec type string default 162" << std::endl;
-                std::cout << "option name sem type string default 28" << std::endl;
+                std::cout << "option name sec type string default 159" << std::endl;
+                std::cout << "option name sem type string default 11" << std::endl;
 
                 std::cout << "option name fth type string default 230" << std::endl;
                 std::cout << "option name svq type string default -113" << std::endl;
@@ -174,8 +184,22 @@ namespace UCI {
                 std::cout << "option name pci type string default 152" << std::endl;
                 std::cout << "option name fpc type string default 294" << std::endl;
                 std::cout << "option name fpm type string default 70" << std::endl;
-                std::cout << "option name smq type string default -39" << std::endl;
-                std::cout << "option name smt type string default -5" << std::endl;
+                std::cout << "option name smq type string default -52" << std::endl;
+                std::cout << "option name smt type string default -21" << std::endl;
+
+                std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
+                std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
+
+                std::cout << "option name pMG type string default 115" << std::endl;
+                std::cout << "option name kMG type string default 446" << std::endl;
+                std::cout << "option name bMG type string default 502" << std::endl;
+                std::cout << "option name rMG type string default 649" << std::endl;
+                std::cout << "option name qMG type string default 1332" << std::endl;
+                std::cout << "option name pEG type string default 148" << std::endl;
+                std::cout << "option name kEG type string default 490" << std::endl;
+                std::cout << "option name bEG type string default 518" << std::endl;
+                std::cout << "option name rEG type string default 878" << std::endl;
+                std::cout << "option name qEG type string default 1749" << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -303,6 +327,18 @@ namespace UCI {
             stream >> maxContinuationVal;
         }
 
+        else if (token == "queenOrderVal") {
+            stream >> queenOrderVal;
+        }
+
+        else if (token == "rookOrderVal") {
+            stream >> rookOrderVal;
+        }
+
+        else if (token == "minorOrderVal") {
+            stream >> minorOrderVal;
+        }
+
         else if (token == "hpv") {
             stream >> hpv;
         }
@@ -353,6 +389,59 @@ namespace UCI {
 
         else if (token == "smt") {
             stream >> smt;
+        }
+
+        else if (token == "singleDepthDividend") {
+            stream >> singleDepthDividend;
+        }
+
+        else if (token == "singleDepthMultiplier") {
+            stream >> singleDepthMultiplier;
+        }
+
+        else if (token == "pMG") {
+            stream >> libchess::Position::pieceValuesMG[0];
+        }
+
+        else if (token == "kMG") {
+            stream >> libchess::Position::pieceValuesMG[1];
+        }
+
+        else if (token == "bMG") {
+            stream >> libchess::Position::pieceValuesMG[2];
+        }
+
+        else if (token == "rMG") {
+            stream >> libchess::Position::pieceValuesMG[3];
+        }
+
+        else if (token == "qMG") {
+            stream >> libchess::Position::pieceValuesMG[4];
+        }
+
+        else if (token == "pEG") {
+            stream >> libchess::Position::pieceValuesEG[0];
+            Anduril::pieceValues[0] = Anduril::pieceValues[8] = libchess::Position::pieceValuesEG[0];
+        }
+
+        else if (token == "kEG") {
+            stream >> libchess::Position::pieceValuesEG[1];
+            Anduril::pieceValues[1] = Anduril::pieceValues[9] = libchess::Position::pieceValuesEG[1];
+        }
+
+        else if (token == "bEG") {
+            stream >> libchess::Position::pieceValuesEG[2];
+            Anduril::pieceValues[2] = Anduril::pieceValues[10] = libchess::Position::pieceValuesEG[2];
+        }
+
+        else if (token == "rEG") {
+            stream >> libchess::Position::pieceValuesEG[3];
+            Anduril::pieceValues[3] = Anduril::pieceValues[11] = libchess::Position::pieceValuesEG[3];
+        }
+
+        else if (token == "qEG") {
+            stream >> libchess::Position::pieceValuesEG[4];
+            Anduril::pieceValues[4] = Anduril::pieceValues[12] = libchess::Position::pieceValuesEG[4];
         }
 
     }

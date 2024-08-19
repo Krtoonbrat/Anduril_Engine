@@ -229,10 +229,10 @@ private:
 
     // killer moves
     // oversize array just to be sure we dont seg fault
-    libchess::Move killers[200][2];
+    KillerMoves killers;
 
     // counter moves
-    libchess::Move counterMoves[64][64];
+    CounterMoves counterMoves;
 
     // history table
     ButterflyHistory moveHistory;
