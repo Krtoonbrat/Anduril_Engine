@@ -66,7 +66,9 @@ endif()
 # release with debug flags
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_compile_options(-g -O2)
-    add_link_options(-fuse-ld=lld)
+    if (!apple-silicon)
+        add_link_options(-fuse-ld=lld)
+    endif ()
 endif()
 
 # add release flags
