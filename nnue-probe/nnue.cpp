@@ -1260,6 +1260,13 @@ static bool load_eval_file(const char *evalFile)
   return success;
 }
 
+static bool load_embedded_file(const unsigned char* embeddedData, const unsigned int embeddedSize) {
+  bool success = verify_net(embeddedData, embeddedSize);
+  if (success)
+    init_weights(embeddedData);
+  return success;
+}
+
 /*
 Interfaces
 */
@@ -1275,6 +1282,18 @@ EXTERNC void _CDECL nnue_init(const char* evalFile)
   }
 
   printf("NNUE file not found!\n");
+  fflush(stdout);
+}
+
+EXTERNC void _CDECL nnue_init_embedded(const unsigned char* embeddedData, const unsigned int embeddedSize) {
+  printf("Loading Embedded NNUE:\n");
+  fflush(stdout);
+  if (load_embedded_file(embeddedData, embeddedSize)) {
+    printf("Embedded NNUE loaded !\n");
+    fflush(stdout);
+    return;
+  }
+  printf("Failed to load Embedded NNUE!\n");
   fflush(stdout);
 }
 

@@ -40,13 +40,21 @@ using fun8_t = bool (*)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGE
     #include <stdlib.h>
 #endif
 
+#include "incbin/incbin.h"
+INCBIN(InternalNNUE, "../egbdll/nets/nn-c157e0a5755b.nnue");
+
 namespace NNUE {
 
-    char nnue_path[256] = "../egbdll/nets/nn-c157e0a5755b.nnue";
+    char nnue_path[256] = "<internal>";
 
 
     void LoadNNUE() {
-        nnue_init(nnue_path);
+        if (!strcmp(nnue_path, "<internal>")) {
+            nnue_init_embedded(gInternalNNUEData, gInternalNNUESize);
+        }
+        else {
+            nnue_init(nnue_path);
+        }
     }
 
     int NNUE_evaluate(int player, int *pieces, int *squares) {

@@ -84,10 +84,12 @@ int nnue_evaluate_pos(Position* pos);
 
 /**
 * Load NNUE file
+* The second definition is for the embedded NNUE file, the other for loading from a specified file
 */
 EXTERNC void _CDECL nnue_init(
   const char * evalFile             /** Path to NNUE file */
 );
+EXTERNC void _CDECL nnue_init_embedded(const unsigned char* embeddedData, const unsigned int embeddedSize);
 
 /**
 * Evaluate on FEN string
