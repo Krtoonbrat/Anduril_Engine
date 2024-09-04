@@ -8,8 +8,6 @@
 #include "Anduril.h"
 #include "PolyglotBook.h"
 
-// all the UCI protocol stuff is going to be implemented
-// with C code because the tutorial I am following is written in C
 namespace UCI {
     // main UCI loop
     void loop(int argc, char* argv[]);

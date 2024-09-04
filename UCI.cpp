@@ -65,9 +65,6 @@ namespace NNUE {
 
 ThreadPool gondor;
 
-// all the UCI protocol stuff is going to be implemented
-// with C (C++ dispersed for when I know which C++ item to use over the C implementation) code because the tutorial
-// I am following is written in C
 namespace UCI {
 
     // FEN for the start position

@@ -59,19 +59,6 @@ int main(int argc, char* argv[]) {
 
     table.resize(256);
 
-    // for profiling
-    /*
-    threads = 4;
-    gondor.clear();
-    std::unique_ptr<Anduril> AI = std::make_unique<Anduril>(0);
-    AI->limits.depth = 20;
-    AI->stopped = false;
-    AI->searching = true;
-    libchess::Position board("r1bn1rk1/pp2ppbp/6p1/3P4/4P3/5N2/q2BBPPP/1R1Q1RK1 w - - 1 14");
-    AI->startTime = std::chrono::steady_clock::now();
-    AI->go(board);
-    */
-
     UCI::loop(argc, argv);
 
     return 0;
