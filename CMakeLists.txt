@@ -66,6 +66,7 @@ endif()
 # release with debug flags
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_compile_options(-g -O2)
+    add_compile_options( -fno-omit-frame-pointer) # The Intel vTune docs say to use this flag when profiling
     if (!apple-silicon)
         add_link_options(-fuse-ld=lld)
     endif ()
