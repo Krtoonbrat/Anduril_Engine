@@ -43,7 +43,7 @@ if(x86)
 
 elseif (apple-silicon)
 
-    add_compile_options(-march=native -mfpu=neon)
+    add_compile_options(-march=native)
     add_compile_definitions(IS_64BIT USE_NEON=8 USE_NEON_DOTPROD)
 
 elseif (arm-neon)
@@ -74,7 +74,7 @@ endif()
 
 # add release flags
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_options(-Ofast -flto -fuse-linker-plugin)
+    add_compile_options(-O3 -flto -fuse-linker-plugin)
     add_compile_definitions(NDEBUG)
     if (!apple-silicon)
         add_link_options(-fuse-ld=lld)
