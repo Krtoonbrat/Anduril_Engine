@@ -358,10 +358,15 @@ inline void Position::make_move(Move move) {
 
     std::optional<PieceType> moving_pt = piece_type_on(from_square);
     std::optional<PieceType> captured_pt = move_type == Move::Type::ENPASSANT ?
-                                           stm == constants::WHITE            ? piece_type_on(to_square - 8)
+                                           stm == constants::WHITE          ? piece_type_on(to_square - 8)
                                                                               : piece_type_on(to_square + 8)
                                                                               : piece_type_on(to_square);
     std::optional<PieceType> promotion_pt = move.promotion_piece_type();
+
+    std::optional<Piece> captured_piece = move_type == Move::Type::ENPASSANT ?
+                                           stm == constants::WHITE          ? piece_on(to_square - 8)
+                                                                              : piece_on(to_square + 8)
+                                                                              : piece_on(to_square);
 
     hash_type hash = prev_state.hash_;
     hash_type phash = prev_state.pawn_hash_;
@@ -389,8 +394,8 @@ inline void Position::make_move(Move move) {
     dp.dirtyNum++;
 
     // remove captured piece
-    if (captured_pt) {
-        dp.pc[dp.dirtyNum] = piece_on(to_square)->to_nnue();
+    if (captured_piece) {
+        dp.pc[dp.dirtyNum] = captured_piece->to_nnue();
         dp.from[dp.dirtyNum] = move_type == Move::Type::ENPASSANT ? epCapSquare.value() : to_square.value();
         dp.to[dp.dirtyNum] = 64;
         dp.dirtyNum++;
