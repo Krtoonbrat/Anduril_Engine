@@ -52,7 +52,7 @@ private:
 
     bool bookOpen;
 
-    bookEntry *entries;
+    bookEntry *entries = nullptr;
 
     long numEntries;
 

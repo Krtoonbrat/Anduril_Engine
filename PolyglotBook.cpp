@@ -44,7 +44,9 @@ bool Book::readBook(const char *file) {
 
 // closes the book
 void Book::freeBook() {
-    free(entries);
+    if (entries) {
+        free(entries);
+    }
 }
 
 // finds and returns a book move for the position
