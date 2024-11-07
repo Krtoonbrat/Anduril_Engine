@@ -449,6 +449,47 @@ inline std::optional<Position> Position::from_uci_position_line(const std::strin
     return pos;
 }
 
+// checks a few common errors in the position
+inline bool Position::is_valid_position() {
+    // check valid kings
+    if (piece_type_bb_[5].popcount() != 2 || piece_type_bb(constants::KING, constants::WHITE).popcount() != 1
+        || piece_type_bb(constants::KING, constants::BLACK).popcount() != 1
+        || (attackers_to(king_square(!side_to_move())) & color_bb(side_to_move()))) {
+        std::cout << "Invalid kings" << std::endl;
+        return false;
+    }
+
+    // check valid pawns
+    if ((piece_type_bb(constants::PAWN) & (lookups::RANK_1_MASK | lookups::RANK_8_MASK))
+        || piece_type_bb(constants::PAWN, constants::WHITE).popcount() > 8
+        || piece_type_bb(constants::PAWN, constants::BLACK).popcount() > 8) {
+        std::cout << "Invalid pawns" << std::endl;
+        return false;
+    }
+
+    // check valid general bitboards
+    if ((color_bb(constants::WHITE) & color_bb(constants::BLACK)) || (color_bb(constants::WHITE) | color_bb(constants::BLACK)) != occupancy_bb()
+        || color_bb(constants::WHITE).popcount() > 16 || color_bb(constants::BLACK).popcount() > 16) {
+        std::cout << "Invalid general bitboards" << std::endl;
+        return false;
+    }
+
+    // no pieces on the same square
+    for (PieceType p1 = constants::PAWN; p1 <= constants::KING; ++p1) {
+        for (PieceType p2 = constants::PAWN; p2 <= constants::KING; ++p2) {
+            if (p1 == p2) {
+                continue;
+            }
+            if (piece_type_bb(p1) & piece_type_bb(p2)) {
+                std::cout << "Pieces on the same square" << std::endl;
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 }  // namespace libchess
 
 #endif  // LIBCHESS_UTILITIES_H

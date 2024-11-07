@@ -1,5 +1,6 @@
 #ifndef LIBCHESS_MOVEINTEGRATION_H
 #define LIBCHESS_MOVEINTEGRATION_H
+#include <cassert>
 #include <iostream>
 #include "../Move.h"
 #include "../Position.h"
@@ -172,6 +173,9 @@ inline void Position::unmake_move() {
 
     Square from_square = move->from_square();
     Square to_square = move->to_square();
+    assert(from_square != to_square);
+    assert(from_square >= constants::A1 && from_square <= constants::H8);
+    assert(to_square >= constants::A1 && to_square <= constants::H8);
 
     auto moving_pt = piece_type_on(to_square);
     switch (move_type) {
@@ -222,6 +226,8 @@ inline void Position::unmake_move() {
         case Move::Type::NONE:
             break;
     }
+
+    assert(is_valid_position());
 }
 
 inline Position::hash_type Position::hashAfter(Move move) {
@@ -332,6 +338,10 @@ inline Position::hash_type Position::hashAfter(Move move) {
 // edited by Krtoonbrat
 // changed to incrementally update hashes
 inline void Position::make_move(Move move) {
+    assert(move.to_square() != move.from_square());
+    assert(move.to_square() >= constants::A1 && move.to_square() <= constants::H8);
+    assert(move.from_square() >= constants::A1 && move.from_square() <= constants::H8);
+
     Color stm = side_to_move();
     if (stm == constants::BLACK) {
         ++fullmoves_;
@@ -549,9 +559,13 @@ inline void Position::make_move(Move move) {
     reverse_side_to_move();
     next_state.hash_ = hash;
     next_state.pawn_hash_ = phash;
+
+    assert(is_valid_position());
 }
 
 inline void Position::make_null_move() {
+    assert(!checkers_to(side_to_move()));
+
     if (side_to_move() == constants::BLACK) {
         ++fullmoves_;
     }
@@ -581,6 +595,8 @@ inline void Position::make_null_move() {
     memcpy(&next.nnue.accumulator, &prev.nnue.accumulator, sizeof(Accumulator));
     DirtyPiece &dp = next.nnue.dirtyPiece;
     dp.dirtyNum = 0;
+
+    assert(is_valid_position());
 }
 
 }  // namespace libchess

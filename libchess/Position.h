@@ -335,6 +335,7 @@ class Position {
     int see_for(Move move, std::array<int, 6> piece_values);
     static std::optional<Position> from_fen(const std::string& fen);
     static std::optional<Position> from_uci_position_line(const std::string& line);
+    bool is_valid_position(); // added by Krtoonbrat
 
     // added by Krtoonbrat, based on the Stockfish implementation
     bool see_ge(Move move, int threshold);
