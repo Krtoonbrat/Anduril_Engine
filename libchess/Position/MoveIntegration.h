@@ -385,7 +385,7 @@ inline void Position::make_move(Move move) {
     }
     hash ^= zobrist::side_to_move_key(constants::WHITE);
 
-    if (moving_pt == constants::PAWN || captured_pt) {
+    if (*moving_pt == constants::PAWN || captured_pt) {
         next_state.halfmoves_ = 0;
     }
 
