@@ -205,7 +205,6 @@ inline bool Position::is_legal_move(Move move) const {
     PieceType pt = piece.type();
     if (move.promotion_piece_type()) {
         if (pt != constants::PAWN) {
-
             return false;
         }
         if (lookups::relative_rank(to_sq.rank(), c) != constants::RANK_8) {
@@ -243,6 +242,12 @@ inline bool Position::is_legal_move(Move move) const {
             // pawns cannot castle and move should not be none
             default:
                 return false;
+        }
+    }
+    // non pawn move marked as pawn move or none
+    else {
+        if (type == Move::Type::DOUBLE_PUSH || type == Move::Type::ENPASSANT || type == Move::Type::PROMOTION || type == Move::Type::CAPTURE_PROMOTION || type == Move::Type::NONE) {
+            return false;
         }
     }
 
