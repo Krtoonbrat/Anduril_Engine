@@ -482,6 +482,8 @@ inline bool Position::is_valid_position() {
             }
             if (piece_type_bb(p1) & piece_type_bb(p2)) {
                 std::cout << "Pieces on the same square" << std::endl;
+                std::cout << "Piece type: " << p1.to_char() << " " << p2.to_char() << std::endl;
+                std::cout << "Board:\n" << (piece_type_bb(p1) & piece_type_bb(p2)) << std::endl;
                 return false;
             }
         }
