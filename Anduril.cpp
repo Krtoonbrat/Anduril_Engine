@@ -26,8 +26,8 @@ int lsb = 212;
 int lbc = 52;
 
 // razoring values
-int rvc = 584;
-int rvs = 170;
+int rvc = 582;
+int rvs = 162;
 
 // reverse futility margin
 int rfm = 255;
@@ -506,7 +506,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     // razoring
     if (!check
-        && staticEval < alpha - 582 - 162 * depth * depth) {
+        && staticEval < alpha - rvc - rvs * depth * depth) {
         // verification that the value is indeed less than alpha
         score = quiescence<NonPV>(board, alpha - 1, alpha);
         if (score < alpha && abs(score) < 31507) {
@@ -1060,7 +1060,7 @@ int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
 void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
                                libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched, int captureCount) {
     int largerBonus = stat_bonus(depth + 1);
-    int bonus = bestScore > beta + 52 ? largerBonus : stat_bonus(depth);
+    int bonus = bestScore > beta + lbc ? largerBonus : stat_bonus(depth);
     int nonBestPenalty;
 
     if (!board.is_capture_move(bestMove)) {

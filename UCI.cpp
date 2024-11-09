@@ -150,6 +150,51 @@ namespace UCI {
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
 
+                std::cout << "option name nem type string default " << UCI::nem << std::endl;
+                std::cout << "option name neb type string default " << UCI::neb << std::endl;
+
+                std::cout << "option name sbc type string default " << sbc << std::endl;
+                std::cout << "option name sbm type string default " << sbm << std::endl;
+                std::cout << "option name msb type string default " << msb << std::endl;
+                std::cout << "option name lsb type string default " << lsb << std::endl;
+
+                std::cout << "option name lbc type string default " << lbc << std::endl;
+                std::cout << "option name rvc type string default " << rvc << std::endl;
+                std::cout << "option name rvs type string default " << rvs << std::endl;
+                std::cout << "option name rfm type string default " << rfm << std::endl;
+                std::cout << "option name hpv type string default " << hpv << std::endl;
+                std::cout << "option name hrv type string default " << hrv << std::endl;
+                std::cout << "option name qte type string default " << qte << std::endl;
+                std::cout << "option name sec type string default " << sec << std::endl;
+                std::cout << "option name sem type string default " << sem << std::endl;
+                std::cout << "option name fth type string default " << fth << std::endl;
+                std::cout << "option name svq type string default " << svq << std::endl;
+                std::cout << "option name pcc type string default " << pcc << std::endl;
+                std::cout << "option name pci type string default " << pci << std::endl;
+                std::cout << "option name fpc type string default " << fpc << std::endl;
+                std::cout << "option name fpm type string default " << fpm << std::endl;
+                std::cout << "option name smq type string default " << smq << std::endl;
+                std::cout << "option name smt type string default " << smt << std::endl;
+                std::cout << "option name pMG type string default " << libchess::Position::pieceValuesMG[0] << std::endl;
+                std::cout << "option name kMG type string default " << libchess::Position::pieceValuesMG[1] << std::endl;
+                std::cout << "option name bMG type string default " << libchess::Position::pieceValuesMG[2] << std::endl;
+                std::cout << "option name rMG type string default " << libchess::Position::pieceValuesMG[3] << std::endl;
+                std::cout << "option name qMG type string default " << libchess::Position::pieceValuesMG[4] << std::endl;
+                std::cout << "option name pEG type string default " << libchess::Position::pieceValuesEG[0] << std::endl;
+                std::cout << "option name kEG type string default " << libchess::Position::pieceValuesEG[1] << std::endl;
+                std::cout << "option name bEG type string default " << libchess::Position::pieceValuesEG[2] << std::endl;
+                std::cout << "option name rEG type string default " << libchess::Position::pieceValuesEG[3] << std::endl;
+                std::cout << "option name qEG type string default " << libchess::Position::pieceValuesEG[4] << std::endl;
+                std::cout << "option name mhv type string default " << maxHistoryVal << std::endl;
+                std::cout << "option name mcv type string default " << maxContinuationVal << std::endl;
+                std::cout << "option name cpm type string default " << maxCaptureVal << std::endl;
+                std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
+                std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
+                std::cout << "option name queenOrderVal type string default " << queenOrderVal << std::endl;
+                std::cout << "option name rookOrderVal type string default " << rookOrderVal << std::endl;
+                std::cout << "option name minorOrderVal type string default " << minorOrderVal << std::endl;
+
+
                 std::cout << "uciok" << std::endl;
 
 
@@ -221,6 +266,235 @@ namespace UCI {
             }
             NNUE::LoadNNUE();
         }
+
+        // set nem
+        else if (token == "nem") {
+            stream >> UCI::nem;
+            initReductions(UCI::nem, UCI::neb);
+        }
+
+        // set neb
+        else if (token == "neb") {
+            stream >> UCI::neb;
+            initReductions(UCI::nem, UCI::neb);
+        }
+
+        // set sbc
+        else if (token == "sbc") {
+            stream >> sbc;
+        }
+
+        // set sbm
+        else if (token == "sbm") {
+            stream >> sbm;
+        }
+
+        // set msb
+        else if (token == "msb") {
+            stream >> msb;
+        }
+
+        // set lsb
+        else if (token == "lsb") {
+            stream >> lsb;
+        }
+
+        // set lbc
+        else if (token == "lbc") {
+            stream >> lbc;
+        }
+
+        // set rvc
+        else if (token == "rvc") {
+            stream >> rvc;
+        }
+
+        // set rvs
+        else if (token == "rvs") {
+            stream >> rvs;
+        }
+
+        // set rfm
+        else if (token == "rfm") {
+            stream >> rfm;
+        }
+
+        // set hpv
+        else if (token == "hpv") {
+            stream >> hpv;
+        }
+
+        // set hrv
+        else if (token == "hrv") {
+            stream >> hrv;
+        }
+
+        // set qte
+        else if (token == "qte") {
+            stream >> qte;
+        }
+
+        // set sec
+        else if (token == "sec") {
+            stream >> sec;
+        }
+
+        // set sem
+        else if (token == "sem") {
+            stream >> sem;
+        }
+
+        // set fth
+        else if (token == "fth") {
+            stream >> fth;
+        }
+
+        // set svq
+        else if (token == "svq") {
+            stream >> svq;
+        }
+
+        // set pcc
+        else if (token == "pcc") {
+            stream >> pcc;
+        }
+
+        // set pci
+        else if (token == "pci") {
+            stream >> pci;
+        }
+
+        // set fpc
+        else if (token == "fpc") {
+            stream >> fpc;
+        }
+
+        // set fpm
+        else if (token == "fpm") {
+            stream >> fpm;
+        }
+
+        // set smq
+        else if (token == "smq") {
+            stream >> smq;
+        }
+
+        // set smt
+        else if (token == "smt") {
+            stream >> smt;
+        }
+
+        // set pMG
+        else if (token == "pMG") {
+            stream >> libchess::Position::pieceValuesMG[0];
+        }
+
+        // set kMG
+        else if (token == "kMG") {
+            stream >> libchess::Position::pieceValuesMG[1];
+        }
+
+        // set bMG
+        else if (token == "bMG") {
+            stream >> libchess::Position::pieceValuesMG[2];
+        }
+
+        // set rMG
+        else if (token == "rMG") {
+            stream >> libchess::Position::pieceValuesMG[3];
+        }
+
+        // set qMG
+        else if (token == "qMG") {
+            stream >> libchess::Position::pieceValuesMG[4];
+        }
+
+        // set pEG
+        else if (token == "pEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[0] = val;
+            Anduril::pieceValues[0] = val;
+            Anduril::pieceValues[8] = val;
+        }
+
+        // set kEG
+        else if (token == "kEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[1] = val;
+            Anduril::pieceValues[1] = val;
+            Anduril::pieceValues[9] = val;
+        }
+
+        // set bEG
+        else if (token == "bEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[2] = val;
+            Anduril::pieceValues[2] = val;
+            Anduril::pieceValues[10] = val;
+        }
+
+        // set rEG
+        else if (token == "rEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[3] = val;
+            Anduril::pieceValues[3] = val;
+            Anduril::pieceValues[11] = val;
+        }
+
+        // set qEG
+        else if (token == "qEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[4] = val;
+            Anduril::pieceValues[4] = val;
+            Anduril::pieceValues[12] = val;
+        }
+
+        // set mhv
+        else if (token == "mhv") {
+            stream >> maxHistoryVal;
+        }
+
+        // set mcv
+        else if (token == "mcv") {
+            stream >> maxContinuationVal;
+        }
+
+        // set cpm
+        else if (token == "cpm") {
+            stream >> maxCaptureVal;
+        }
+
+        // set singleDepthDividend
+        else if (token == "singleDepthDividend") {
+            stream >> singleDepthDividend;
+        }
+
+        // set singleDepthMultiplier
+        else if (token == "singleDepthMultiplier") {
+            stream >> singleDepthMultiplier;
+        }
+
+        // set queenOrderVal
+        else if (token == "queenOrderVal") {
+            stream >> queenOrderVal;
+        }
+
+        // set rookOrderVal
+        else if (token == "rookOrderVal") {
+            stream >> rookOrderVal;
+        }
+
+        // set minorOrderVal
+        else if (token == "minorOrderVal") {
+            stream >> minorOrderVal;
+        }
+
+
 
     }
 
