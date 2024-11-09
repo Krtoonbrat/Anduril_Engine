@@ -59,6 +59,10 @@ extern int smt;
 int singleDepthDividend = 25;
 int singleDepthMultiplier = 16;
 
+int dta = 18;
+int dtn = 300;
+int dtd = 400;
+
 namespace NNUE {
     extern char nnue_path[256];
 }
@@ -188,6 +192,9 @@ namespace UCI {
                 std::cout << "option name mhv type string default " << maxHistoryVal << std::endl;
                 std::cout << "option name mcv type string default " << maxContinuationVal << std::endl;
                 std::cout << "option name cpm type string default " << maxCaptureVal << std::endl;
+                std::cout << "option name dta type string default " << dta << std::endl;
+                std::cout << "option name dtn type string default " << dtn << std::endl;
+                std::cout << "option name dtd type string default " << dtd << std::endl;
                 std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
                 std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
                 std::cout << "option name queenOrderVal type string default " << queenOrderVal << std::endl;
@@ -494,6 +501,21 @@ namespace UCI {
             stream >> minorOrderVal;
         }
 
+        // set dta
+        else if (token == "dta") {
+            stream >> dta;
+        }
+
+        // set dtn
+        else if (token == "dtn") {
+            stream >> dtn;
+        }
+
+        // set dtd
+        else if (token == "dtd") {
+            stream >> dtd;
+        }
+
 
 
     }
@@ -653,7 +675,7 @@ void Anduril::go(libchess::Position board) {
     int beta = 32001;
     int bestScore = -32001;
     int prevBestScore = bestScore;
-    int delta = 18;
+    int delta = dta;
 
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
@@ -760,14 +782,14 @@ void Anduril::go(libchess::Position board) {
                 rDepth++;
                 rDepth = std::clamp(rDepth, 1, 100);
                 upper = lower = false;
-                delta = std::min(18 + bestScore * bestScore / 10000, 100);
+                delta = std::min(dta + bestScore * bestScore / 10000, 100);
                 alpha = std::max(bestScore - delta, -32001);
                 beta = std::min(bestScore + delta, 32001);
             }
         }
         // for depths less than 5
         else {
-            delta = std::min(18 + bestScore * bestScore / 10000, 100);
+            delta = std::min(dta + bestScore * bestScore / 10000, 100);
             rDepth++;
             rDepth = std::clamp(rDepth, 1, 100);
             sDepth = rDepth;
@@ -776,7 +798,8 @@ void Anduril::go(libchess::Position board) {
         // expand search window in case we miss (will be reset anyway if we didn't)
         // we can do it here because if we did not miss, we set alpha and beta for the next search above,
         // if we did miss, delta was already modified before we searched, meaning the alpha and beta windows were expanded
-        delta += delta * 3 / 4;
+        // 3 / 4
+        delta += delta * dtn / dtd;
 
         if (!incomplete && found) {
             bestMove = board.from_table(node->bestMove);
