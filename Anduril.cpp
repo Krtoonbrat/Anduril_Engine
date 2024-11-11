@@ -14,7 +14,8 @@
 
 // reduction table
 // its oversize just in case something weird happens
-int reductions[150][150];
+int reductionsQuiet[150][150];
+int reductionsTactical[150][150];
 
 // stat bonus values
 int sbc = 156;
@@ -61,14 +62,16 @@ extern int singleDepthMultiplier;
 extern ThreadPool gondor;
 
 // the other formula simplifies down to this.  This should be easier to tune than 4 separate variables
-void initReductions(double nem, double neb) {
+void initReductions(double nem, double neb, double tem, double teb) {
     for (int i = 0; i < 150; i++) {
         for (int j = 0; j < 150; j++) {
             if (i == 0 || j == 0) {
-                reductions[i][j] = 0;
+                reductionsQuiet[i][j] = 0;
+                reductionsTactical[i][j] = 0;
             }
             else {
-                reductions[i][j] = int(neb + (log(i) * log(j) / nem));
+                reductionsQuiet[i][j] = int(neb + (log(i) * log(j) / nem));
+                reductionsTactical[i][j] = int(teb + (log(i) * log(j) / tem));
             }
         }
     }
@@ -725,7 +728,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             if (!capture
                 && !givesCheck) {
 
-                int lmrDepth = depth - reductions[depth][moveCounter];
+                int lmrDepth = depth - reductionsQuiet[depth][moveCounter];
 
                 // futility pruning
                 if (lmrDepth <= 8
@@ -849,60 +852,58 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // search with zero window
         // first check if we can reduce
-        if (depth >= 2
-            && moveCounter > 2
-            && (!PvNode     // at PV nodes, we want to make sure we don't reduce tactical moves.  At non-PV nodes, we don't care
-            || (!capture && !givesCheck && !promotion))) {
+        if (depth >= 2 && moveCounter > 1) {
             // find our reduction
-            int reduction = reductions[depth][moveCounter];
-
-            // decrease if position is not likely to fail low
-            if (PvNode && !likelyFailLow) {
-                reduction--;
+            int reduction;
+            if (capture || promotion || givesCheck) {
+                reduction = reductionsTactical[depth][moveCounter];
             }
+            else {
+                reduction = reductionsQuiet[depth][moveCounter];
 
-            // increase reduction for cut nodes
-            if (cutNode) {
-                reduction += 2;
+                // decrease if position is not likely to fail low
+                if (PvNode && !likelyFailLow) {
+                    reduction--;
+                }
+
+                // increase reduction for cut nodes
+                if (cutNode) {
+                    reduction += 2;
+                }
+
+                // increase reduction if transposition move is a capture
+                if (transpositionCapture) {
+                    reduction++;
+                }
+
+                // decrease reduction for PvNodes
+                if (PvNode) {
+                    reduction--;
+                }
+
+                // decrease reduction if the transposition move has been singularly extended
+                if (singularQuietLMR) {
+                    reduction--;
+                }
+
+                // decrease reduction if opponent move count is high
+                if (board.moveCount(ply - 1) > 7) {
+                    reduction--;
+                }
+
+                // increase reduction on repetition
+                if (move == *board.previousMove(ply - 3) && board.is_repeat()) {
+                    reduction += 2;
+                }
+
+                // adjust based on history stats
+                hist += moveHistory[board.side_to_move()][move.from_square()][move.to_square()];
+                reduction -= hist / hrv;
             }
-
-            // increase reduction if transposition move is a capture
-            if (transpositionCapture) {
-                reduction++;
-            }
-
-            // decrease reduction for PvNodes
-            if (PvNode) {
-                reduction--;
-            }
-
-            // decrease reduction if the transposition move has been singularly extended
-            if (singularQuietLMR) {
-                reduction--;
-            }
-
-            // decrease reduction if opponent move count is high
-            if (board.moveCount(ply - 1) > 7) {
-                reduction--;
-            }
-
-            // increase reduction on repetition
-            if (move == *board.previousMove(ply - 3) && board.is_repeat()) {
-                reduction += 2;
-            }
-
-            // decrease reduction on tactical moves
-            if (capture || givesCheck || promotion) {
-                reduction--;
-            }
-
-            // adjust based on history stats
-            hist += moveHistory[board.side_to_move()][move.from_square()][move.to_square()];
-            reduction -= hist / hrv;
 
             // new depth we will search with
-            // we need to search at least one more move, and allow an "extension" of up to one (really all we are doing in this case is not changing the depth)
-            int newDepth = std::max(1, std::min(actualDepth - reduction, actualDepth + 1));
+            // we need to search at least one more move, and cap the reduction at actualDepth so that we don't extend the search
+            int newDepth = std::max(1, std::min(actualDepth - reduction, actualDepth));
 
             incPly();
             score = -negamax<NonPV>(board, newDepth, -(alpha + 1), -alpha, true);

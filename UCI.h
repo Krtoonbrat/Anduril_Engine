@@ -23,6 +23,8 @@ namespace UCI {
 
     static double nem = 2.6044;
     static double neb = -0.6181;
+    static double tem = 3.35;
+    static double teb = 0.20;
 }
 
 #endif //ANDURIL_ENGINE_UCI_H

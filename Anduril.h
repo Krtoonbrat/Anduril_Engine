@@ -273,7 +273,7 @@ static std::atomic<uint64_t> movesTransposed;
 static std::atomic<uint64_t> quiesceExplored;
 
 // initialize the reduction table
-void initReductions(double nem, double neb);
+void initReductions(double nem, double neb, double tem, double teb);
 
 // prefetches an address in memory to CPU cache that doesn't block execution
 // this should speed up the program by reducing the amount of time we wait for transposition table probes

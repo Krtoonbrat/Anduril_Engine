@@ -156,6 +156,8 @@ namespace UCI {
 
                 std::cout << "option name nem type string default " << UCI::nem << std::endl;
                 std::cout << "option name neb type string default " << UCI::neb << std::endl;
+                std::cout << "option name tem type string default " << UCI::tem << std::endl;
+                std::cout << "option name teb type string default " << UCI::teb << std::endl;
 
                 std::cout << "option name sbc type string default " << sbc << std::endl;
                 std::cout << "option name sbm type string default " << sbm << std::endl;
@@ -277,13 +279,25 @@ namespace UCI {
         // set nem
         else if (token == "nem") {
             stream >> UCI::nem;
-            initReductions(UCI::nem, UCI::neb);
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
         }
 
         // set neb
         else if (token == "neb") {
             stream >> UCI::neb;
-            initReductions(UCI::nem, UCI::neb);
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set tem
+        else if (token == "tem") {
+            stream >> UCI::tem;
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set teb
+        else if (token == "teb") {
+            stream >> UCI::teb;
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
         }
 
         // set sbc

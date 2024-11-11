@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     libchess::lookups::init::init_magics(libchess::constants::ROOK, libchess::lookups::rook_table, libchess::lookups::rook_magics);
     libchess::lookups::init::init_magics(libchess::constants::BISHOP, libchess::lookups::bishop_table, libchess::lookups::bishop_magics);
 
-    initReductions(UCI::nem, UCI::neb);
+    initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
 
     table.resize(256);
 
