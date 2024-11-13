@@ -189,6 +189,14 @@ namespace UCI {
                 std::cout << "option name fpm type string default " << fpm << std::endl;
                 std::cout << "option name smq type string default " << smq << std::endl;
                 std::cout << "option name smt type string default " << smt << std::endl;
+                std::cout << "option name mhv type string default " << maxHistoryVal << std::endl;
+                std::cout << "option name mcv type string default " << maxContinuationVal << std::endl;
+                std::cout << "option name cpm type string default " << maxCaptureVal << std::endl;
+                std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
+                std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
+                std::cout << "option name queenOrderVal type string default " << queenOrderVal << std::endl;
+                std::cout << "option name rookOrderVal type string default " << rookOrderVal << std::endl;
+                std::cout << "option name minorOrderVal type string default " << minorOrderVal << std::endl;
                 std::cout << "option name pMG type string default " << libchess::Position::pieceValuesMG[0] << std::endl;
                 std::cout << "option name kMG type string default " << libchess::Position::pieceValuesMG[1] << std::endl;
                 std::cout << "option name bMG type string default " << libchess::Position::pieceValuesMG[2] << std::endl;
@@ -199,14 +207,6 @@ namespace UCI {
                 std::cout << "option name bEG type string default " << libchess::Position::pieceValuesEG[2] << std::endl;
                 std::cout << "option name rEG type string default " << libchess::Position::pieceValuesEG[3] << std::endl;
                 std::cout << "option name qEG type string default " << libchess::Position::pieceValuesEG[4] << std::endl;
-                std::cout << "option name mhv type string default " << maxHistoryVal << std::endl;
-                std::cout << "option name mcv type string default " << maxContinuationVal << std::endl;
-                std::cout << "option name cpm type string default " << maxCaptureVal << std::endl;
-                std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
-                std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
-                std::cout << "option name queenOrderVal type string default " << queenOrderVal << std::endl;
-                std::cout << "option name rookOrderVal type string default " << rookOrderVal << std::endl;
-                std::cout << "option name minorOrderVal type string default " << minorOrderVal << std::endl;
 
 
                 std::cout << "uciok" << std::endl;
