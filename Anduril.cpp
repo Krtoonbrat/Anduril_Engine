@@ -855,7 +855,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if (depth >= 2 && moveCounter > 1) {
             // find our reduction
             int reduction;
-            if (capture || promotion || givesCheck) {
+            if (capture || promotion) {
                 reduction = reductionsTactical[depth][moveCounter];
             }
             else {
