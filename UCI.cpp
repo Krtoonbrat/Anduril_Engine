@@ -59,6 +59,8 @@ extern int smt;
 int singleDepthDividend = 25;
 int singleDepthMultiplier = 16;
 
+int mad = 8;
+
 int dta = 18;
 int dtn = 30;
 int dtd = 40;
@@ -159,6 +161,12 @@ namespace UCI {
                 std::cout << "option name tem type string default " << UCI::tem << std::endl;
                 std::cout << "option name teb type string default " << UCI::teb << std::endl;
 
+                std::cout << "option name dta type string default " << dta << std::endl;
+                std::cout << "option name dtn type string default " << dtn << std::endl;
+                std::cout << "option name dtd type string default " << dtd << std::endl;
+
+                std::cout << "option name mad type string default " << mad << std::endl;
+
                 std::cout << "option name sbc type string default " << sbc << std::endl;
                 std::cout << "option name sbm type string default " << sbm << std::endl;
                 std::cout << "option name msb type string default " << msb << std::endl;
@@ -194,9 +202,6 @@ namespace UCI {
                 std::cout << "option name mhv type string default " << maxHistoryVal << std::endl;
                 std::cout << "option name mcv type string default " << maxContinuationVal << std::endl;
                 std::cout << "option name cpm type string default " << maxCaptureVal << std::endl;
-                std::cout << "option name dta type string default " << dta << std::endl;
-                std::cout << "option name dtn type string default " << dtn << std::endl;
-                std::cout << "option name dtd type string default " << dtd << std::endl;
                 std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
                 std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
                 std::cout << "option name queenOrderVal type string default " << queenOrderVal << std::endl;
@@ -298,6 +303,11 @@ namespace UCI {
         else if (token == "teb") {
             stream >> UCI::teb;
             initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set mad
+        else if (token == "mad") {
+            stream >> mad;
         }
 
         // set sbc
@@ -767,7 +777,7 @@ void Anduril::go(libchess::Position board) {
         completedDepth = sDepth;
 
         // set the aspiration window
-        if (rDepth >= 8) {
+        if (rDepth >= mad) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
