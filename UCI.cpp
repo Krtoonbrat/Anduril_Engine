@@ -60,8 +60,8 @@ int singleDepthDividend = 25;
 int singleDepthMultiplier = 16;
 
 int dta = 18;
-int dtn = 300;
-int dtd = 400;
+int dtn = 30;
+int dtd = 40;
 
 namespace NNUE {
     extern char nnue_path[256];
