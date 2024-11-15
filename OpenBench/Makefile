@@ -46,5 +46,19 @@ OBJS=$(SRC:.cpp=.o)
 # Linker flags
 LDFLAGS=-flto -fuse-linker-plugin -fuse-ld=lld
 
+# All flags used when compiling the binary that will produce PBO info
+PBOFLAGS=$(CXXFLAGS) -fprofile-generate=anduril.profraw $(CXXDEFINES) $(LDFLAGS)
+
+# All flags used when compiling the binary that will use PBO info
+PBOUSEFLAGS=$(CXXFLAGS) -fprofile-use=anduril.profdata $(CXXDEFINES) $(LDFLAGS)
+
+# Since this script is specifically for OpenBench, we can be sure that the binary created should only run on the system it was compiled on.
+# Therefore, we can use PBO to optimize the binary without worry!
 all:
-	$(CXX) $(CXXFLAGS) $(CXXDEFINES) $(LDFLAGS) $(SRC) -o $(EXE)
+	$(CXX) $(PBOFLAGS) $(SRC) -o $(EXE)
+	./$(EXE) bench
+	rm -f Anduril_Engine Anduril_Engine.exe
+	llvm-profdata merge -output=anduril.profdata anduril.profraw
+	$(CXX) $(PBOUSEFLAGS) $(SRC) -o $(EXE)
+	rm -rf *.profraw
+	rm -rf anduril.profdata
