@@ -92,8 +92,10 @@ namespace UCI {
 
         if (argc > 1) {
             std::string in = std::string(argv[1]);
+            // benchmark will just use the already created engine and board, run for depth 20, and report node count and speed.  Program exits when this is finished if the bench command was given as an argument
             if (in == "bench") {
-                // benchmark will just use the already created engine and board, run for depth 20, and report node count and speed.  Program exits when this is finished if the bench command was given as an argument
+                // set transposition table to min size for more accurate measurement
+                table.resize(16);
                 gondor.mainThread()->engine->bench(board);
                 return;
             }
