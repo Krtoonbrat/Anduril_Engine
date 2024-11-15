@@ -17,6 +17,9 @@ struct limit {
 
     // is there a time set at all?
     bool timeSet = false;
+
+    // maximum number of nodes to search
+    int nodes = -1;
 };
 
 #endif //ANDURIL_ENGINE_LIMIT_H

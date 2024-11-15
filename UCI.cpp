@@ -551,9 +551,13 @@ namespace UCI {
         int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
         int increment = 0;
+        int nodes = -1;
         gondor.mainThread()->engine->limits.timeSet = false;
 
         std::string token;
+
+        // start the clock as early as possible to help avoid time loss on with extremely low clock
+        gondor.mainThread()->engine->startTime = std::chrono::steady_clock::now();
 
         // this makes sure that the opening book is set to the correct state
         if (!bookOpen) {
@@ -594,6 +598,10 @@ namespace UCI {
             else if (token == "depth") {
                 stream >> depth;
             }
+
+            else if (token == "nodes") {
+                stream >> nodes;
+            }
         }
 
         if (moveTime != -1) {
@@ -601,8 +609,11 @@ namespace UCI {
             mtg = 1;
         }
 
-        gondor.mainThread()->engine->startTime = std::chrono::steady_clock::now();
         gondor.mainThread()->engine->limits.depth = depth;
+
+        // nodes will really only work if we are searching with one thread
+        // the engine will most likely search a few more nodes than this if we are using multiple threads
+        gondor.mainThread()->engine->limits.nodes = nodes;
 
         if (time != -1) {
             gondor.mainThread()->engine->limits.timeSet = true;

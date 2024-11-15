@@ -351,10 +351,15 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         selDepth = (ply - rootPly) + 1;
     }
 
+    // should we abort the search?
+    if (id == 0 && shouldStop()) {
+        gondor.stop = true;
+    }
+
     // is the time up?  Mate distance pruning?
     if constexpr (!rootNode) {
         // check for aborted search
-        if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+        if (gondor.stop) {
             return 0;
         }
 
@@ -1173,4 +1178,13 @@ uint64_t Anduril::getMovesExplored() {
         total += t->engine->movesExplored.load();
     }
     return total;
+}
+
+bool Anduril::shouldStop() {
+    if (limits.nodes != -1) {
+        return getMovesExplored() >= limits.nodes;
+    }
+
+    return limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime;
+
 }

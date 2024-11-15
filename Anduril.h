@@ -56,6 +56,9 @@ public:
     // getter and setter for moves explored
     uint64_t getMovesExplored();
 
+    // checks if the search should stop due to time (or node) limit
+    bool shouldStop();
+
     // benchmarks the engine
     void bench(libchess::Position &board);
 
