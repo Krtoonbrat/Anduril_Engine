@@ -158,12 +158,14 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     uint64_t hash = board.hash();
     Node *node = table.probe(hash, board.found());
     int nType = board.found() ? node->nodeTypeGenBound & 0x3 : 0;
+    int nEval = board.found() ? node->nodeEval : -32001;
+    int nDepth = board.found() ? node->nodeDepth : -1;
     int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = board.found() ? board.from_table(node->bestMove) : libchess::Move(0);
 	if (!PvNode
 		&& board.found()
         && nScore != -32001
-		&& node->nodeDepth >= tDepth
+		&& nDepth >= tDepth
         && (nType & (nScore >= beta ? 2 : 1))) {
 		movesTransposed++;
 		return nScore;
@@ -173,7 +175,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
     if (!check) {
         // stand pat score to see if we can exit early
         if (board.found()) {
-            if ((bestScore = board.staticEval() = node->nodeEval) == -32001) {
+            if ((bestScore = board.staticEval() = nEval) == -32001) {
                 bestScore = board.staticEval() = evaluateBoard(board);
             }
 
@@ -415,6 +417,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     Node *node = table.probe(hash, board.found());
     int nDepth = board.found() ? node->nodeDepth : -99;
     int nType = board.found() ? node->nodeTypeGenBound & 0x3 : 0;
+    int nEval = board.found() ? node->nodeEval : -32001;
     int nScore = board.found() ? scoreFromTable(node->nodeScore, (ply - rootPly), board.halfmoves()) : -32001;
     libchess::Move nMove = board.found() ? board.from_table(node->bestMove) : libchess::Move(0);
     bool transpositionCapture = board.found() && board.is_capture_move(nMove);
@@ -473,11 +476,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     }
     else if (board.found()) {
         // little check in case something gets messed up
-        if (node->nodeEval == -32001) {
+        if (nEval == -32001) {
             board.staticEval() = staticEval = evaluateBoard(board);
         }
         else {
-            board.staticEval() = staticEval = node->nodeEval;
+            board.staticEval() = staticEval = nEval;
         }
 
         // previously saved transposition score can be used as a better position evaluation
