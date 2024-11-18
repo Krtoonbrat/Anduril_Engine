@@ -55,6 +55,15 @@ int maxHistoryVal = 8194;
 int maxContinuationVal = 31080;
 int maxCaptureVal = 7306;
 
+int mcPruningDepth = 3;
+int unlikelyFailLowRed = -1;
+int cutNodeRed = 2;
+int transpositionCapRed = 1;
+int pvRed = -1;
+int singleQuietRed = -1;
+int oppMoveCountRed = -1;
+int repetitionRed = 2;
+
 extern int singleDepthDividend;
 extern int singleDepthMultiplier;
 
@@ -82,8 +91,8 @@ int stat_bonus(int depth) {
 }
 
 // returns the amount of moves we need to search before we can use move count based pruning
-constexpr int moveCountPruningThreshold(bool improving, int depth) {
-    return improving ? (3 + depth * depth) : (3 + depth * depth) / 2;
+int moveCountPruningThreshold(bool improving, int depth) {
+    return improving ? (mcPruningDepth + depth * depth) : (mcPruningDepth + depth * depth) / 2;
 }
 
 // returns the margin for reverse futility pruning.  Returns the same values as the list we used before, except this is
@@ -868,37 +877,37 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
                 // decrease if position is not likely to fail low
                 if (PvNode && !likelyFailLow) {
-                    reduction--;
+                    reduction += unlikelyFailLowRed; // -1
                 }
 
                 // increase reduction for cut nodes
                 if (cutNode) {
-                    reduction += 2;
+                    reduction += cutNodeRed; // 2
                 }
 
                 // increase reduction if transposition move is a capture
                 if (transpositionCapture) {
-                    reduction++;
+                    reduction += transpositionCapRed; // 1
                 }
 
                 // decrease reduction for PvNodes
                 if (PvNode) {
-                    reduction--;
+                    reduction += pvRed; // -1
                 }
 
                 // decrease reduction if the transposition move has been singularly extended
                 if (singularQuietLMR) {
-                    reduction--;
+                    reduction += singleQuietRed; // -1
                 }
 
                 // decrease reduction if opponent move count is high
                 if (board.moveCount(ply - 1) > 7) {
-                    reduction--;
+                    reduction += oppMoveCountRed; // -1
                 }
 
                 // increase reduction on repetition
                 if (move == *board.previousMove(ply - 3) && board.is_repeat()) {
-                    reduction += 2;
+                    reduction += repetitionRed; // 2
                 }
 
                 // adjust based on history stats

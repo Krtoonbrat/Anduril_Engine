@@ -56,6 +56,15 @@ extern int fpm;
 extern int smq;
 extern int smt;
 
+extern int mcPruningDepth; // 3
+extern int unlikelyFailLowRed; // -1
+extern int cutNodeRed; // 2
+extern int transpositionCapRed; // 1
+extern int pvRed; // -1
+extern int singleQuietRed; // -1
+extern int oppMoveCountRed; // -1
+extern int repetitionRed; // 2
+
 int singleDepthDividend = 25;
 int singleDepthMultiplier = 16;
 
@@ -162,6 +171,15 @@ namespace UCI {
                 std::cout << "option name neb type string default " << UCI::neb << std::endl;
                 std::cout << "option name tem type string default " << UCI::tem << std::endl;
                 std::cout << "option name teb type string default " << UCI::teb << std::endl;
+
+                std::cout << "option name mcPruningDepth type string default " << mcPruningDepth << std::endl;
+                std::cout << "option name unlikelyFailLowRed type string default " << unlikelyFailLowRed << std::endl;
+                std::cout << "option name cutNodeRed type string default " << cutNodeRed << std::endl;
+                std::cout << "option name transpositionCapRed type string default " << transpositionCapRed << std::endl;
+                std::cout << "option name pvRed type string default " << pvRed << std::endl;
+                std::cout << "option name singleQuietRed type string default " << singleQuietRed << std::endl;
+                std::cout << "option name oppMoveCountRed type string default " << oppMoveCountRed << std::endl;
+                std::cout << "option name repetitionRed type string default " << repetitionRed << std::endl;
 
                 std::cout << "option name dta type string default " << dta << std::endl;
                 std::cout << "option name dtn type string default " << dtn << std::endl;
@@ -305,6 +323,46 @@ namespace UCI {
         else if (token == "teb") {
             stream >> UCI::teb;
             initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set mcPruningDepth
+        else if (token == "mcPruningDepth") {
+            stream >> mcPruningDepth;
+        }
+
+        // set unlikelyFailLowRed
+        else if (token == "unlikelyFailLowRed") {
+            stream >> unlikelyFailLowRed;
+        }
+
+        // set cutNodeRed
+        else if (token == "cutNodeRed") {
+            stream >> cutNodeRed;
+        }
+
+        // set transpositionCapRed
+        else if (token == "transpositionCapRed") {
+            stream >> transpositionCapRed;
+        }
+
+        // set pvRed
+        else if (token == "pvRed") {
+            stream >> pvRed;
+        }
+
+        // set singleQuietRed
+        else if (token == "singleQuietRed") {
+            stream >> singleQuietRed;
+        }
+
+        // set oppMoveCountRed
+        else if (token == "oppMoveCountRed") {
+            stream >> oppMoveCountRed;
+        }
+
+        // set repetitionRed
+        else if (token == "repetitionRed") {
+            stream >> repetitionRed;
         }
 
         // set mad
