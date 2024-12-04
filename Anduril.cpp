@@ -911,7 +911,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 }
 
                 // adjust based on history stats
-                hist += moveHistory[board.side_to_move()][move.from_square()][move.to_square()];
+                // first index is !side_to_move because we already called make_move!
+                hist += moveHistory[!board.side_to_move()][move.from_square()][move.to_square()];
                 reduction -= hist / hrv;
             }
 
