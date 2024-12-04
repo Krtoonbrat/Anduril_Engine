@@ -64,6 +64,23 @@ extern int pvRed; // -1
 extern int singleQuietRed; // -1
 extern int oppMoveCountRed; // -1
 extern int repetitionRed; // 2
+extern int oppMoveCountThr; // 7
+
+extern int revFutilDepth; // 8
+extern int nullBase; // 2
+extern int nullDepthDiv; // 4
+extern int nullDifMin; // 4
+extern int nullDifDiv; // 255
+extern int verifDepth; // 13
+extern int verifMul; // 261
+extern int verifDiv; // 492
+extern int IIRDepth; // 7
+extern int futilDepth; // 8
+extern int contHisPrnDepth; // 5
+extern int seePrnDepth; // 8
+extern int singleExtDepth; // 4
+extern int singleExtrDepth; // 21
+extern int singleExtnDepth; // 3
 
 int singleDepthDividend = 25;
 int singleDepthMultiplier = 16;
@@ -179,7 +196,24 @@ namespace UCI {
                 std::cout << "option name pvRed type string default " << pvRed << std::endl;
                 std::cout << "option name singleQuietRed type string default " << singleQuietRed << std::endl;
                 std::cout << "option name oppMoveCountRed type string default " << oppMoveCountRed << std::endl;
+                std::cout << "option name oppMoveCountThr type string default " << oppMoveCountThr << std::endl;
                 std::cout << "option name repetitionRed type string default " << repetitionRed << std::endl;
+
+                std::cout << "option name revFutilDepth type string default " << revFutilDepth << std::endl;
+                std::cout << "option name nullBase type string default " << nullBase << std::endl;
+                std::cout << "option name nullDepthDiv type string default " << nullDepthDiv << std::endl;
+                std::cout << "option name nullDifMin type string default " << nullDifMin << std::endl;
+                std::cout << "option name nullDifDiv type string default " << nullDifDiv << std::endl;
+                std::cout << "option name verifDepth type string default " << verifDepth << std::endl;
+                std::cout << "option name verifMul type string default " << verifMul << std::endl;
+                std::cout << "option name verifDiv type string default " << verifDiv << std::endl;
+                std::cout << "option name IIRDepth type string default " << IIRDepth << std::endl;
+                std::cout << "option name futilDepth type string default " << futilDepth << std::endl;
+                std::cout << "option name contHisPrnDepth type string default " << contHisPrnDepth << std::endl;
+                std::cout << "option name seePrnDepth type string default " << seePrnDepth << std::endl;
+                std::cout << "option name singleExtDepth type string default " << singleExtDepth << std::endl;
+                std::cout << "option name singleExtrDepth type string default " << singleExtrDepth << std::endl;
+                std::cout << "option name singleExtnDepth type string default " << singleExtnDepth << std::endl;
 
                 std::cout << "option name dta type string default " << dta << std::endl;
                 std::cout << "option name dtn type string default " << dtn << std::endl;
@@ -360,9 +394,89 @@ namespace UCI {
             stream >> oppMoveCountRed;
         }
 
+        // set oppMoveCountThr
+        else if (token == "oppMoveCountThr") {
+            stream >> oppMoveCountThr;
+        }
+
         // set repetitionRed
         else if (token == "repetitionRed") {
             stream >> repetitionRed;
+        }
+
+        // set revFutilDepth
+        else if (token == "revFutilDepth") {
+            stream >> revFutilDepth;
+        }
+
+        // set nullBase
+        else if (token == "nullBase") {
+            stream >> nullBase;
+        }
+
+        // set nullDepthDiv
+        else if (token == "nullDepthDiv") {
+            stream >> nullDepthDiv;
+        }
+
+        // set nullDifMin
+        else if (token == "nullDifMin") {
+            stream >> nullDifMin;
+        }
+
+        // set nullDifDiv
+        else if (token == "nullDifDiv") {
+            stream >> nullDifDiv;
+        }
+
+        // set verifDepth
+        else if (token == "verifDepth") {
+            stream >> verifDepth;
+        }
+
+        // set verifMul
+        else if (token == "verifMul") {
+            stream >> verifMul;
+        }
+
+        // set verifDiv
+        else if (token == "verifDiv") {
+            stream >> verifDiv;
+        }
+
+        // set IIRDepth
+        else if (token == "IIRDepth") {
+            stream >> IIRDepth;
+        }
+
+        // set futilDepth
+        else if (token == "futilDepth") {
+            stream >> futilDepth;
+        }
+
+        // set contHisPrnDepth
+        else if (token == "contHisPrnDepth") {
+            stream >> contHisPrnDepth;
+        }
+
+        // set seePrnDepth
+        else if (token == "seePrnDepth") {
+            stream >> seePrnDepth;
+        }
+
+        // set singleExtDepth
+        else if (token == "singleExtDepth") {
+            stream >> singleExtDepth;
+        }
+
+        // set singleExtrDepth
+        else if (token == "singleExtrDepth") {
+            stream >> singleExtrDepth;
+        }
+
+        // set singleExtnDepth
+        else if (token == "singleExtnDepth") {
+            stream >> singleExtnDepth;
         }
 
         // set mad

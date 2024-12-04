@@ -62,7 +62,24 @@ int transpositionCapRed = 1;
 int pvRed = -1;
 int singleQuietRed = -1;
 int oppMoveCountRed = -1;
+int oppMoveCountThr = 7;
 int repetitionRed = 2;
+
+int revFutilDepth = 8;
+int nullBase = 2;
+int nullDepthDiv = 4;
+int nullDifMin = 4;
+int nullDifDiv = 255;
+int verifDepth = 13;
+int verifMul = 261;
+int verifDiv = 492;
+int IIRDepth = 7;
+int futilDepth = 8;
+int contHisPrnDepth = 5;
+int seePrnDepth = 8;
+int singleExtDepth = 4;
+int singleExtrDepth = 21;
+int singleExtnDepth = 3;
 
 extern int singleDepthDividend;
 extern int singleDepthMultiplier;
@@ -535,7 +552,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     if (!PvNode
         && !check
         && excludedMove.value() == 0
-        && depth < 8
+        && depth < revFutilDepth // 8
         && staticEval - reverseFutilityMargin(depth, improving) >= beta
         && staticEval >= beta
         && staticEval < 31000) {
@@ -554,7 +571,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         && (!board.found() || nScore >= beta)) {
 
         // set reduction based on depth, eval, and whether the last move made was tactical
-        int R = 2 + depth / 4 + std::min(4, (staticEval - beta) / 255) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
+
+        int R = nullBase + depth / nullDepthDiv + std::min(nullDifMin, (staticEval - beta) / nullDifDiv) + (board.is_capture_move(*board.previous_move()) || board.is_promotion_move(*board.previous_move()));
 
         board.continuationHistory() = &continuationHistory[0][0][15][0]; // no piece has a value of 15 so we can use that as our "null" flag
 
@@ -569,12 +587,12 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         if (nullScore >= beta && nullScore < 31507) {
 
-            if (minNullPly || depth < 13) {
+            if (minNullPly || depth < verifDepth) {
                 return nullScore;
             }
 
             // verification search at high depths, null pruning disabled until minNullPly is reached
-            minNullPly = (ply - rootPly) + 261 * (depth - R) / 492;
+            minNullPly = (ply - rootPly) + verifMul * (depth - R) / verifDiv;
 
             int s = negamax<NonPV>(board, depth - R, beta - 1, beta, false);
 
@@ -648,7 +666,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // search tree where we expected to find a transposition, but didn't.  This is a modernized approach to Internal Iterative Deepening
     if (cutNode
         && !check
-        && depth >= 7
+        && depth >= IIRDepth
         && nMove.value() == 0) {
         depth -= 1;
     }
@@ -745,14 +763,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 int lmrDepth = depth - reductionsQuiet[depth][moveCounter];
 
                 // futility pruning
-                if (lmrDepth <= 8
+                if (lmrDepth <= futilDepth
                     && !check
                     && board.staticEval() + fpc + lmrDepth * fpm <= alpha) {
                         continue;
                 }
 
                 // continuation history pruning
-                if (lmrDepth <= 5
+                if (lmrDepth <= contHisPrnDepth
                     && hist < hpv * depth) {
                         continue;
                     }
@@ -765,7 +783,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // see pruning
         if (bestScore > -31000
-            && depth <= 8
+            && depth <= seePrnDepth
             && picker.getStage() > 2 // value of 2 == good captures
             && !board.see_ge(move, seeMargin)) {
                 continue;
@@ -780,12 +798,12 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             // Singular extension search
             // based on the stockfish implementation
             if (!rootNode
-                && depth >= 4 - (rDepth > 21) + (PvNode && board.ttPv())
+                && depth >= singleExtDepth - (rDepth > singleExtrDepth) + (PvNode && board.ttPv())
                 && move == nMove
                 && excludedMove.value() == 0
                 && abs(nScore) < 31000
                 && (nType & 2)
-                && nDepth >= depth - 3) {
+                && nDepth >= depth - singleExtnDepth) {
                 int singleBeta = nScore - (sec + sem * (board.ttPv() && !PvNode)) * depth / 64;
                 int singleDepth = (depth - 1) * singleDepthMultiplier / singleDepthDividend;
                 singularAttempts++;
@@ -901,7 +919,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 }
 
                 // decrease reduction if opponent move count is high
-                if (board.moveCount(ply - 1) > 7) {
+                if (board.moveCount(ply - 1) > oppMoveCountThr) {
                     reduction += oppMoveCountRed; // -1
                 }
 
