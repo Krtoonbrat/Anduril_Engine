@@ -60,13 +60,14 @@ endif()
 
 # add debug flags if needed
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-g)
+    add_compile_options(-gdwarf-3)
 endif()
 
 # release with debug flags
 if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    add_compile_options(-g -O2)
+    add_compile_options(-gdwarf-3 -O2)
     add_compile_options( -fno-omit-frame-pointer) # The Intel vTune docs say to use this flag when profiling
+
     if (!apple-silicon)
         add_link_options(-fuse-ld=lld)
     endif ()
@@ -76,6 +77,7 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O3 -flto -fuse-linker-plugin)
     add_compile_definitions(NDEBUG)
+
     if (!apple-silicon)
         add_link_options(-fuse-ld=lld)
     endif ()
@@ -86,8 +88,4 @@ if (DEFINED MAKE_PROFILE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-instr-generate")
 endif()
 
-add_executable(Anduril_Engine main.cpp Anduril.cpp Anduril.h Node.h PolyglotBook.cpp PolyglotBook.h TranspositionTable.cpp TranspositionTable.h evaluation.cpp UCI.cpp UCI.h limit.h ZobristHasher.cpp ZobristHasher.h MovePicker.cpp MovePicker.h History.h misc.cpp misc.h Thread.cpp Thread.h
-        nnue-probe/nnue.h
-        nnue-probe/nnue.cpp
-        nnue-probe/misc.cpp
-        perft.cpp)
+add_executable(Anduril_Engine main.cpp Anduril.cpp Anduril.h Node.h PolyglotBook.cpp PolyglotBook.h TranspositionTable.cpp TranspositionTable.h evaluation.cpp UCI.cpp UCI.h limit.h ZobristHasher.cpp ZobristHasher.h MovePicker.cpp MovePicker.h History.h misc.cpp misc.h Thread.cpp Thread.h nnue-probe/nnue.h nnue-probe/nnue.cpp nnue-probe/misc.cpp perft.cpp Pyrrhic/tbprobe.cpp Syzygy.cpp Syzygy.h)

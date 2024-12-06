@@ -56,6 +56,13 @@ public:
     // getter and setter for moves explored
     uint64_t getMovesExplored();
 
+    inline void setMovesExplored(int moves) { movesExplored = moves; }
+
+    // getter and setter for tb hits
+    uint64_t getTbHits();
+
+    void setTbHits(int hits) { tbHits = hits; }
+
     // checks if the search should stop due to time (or node) limit
     bool shouldStop();
 
@@ -64,8 +71,6 @@ public:
 
     // runs perft to verify move generation
     void perft(libchess::Position &board, int depth);
-
-    inline void setMovesExplored(int moves) { movesExplored = moves; }
 
     // reset the ply
     inline void resetPly() { ply = 0; }
@@ -138,6 +143,9 @@ public:
 
     // total number of moves Anduril searched
     std::atomic<uint64_t> movesExplored;
+
+    // total number of tb hits
+    std::atomic<uint64_t> tbHits;
 
 private:
 

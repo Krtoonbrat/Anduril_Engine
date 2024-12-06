@@ -9,8 +9,10 @@
 
 #include "Anduril.h"
 #include "MovePicker.h"
+#include "Syzygy.h"
 #include "Thread.h"
 #include "UCI.h"
+#include "Pyrrhic/tbprobe.h"
 
 // reduction table
 // its oversize just in case something weird happens
@@ -130,19 +132,29 @@ int scoreFromTable(int score, int ply, int rule50) {
     }
 
     // if a mate score is stored, we need to adjust it to be relative to the current ply
-    if (score >= 31508) {
+    if (score >= 31507) {
         // don't return a mate score if we are going to hit the 50 move rule
         if (score >= 31754 && 32000 - score > 99 - rule50) {
-            return 31753; // this is below what checkmate in maximum search would be
+            return 31506; // this is below what checkmate in maximum search would be
+        }
+
+        // downgrade false tb scores
+        if (31753 - score > 99 - rule50) {
+            return 31506;
         }
         
         return score - ply;
     }
 
-    if (score <= -31508) {
+    if (score <= -31507) {
         // don't return a mate score if we are going to hit the 50 move rule
         if (score <= -31754 && 32000 + score > 99 - rule50) {
-            return -31753; // this is below what checkmate in maximum search would be
+            return -31506; // this is below what checkmate in maximum search would be
+        }
+
+        // downgrade false tb scores
+        if (-31753 + score > 99 - rule50) {
+            return -31506;
         }
 
         return score + ply;
@@ -216,7 +228,7 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, int dept
             bestScore = board.staticEval() = board.prevMoveType(ply) != libchess::Move::Type::NONE ? evaluateBoard(board) : -board.staticEval(ply - 1);
         }
 
-        // adjust alpha and beta based on the stand pat
+        // adjust alpha based on the stand pat
         if (bestScore >= beta) {
 			if (!board.found()) {
                 node->save(hash, tableScore(bestScore, (ply - rootPly)), 2, -3, 0, board.staticEval(), false);
@@ -435,6 +447,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // holds the score of the move we just searched
     int score = -32001;
 
+    // max score in case we find a tb score
+    int maxScore = 32000;
+
     int moveCounter;
     moveCounter = board.moveCount() = 0;
 
@@ -494,6 +509,40 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             return nScore;
         }
 	}
+
+    // probe the tablebases
+    unsigned tbScore = 0;
+    if ((tbScore = Tablebase::probeTablebaseWDL(board, depth, (ply - rootPly))) != TB_RESULT_FAILED) {
+        ++tbHits;
+
+        // convert WDL to a score
+        score = tbScore == TB_LOSS ? -31753 + (ply - rootPly)
+              : tbScore == TB_WIN  ?  31753 - (ply - rootPly)
+              : 0;
+
+        // find the node type for the transposition table
+        int tbType = tbScore == TB_LOSS ? 1
+                   : tbScore == TB_WIN  ? 2
+                   : 3;
+
+        // check to see if tb score causes a cutoff
+        if (tbType == 3 || (tbType == 2 ? score >= beta : score <= alpha)) {
+            node->save(hash, tableScore(score, (ply - rootPly)), tbType, depth, 0, 0, board.ttPv());
+            return score;
+        }
+
+        // if we are in a pv node, we need to make sure we don't return a score lower than the tb
+        if constexpr(PvNode) {
+            if (tbType == 2) {
+                bestScore = score;
+                alpha = std::max(alpha, bestScore);
+            }
+            else {
+                maxScore = score;
+            }
+        }
+    }
+
 
 	// get the static evaluation
     // it won't be needed if in check however
@@ -1022,6 +1071,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         updateContinuationHistory(board, *board.piece_on(prevMoveSq), prevMoveSq, stat_bonus(depth) * bonus, 1);
     }
 
+    // best score cannot be greater than the tb score
+    if constexpr(PvNode) {
+        bestScore = std::min(bestScore, maxScore);
+    }
+
     // If no good move is found and the previous position was ttPv, then the previous
     // opponent move is probably good and the new position is added to the search tree.
     if (bestScore <= alpha) {
@@ -1207,6 +1261,15 @@ uint64_t Anduril::getMovesExplored() {
     }
     return total;
 }
+
+uint64_t Anduril::getTbHits() {
+    uint64_t total = 0;
+    for (auto &t : gondor) {
+        total += t->engine->tbHits.load();
+    }
+    return total;
+}
+
 
 bool Anduril::shouldStop() {
     if (limits.nodes != -1) {
