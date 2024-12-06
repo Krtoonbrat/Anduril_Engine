@@ -40,7 +40,7 @@ endif
 
 
 # Source files
-SRC=../Anduril.cpp ../evaluation.cpp ../main.cpp ../misc.cpp ../MovePicker.cpp ../perft.cpp ../PolyglotBook.cpp ../Thread.cpp ../TranspositionTable.cpp ../UCI.cpp ../ZobristHasher.cpp ../nnue-probe/misc.cpp ../nnue-probe/nnue.cpp
+SRC=../Anduril.cpp ../evaluation.cpp ../main.cpp ../misc.cpp ../MovePicker.cpp ../perft.cpp ../PolyglotBook.cpp ../Syzygy.cpp ../Thread.cpp ../TranspositionTable.cpp ../UCI.cpp ../ZobristHasher.cpp ../nnue-probe/misc.cpp ../nnue-probe/nnue.cpp ../Pyrrhic/tbprobe.cpp
 OBJS=$(SRC:.cpp=.o)
 
 # Linker flags
