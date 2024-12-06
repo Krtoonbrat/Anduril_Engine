@@ -12,6 +12,7 @@
 #include "Anduril.h"
 #include "misc.h"
 #include "libchess/Position.h"
+#include "Pyrrhic/tbprobe.h"
 #include "Thread.h"
 #include "UCI.h"
 
@@ -95,6 +96,11 @@ namespace NNUE {
     extern char nnue_path[256];
 }
 
+char syzygy_path[256] = "<empty>";
+int syzygyProbeDepth = 1;
+bool syzygy50MoveRule = true;
+int syzygyProbeLimit = 7;
+
 ThreadPool gondor;
 
 namespace UCI {
@@ -112,6 +118,10 @@ namespace UCI {
         openingBook.closeBook();
         bool bookOpen = openingBook.getBookOpen();
         gondor.set(board, 1);
+
+        // initialize tablebase
+        tb_free();
+        tb_init(syzygy_path);
 
         // load the nnue file
         NNUE::LoadNNUE();
@@ -183,6 +193,11 @@ namespace UCI {
                 std::cout << "option name OwnBook type check default false" << std::endl;
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
+
+                std::cout << "option name SyzygyPath type string default " << syzygy_path << std::endl;
+                std::cout << "option name SyzygyProbeDepth type spin default 1 min 1 max 100" << std::endl;
+                std::cout << "option name Syzygy50MoveRule type check default true" << std::endl;
+                std::cout << "option name SyzygyProbeLimit type spin default 7 min 0 max 7" << std::endl;
 
                 std::cout << "option name nem type string default " << UCI::nem << std::endl;
                 std::cout << "option name neb type string default " << UCI::neb << std::endl;
@@ -333,6 +348,41 @@ namespace UCI {
                 *end = '\0';
             }
             NNUE::LoadNNUE();
+        }
+
+        else if (token == "SyzygyPath") {
+            stream >> syzygy_path;
+            char *end = strchr(syzygy_path, '\n');
+            if (end) {
+                *end = '\0';
+            }
+            tb_free();
+            tb_init(syzygy_path);
+
+            // give them some info
+            if (TB_LARGEST != 0) {
+                std::cout << "info string up to " << TB_LARGEST << "-piece Syzygy tablebases loaded" << std::endl;
+                std::cout << "info string loaded " << TB_NUM_WDL << " WDL; " << TB_NUM_DTZ << " DTZ; " << TB_NUM_DTM << " DTM" << std::endl;
+            }
+
+        }
+
+        else if (token == "SyzygyProbeDepth") {
+            stream >> syzygyProbeDepth;
+        }
+
+        else if (token == "Syzygy50MoveRule") {
+            stream >> token;
+            if (token == "true") {
+                syzygy50MoveRule = true;
+            }
+            else {
+                syzygy50MoveRule = false;
+            }
+        }
+
+        else if (token == "SyzygyProbeLimit") {
+            stream >> syzygyProbeLimit;
         }
 
         // set nem
@@ -1035,6 +1085,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
@@ -1046,6 +1097,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
@@ -1056,6 +1108,7 @@ void Anduril::go(libchess::Position board) {
                               << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
@@ -1071,6 +1124,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -1083,6 +1137,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -1094,6 +1149,7 @@ void Anduril::go(libchess::Position board) {
                               << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -1141,6 +1197,7 @@ void Anduril::go(libchess::Position board) {
         // reset the node count for each thread
         for (auto &thread : gondor) {
             thread->engine->setMovesExplored(0);
+            thread->engine->setTbHits(0);
         }
 
         // tell the GUI what move we want to make
