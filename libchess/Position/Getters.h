@@ -222,6 +222,12 @@ inline bool Position::is_legal_move(Move move) const {
     }
 
     if (pt == constants::PAWN) {
+        // pawn moving to back rank not marked as promotion
+        if (lookups::relative_rank(to_sq.rank(), c) == constants::RANK_8 &&
+            type != Move::Type::PROMOTION && type != Move::Type::CAPTURE_PROMOTION) {
+            return false;
+        }
+
         switch (type) {
             case Move::Type::DOUBLE_PUSH:
                 if (abs(move.to_square() - move.from_square()) != 16) {

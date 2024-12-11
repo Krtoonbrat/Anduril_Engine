@@ -128,6 +128,11 @@ inline bool Position::gives_check(Move move) const {
 // added by Krtoonbrat
 // constructs a move from a 16 bit integer
 inline Move Position::from_table(uint16_t move) {
+    // early exit if we were passed an empty move
+    if (move == 0) {
+        return Move(0);
+    }
+
     Move m;
 
     // grab the to and from squares
