@@ -63,7 +63,7 @@ int cutNodeRed = 2;
 int transpositionCapRed = 1;
 int pvRed = -1;
 int singleQuietRed = -1;
-int oppMoveCountRed = -3;
+int oppMoveCountRed = -2;
 int oppMoveCountThr = 6;
 int repetitionRed = 1;
 
