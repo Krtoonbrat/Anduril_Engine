@@ -608,6 +608,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         return staticEval;
     }
 
+    // internal iterative reductions
+    // decrease depth on cut nodes and pv nodes that don't have a transposition move
+    if ((cutNode || PvNode)
+        && depth >= IIRDepth
+        && nMove.value() == 0) {
+        depth -= 1;
+    }
+
     // null move pruning
     if (!PvNode
         && !check
@@ -709,15 +717,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
             }
 
         }
-    }
-
-    // Internal Iterative Reduction.  Idea taken from Ethereal.  We lower the depth on cutnodes that are high in the
-    // search tree where we expected to find a transposition, but didn't.  This is a modernized approach to Internal Iterative Deepening
-    if (cutNode
-        && !check
-        && depth >= IIRDepth
-        && nMove.value() == 0) {
-        depth -= 1;
     }
 
     // holds the continuation history from previous moves
