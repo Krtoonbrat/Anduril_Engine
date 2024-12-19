@@ -827,7 +827,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         }
 
-        int seeMargin = (!capture && !promotion && !givesCheck) ? smq * depth : smt * depth * depth;
+        int seeMargin = (!capture && !promotion && !givesCheck) ? smq * depth * depth : smt * depth;
 
         // see pruning
         if (bestScore > -31000
