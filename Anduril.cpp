@@ -51,7 +51,7 @@ int pci = 154;
 int fpc = 298;
 int fpm = 75;
 int smq = -36;
-int smt = -11;
+int smt = -100;
 
 int maxHistoryVal = 8182;
 int maxContinuationVal = 30967;
@@ -430,8 +430,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     libchess::Move excludedMove = board.getExcluded();
 
     // reset killers for next ply
-    killers[ply - rootPly + 2][0] = libchess::Move(0);
-    killers[ply - rootPly + 2][1] = libchess::Move(0);
+    killers[ply - rootPly + 1][0] = libchess::Move(0);
+    killers[ply - rootPly + 1][1] = libchess::Move(0);
 
     // amount of quiet moves we searched and what moves they were
     int quietCount = 0;
@@ -1115,7 +1115,7 @@ void Anduril::bench(libchess::Position &board) {
     // using PV instead of root will silence any console activity that would have occurred.
     // In return, this is slightly inaccurate to the "real thing", but realistically it should be close enough to not matter
     startTime = std::chrono::steady_clock::now();
-    negamax<PV>(board, 20, -32001, 32001, false);
+    negamax<PV>(board, 25, -32001, 32001, false);
 
     // stop the timer and report the nodes searched and speed
     stopTime = std::chrono::steady_clock::now();

@@ -89,8 +89,8 @@ int singleDepthMultiplier = 16;
 int mad = 7;
 
 int dta = 16;
-int dtn = 19;
-int dtd = 44;
+int dtn = 30;
+int dtd = 40;
 
 namespace NNUE {
     extern char nnue_path[256];
