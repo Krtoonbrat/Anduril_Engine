@@ -21,41 +21,41 @@ int reductionsTactical[150][150];
 
 // stat bonus values
 int sbc = 151;
-int sbm = 369;
-int msb = 6927;
-int lsb = 211;
+int sbm = 367;
+int msb = 6930;
+int lsb = 210;
 
 // this is the value we add to beta to determine if we use the larger bonus when updating the history tables
-int lbc = 53;
+int lbc = 51;
 
 // razoring values
-int rvc = 588;
-int rvs = 165;
+int rvc = 590;
+int rvs = 163;
 
 // reverse futility margin
-int rfm = 260;
+int rfm = 252;
 
 // history pruning value
-int hpv = -14501;
-int hrv = 21809;
-int qte = 4211;
+int hpv = -14484;
+int hrv = 21832;
+int qte = 4198;
 
 // singular extension values
-int sec = 114;
-int sem = 20;
+int sec = 107;
+int sem = 21;
 
-int fth = 240;
+int fth = 242;
 int svq = -101;
 int pcc = 277;
-int pci = 154;
-int fpc = 298;
+int pci = 150;
+int fpc = 295;
 int fpm = 75;
-int smq = -36;
-int smt = -100;
+int smq = -35;
+int smt = -101;
 
-int maxHistoryVal = 8182;
-int maxContinuationVal = 30967;
-int maxCaptureVal = 7275;
+int maxHistoryVal = 8219;
+int maxContinuationVal = 30924;
+int maxCaptureVal = 7284;
 
 int mcPruningDepth = 3;
 int unlikelyFailLowRed = -1;
@@ -64,20 +64,20 @@ int transpositionCapRed = 1;
 int pvRed = -1;
 int singleQuietRed = -1;
 int oppMoveCountRed = -2;
-int oppMoveCountThr = 6;
+int oppMoveCountThr = 5;
 int repetitionRed = 1;
 
-int revFutilDepth = 8;
+int revFutilDepth = 7;
 int nullBase = 2;
 int nullDepthDiv = 3;
 int nullDifMin = 4;
-int nullDifDiv = 258;
+int nullDifDiv = 255;
 int verifDepth = 13;
 int verifMul = 261;
-int verifDiv = 487;
+int verifDiv = 490;
 int IIRDepth = 7;
-int futilDepth = 8;
-int contHisPrnDepth = 5;
+int futilDepth = 9;
+int contHisPrnDepth = 6;
 int seePrnDepth = 8;
 int singleExtDepth = 4;
 int singleExtrDepth = 21;
