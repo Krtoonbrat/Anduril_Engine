@@ -9,11 +9,16 @@ EXE=Anduril_Engine
 CXX=clang++
 
 # Flags
-# Currently requires at least AVX2
-CXXFLAGS=-std=c++20 -Wall -Wextra -O3 -march=native -msse -msse3 -mpopcnt -mavx2 -mbmi -msse4.1 -mssse3 -msse2 -static
-CXXDEFINES+=-DUSE_AVX2 -DUSE_SSE41 -DUSE_SSE3 -DUSE_SSSE3 -DUSE_SSE2 -DUSE_SSE -DNDEBUG -DIS_64BIT
+# Currently requires at least AVX
+CXXFLAGS=-std=c++20 -Wall -Wextra -O3 -march=native -msse -msse3 -mpopcnt -msse4.1 -mssse3 -msse2 -static
+CXXDEFINES+=-DUSE_SSE41 -DUSE_SSE3 -DUSE_SSSE3 -DUSE_SSE2 -DUSE_SSE -DNDEBUG -DIS_64BIT
 
 CPUFLAGS = $(shell echo | $(CXX) -march=native -E -dM -)
+
+ifneq ($(findstring __AVX2__, $(CPUFLAGS)),)
+	CXXFLAGS+= -mavx2
+	CXXDEFINES+= -DUSE_AVX2
+endif
 
 ifneq ($(findstring __BMI2__, $(CPUFLAGS)),)
 	CXXFLAGS+= -mbmi2

@@ -15,29 +15,34 @@ if(x86)
     # set the compile to be statically linked
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
 
-    # minimum requirements: AVX2, 64 bit, popcount, sse, sse3, sse3 sse4.1, ssse3
-    add_compile_options(-march=native -mpopcnt -msse -msse2 -msse3 -msse4.1 -mssse3 -mavx2 -mbmi)
-    add_compile_definitions(IS_64BIT USE_SSE USE_SSE2 USE_SSE3 USE_SSE41 USE_SSSE3 USE_AVX2)
+    # minimum requirements: AVX, 64 bit, popcount, sse, sse3, sse3 sse4.1, ssse3
+    add_compile_options(-march=native -mpopcnt -msse -msse2 -msse3 -msse4.1 -mssse3)
+    add_compile_definitions(IS_64BIT USE_SSE USE_SSE2 USE_SSE3 USE_SSE41 USE_SSSE3)
 
     # set hardware extension level
+    if (AVX2)
+        add_compile_options(-mavx2)
+        add_compile_definitions(USE_AVX2)
+    endif()
+
     if(BMI2)
-        add_compile_options(-mbmi2)
-        add_compile_definitions(USE_PEXT)
+        add_compile_options(-mavx2 -mbmi2)
+        add_compile_definitions(USE_AVX2 USE_PEXT)
     endif()
 
     if(AVXVNNI)
-        add_compile_options(-mbmi2 -mavxvnni)
-        add_compile_definitions(USE_PEXT USE_VNNI USE_AVXVNNI)
+        add_compile_options(-mavx2 -mbmi2 -mavxvnni)
+        add_compile_definitions(USE_AVX2 USE_PEXT USE_VNNI USE_AVXVNNI)
     endif()
 
     if(AVX-512)
-        add_compile_options(-mbmi2 -mavx512f -mavx512bw)
-        add_compile_definitions(USE_PEXT USE_AVX512)
+        add_compile_options(-mavx2 -mbmi2 -mavx512f -mavx512bw)
+        add_compile_definitions(USE_AVX2 USE_PEXT USE_AVX512)
     endif()
 
     if(VNNI512)
-        add_compile_options(-mbmi2 -mavx512f -mavx512bw -mavx512dq -mavx512vl -mavx512vnni -mprefer-vector-width=512)
-        add_compile_definitions(USE_PEXT USE_AVX512 USE_VNNI)
+        add_compile_options(-mavx2 -mbmi2 -mavx512f -mavx512bw -mavx512dq -mavx512vl -mavx512vnni -mprefer-vector-width=512)
+        add_compile_definitions(USE_AVX2 USE_PEXT USE_AVX512 USE_VNNI)
     endif()
 
 
