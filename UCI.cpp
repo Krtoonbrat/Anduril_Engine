@@ -16,10 +16,10 @@
 #include "Thread.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {114, 436, 483, 646, 1482, 0};
-int libchess::Position::pieceValuesEG[6] = {143, 476, 523, 914, 1811, 0};
-int Anduril::pieceValues[16] = { 143,  476,  523,  914,  1811, 0, 0, 0,
-                                 143,  476,  523,  914,  1811, 0, 0, 0};
+int libchess::Position::pieceValuesMG[6] = {115, 440, 488, 647, 1476, 0};
+int libchess::Position::pieceValuesEG[6] = {144, 476, 529, 915, 1815, 0};
+int Anduril::pieceValues[16] = { 144,  476,  529,  915,  1815, 0, 0, 0,
+                                 144,  476,  529,  915,  1815, 0, 0, 0};
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
@@ -86,11 +86,10 @@ extern int singleExtnDepth; // 3
 int singleDepthDividend = 25;
 int singleDepthMultiplier = 16;
 
-int mad = 7;
+int mad = 6;
 
-
-int dta = 16;
-int dtn = 30;
+int dta = 15;
+int dtn = 29;
 int dtd = 40;
 
 namespace NNUE {
