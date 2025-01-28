@@ -1078,7 +1078,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // If no good move is found and the previous position was ttPv, then the previous
     // opponent move is probably good and the new position is added to the search tree.
     if (bestScore <= alpha) {
-        board.ttPv() = board.ttPv() || (board.ttPv(ply - rootPly - 1) && depth > 3);
+        board.ttPv() = board.ttPv() || (board.ttPv(ply - 1) && depth > 3);
     }
 
     // save the node
