@@ -932,7 +932,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // search with zero window
         // first check if we can reduce
-        if (depth >= 2 && moveCounter > 1) {
+        if (depth >= 2 && moveCounter > 2) {
             // find our reduction
             int reduction;
             if (capture || promotion) {
