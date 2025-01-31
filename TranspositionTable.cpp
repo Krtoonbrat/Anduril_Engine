@@ -74,7 +74,12 @@ void TranspositionTable::clear() {
                          len    = idx != size_t(gondor.numThreads) - 1 ?
                                   stride : clusterCount - start;
 
-            std::memset(&tPtr[start], 0, len * sizeof(Cluster));
+            Cluster c;
+            c.entry[0] = Node{-32001, -32001, -99, 0, 0, 0};
+            c.entry[1] = c.entry[2] = c.entry[0];
+            c.padding[0] = c.padding[1] = 0;
+
+            std::fill_n(&tPtr[start], len, c);
         });
     }
 

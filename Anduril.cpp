@@ -527,7 +527,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // check to see if tb score causes a cutoff
         if (tbType == 3 || (tbType == 2 ? score >= beta : score <= alpha)) {
-            node->save(hash, tableScore(score, (ply - rootPly)), tbType, depth, 0, 0, board.ttPv());
+            node->save(hash, tableScore(score, (ply - rootPly)), tbType, depth, 0, -32001, board.ttPv());
             return score;
         }
 
