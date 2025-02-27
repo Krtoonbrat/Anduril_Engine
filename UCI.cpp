@@ -16,10 +16,10 @@
 #include "Thread.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {115, 440, 488, 647, 1476, 0};
-int libchess::Position::pieceValuesEG[6] = {144, 476, 529, 915, 1815, 0};
-int Anduril::pieceValues[16] = { 144,  476,  529,  915,  1815, 0, 0, 0,
-                                 144,  476,  529,  915,  1815, 0, 0, 0};
+int libchess::Position::pieceValuesMG[6] = {117, 439, 478, 659, 1455, 0};
+int libchess::Position::pieceValuesEG[6] = {149, 468, 514, 934, 1827, 0};
+int Anduril::pieceValues[16] = { 149,  468,  514,  934,  1827, 0, 0, 0,
+                                 149,  468,  514,  934,  1827, 0, 0, 0};
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
@@ -61,7 +61,6 @@ extern int mcPruningDepth; // 3
 extern int unlikelyFailLowRed; // -1
 extern int cutNodeRed; // 2
 extern int transpositionCapRed; // 1
-extern int pvRed; // -1
 extern int singleQuietRed; // -1
 extern int oppMoveCountRed; // -1
 extern int repetitionRed; // 2
@@ -83,12 +82,12 @@ extern int singleExtDepth; // 4
 extern int singleExtrDepth; // 21
 extern int singleExtnDepth; // 3
 
-int singleDepthDividend = 25;
+int singleDepthDividend = 26;
 int singleDepthMultiplier = 16;
 
 int mad = 6;
 
-int dta = 15;
+int dta = 14;
 int dtn = 29;
 int dtd = 40;
 
@@ -208,7 +207,6 @@ namespace UCI {
                 std::cout << "option name unlikelyFailLowRed type string default " << unlikelyFailLowRed << std::endl;
                 std::cout << "option name cutNodeRed type string default " << cutNodeRed << std::endl;
                 std::cout << "option name transpositionCapRed type string default " << transpositionCapRed << std::endl;
-                std::cout << "option name pvRed type string default " << pvRed << std::endl;
                 std::cout << "option name singleQuietRed type string default " << singleQuietRed << std::endl;
                 std::cout << "option name oppMoveCountRed type string default " << oppMoveCountRed << std::endl;
                 std::cout << "option name oppMoveCountThr type string default " << oppMoveCountThr << std::endl;
@@ -427,11 +425,6 @@ namespace UCI {
         // set transpositionCapRed
         else if (token == "transpositionCapRed") {
             stream >> transpositionCapRed;
-        }
-
-        // set pvRed
-        else if (token == "pvRed") {
-            stream >> pvRed;
         }
 
         // set singleQuietRed

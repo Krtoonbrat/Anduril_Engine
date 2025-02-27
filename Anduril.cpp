@@ -20,67 +20,66 @@ int reductionsQuiet[150][150];
 int reductionsTactical[150][150];
 
 // stat bonus values
-int sbc = 151;
+int sbc = 136;
 int sbm = 367;
-int msb = 6930;
-int lsb = 210;
+int msb = 6941;
+int lsb = 202;
 
 // this is the value we add to beta to determine if we use the larger bonus when updating the history tables
-int lbc = 51;
+int lbc = 53;
 
 // razoring values
-int rvc = 590;
-int rvs = 163;
+int rvc = 577;
+int rvs = 147;
 
 // reverse futility margin
-int rfm = 252;
+int rfm = 234;
 
 // history pruning value
-int hpv = -14484;
-int hrv = 21832;
-int qte = 4198;
+int hpv = -14462;
+int hrv = 21765;
+int qte = 4167;
 
 // singular extension values
-int sec = 107;
-int sem = 21;
+int sec = 101;
+int sem = 20;
 
-int fth = 242;
-int svq = -101;
-int pcc = 277;
-int pci = 150;
-int fpc = 295;
-int fpm = 75;
-int smq = -35;
-int smt = -101;
+int fth = 280;
+int svq = -105;
+int pcc = 249;
+int pci = 132;
+int fpc = 276;
+int fpm = 78;
+int smq = -5;
+int smt = -62;
 
-int maxHistoryVal = 8219;
-int maxContinuationVal = 30924;
-int maxCaptureVal = 7284;
+int maxHistoryVal = 8250;
+int maxContinuationVal = 31035;
+int maxCaptureVal = 7321;
 
-int mcPruningDepth = 3;
+int mcPruningDepth = 4;
 int unlikelyFailLowRed = -1;
-int cutNodeRed = 2;
+int cutNodeRed = 3;
 int transpositionCapRed = 1;
-int pvRed = -1;
 int singleQuietRed = -1;
 int oppMoveCountRed = -2;
 int oppMoveCountThr = 5;
 int repetitionRed = 1;
 
-int revFutilDepth = 7;
+int revFutilDepth = 6;
 int nullBase = 2;
 int nullDepthDiv = 3;
-int nullDifMin = 4;
-int nullDifDiv = 255;
+int nullDifMin = 5;
+int nullDifDiv = 252;
 int verifDepth = 13;
-int verifMul = 261;
-int verifDiv = 490;
+int verifMul = 265;
+int verifDiv = 487;
 int IIRDepth = 7;
 int futilDepth = 9;
-int contHisPrnDepth = 6;
-int seePrnDepth = 8;
-int singleExtDepth = 4;
-int singleExtrDepth = 21;
+int contHisPrnDepth = 5;
+int seePrnDepth = 9;
+int singleExtDepth = 5;
+int singleExtrDepth = 22;
 int singleExtnDepth = 3;
 
 extern int singleDepthDividend;
@@ -954,11 +953,6 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 // increase reduction if transposition move is a capture
                 if (transpositionCapture) {
                     reduction += transpositionCapRed; // 1
-                }
-
-                // decrease reduction for PvNodes
-                if (PvNode) {
-                    reduction += pvRed; // -1
                 }
 
                 // decrease reduction if the transposition move has been singularly extended
