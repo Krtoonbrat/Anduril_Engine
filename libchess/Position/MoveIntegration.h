@@ -127,7 +127,15 @@ inline bool Position::gives_check(Move move) const {
 
 // added by Krtoonbrat
 // constructs a move from a 16 bit integer
+// first 6 are from square, next 6 are to square
+// bits 12 and 13 mark promotion piece type
+// bits 14 and 15 mark move type
 inline Move Position::from_table(uint16_t move) {
+    // early exit if we were passed an empty move
+    if (move == 0) {
+        return Move(0);
+    }
+
     Move m;
 
     // grab the to and from squares

@@ -58,6 +58,9 @@ class Move {
 
     // added by Krtoonbrat
     // this converts the move to a 16 bit integer for storage in the transposition table
+    // first 6 are from square, next 6 are to square
+    // bits 12 and 13 mark promotion piece type
+    // bits 14 and 15 mark move type
     uint16_t to_table() const {
         uint16_t move = 0;
 

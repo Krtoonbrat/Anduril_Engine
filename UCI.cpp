@@ -12,13 +12,14 @@
 #include "Anduril.h"
 #include "misc.h"
 #include "libchess/Position.h"
+#include "Pyrrhic/tbprobe.h"
 #include "Thread.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {118, 453, 487, 671, 1464, 0};
-int libchess::Position::pieceValuesEG[6] = {146, 489, 516, 917, 1785, 0};
-int Anduril::pieceValues[16] = { 146,  489,  516,  917,  1785, 0, 0, 0,
-                                 146,  489,  516,  917,  1785, 0, 0, 0};
+int libchess::Position::pieceValuesMG[6] = {117, 439, 478, 659, 1455, 0};
+int libchess::Position::pieceValuesEG[6] = {149, 468, 514, 934, 1827, 0};
+int Anduril::pieceValues[16] = { 149,  468,  514,  934,  1827, 0, 0, 0,
+                                 149,  468,  514,  934,  1827, 0, 0, 0};
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
@@ -56,12 +57,48 @@ extern int fpm;
 extern int smq;
 extern int smt;
 
-int singleDepthDividend = 25;
+extern int mcPruningDepth; // 3
+extern int unlikelyFailLowRed; // -1
+extern int cutNodeRed; // 2
+extern int transpositionCapRed; // 1
+extern int singleQuietRed; // -1
+extern int oppMoveCountRed; // -1
+extern int repetitionRed; // 2
+extern int oppMoveCountThr; // 7
+
+extern int revFutilDepth; // 8
+extern int nullBase; // 2
+extern int nullDepthDiv; // 4
+extern int nullDifMin; // 4
+extern int nullDifDiv; // 255
+extern int verifDepth; // 13
+extern int verifMul; // 261
+extern int verifDiv; // 492
+extern int IIRDepth; // 7
+extern int futilDepth; // 8
+extern int contHisPrnDepth; // 5
+extern int seePrnDepth; // 8
+extern int singleExtDepth; // 4
+extern int singleExtrDepth; // 21
+extern int singleExtnDepth; // 3
+
+int singleDepthDividend = 26;
 int singleDepthMultiplier = 16;
+
+int mad = 6;
+
+int dta = 14;
+int dtn = 29;
+int dtd = 40;
 
 namespace NNUE {
     extern char nnue_path[256];
 }
+
+char syzygy_path[256] = "<empty>";
+int syzygyProbeDepth = 1;
+bool syzygy50MoveRule = true;
+int syzygyProbeLimit = 7;
 
 ThreadPool gondor;
 
@@ -81,13 +118,19 @@ namespace UCI {
         bool bookOpen = openingBook.getBookOpen();
         gondor.set(board, 1);
 
+        // initialize tablebase
+        tb_free();
+        tb_init(syzygy_path);
+
         // load the nnue file
         NNUE::LoadNNUE();
 
         if (argc > 1) {
             std::string in = std::string(argv[1]);
+            // benchmark will just use the already created engine and board, run for depth 20, and report node count and speed.  Program exits when this is finished if the bench command was given as an argument
             if (in == "bench") {
-                // benchmark will just use the already created engine and board, run for depth 20, and report node count and speed.  Program exits when this is finished if the bench command was given as an argument
+                // set transposition table to min size for more accurate measurement
+                table.resize(16);
                 gondor.mainThread()->engine->bench(board);
                 return;
             }
@@ -149,6 +192,89 @@ namespace UCI {
                 std::cout << "option name OwnBook type check default false" << std::endl;
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
+
+                std::cout << "option name SyzygyPath type string default " << syzygy_path << std::endl;
+                std::cout << "option name SyzygyProbeDepth type spin default 1 min 1 max 100" << std::endl;
+                std::cout << "option name Syzygy50MoveRule type check default true" << std::endl;
+                std::cout << "option name SyzygyProbeLimit type spin default 7 min 0 max 7" << std::endl;
+
+                std::cout << "option name nem type string default " << UCI::nem << std::endl;
+                std::cout << "option name neb type string default " << UCI::neb << std::endl;
+                std::cout << "option name tem type string default " << UCI::tem << std::endl;
+                std::cout << "option name teb type string default " << UCI::teb << std::endl;
+
+                std::cout << "option name mcPruningDepth type string default " << mcPruningDepth << std::endl;
+                std::cout << "option name unlikelyFailLowRed type string default " << unlikelyFailLowRed << std::endl;
+                std::cout << "option name cutNodeRed type string default " << cutNodeRed << std::endl;
+                std::cout << "option name transpositionCapRed type string default " << transpositionCapRed << std::endl;
+                std::cout << "option name singleQuietRed type string default " << singleQuietRed << std::endl;
+                std::cout << "option name oppMoveCountRed type string default " << oppMoveCountRed << std::endl;
+                std::cout << "option name oppMoveCountThr type string default " << oppMoveCountThr << std::endl;
+                std::cout << "option name repetitionRed type string default " << repetitionRed << std::endl;
+
+                std::cout << "option name revFutilDepth type string default " << revFutilDepth << std::endl;
+                std::cout << "option name nullBase type string default " << nullBase << std::endl;
+                std::cout << "option name nullDepthDiv type string default " << nullDepthDiv << std::endl;
+                std::cout << "option name nullDifMin type string default " << nullDifMin << std::endl;
+                std::cout << "option name nullDifDiv type string default " << nullDifDiv << std::endl;
+                std::cout << "option name verifDepth type string default " << verifDepth << std::endl;
+                std::cout << "option name verifMul type string default " << verifMul << std::endl;
+                std::cout << "option name verifDiv type string default " << verifDiv << std::endl;
+                std::cout << "option name IIRDepth type string default " << IIRDepth << std::endl;
+                std::cout << "option name futilDepth type string default " << futilDepth << std::endl;
+                std::cout << "option name contHisPrnDepth type string default " << contHisPrnDepth << std::endl;
+                std::cout << "option name seePrnDepth type string default " << seePrnDepth << std::endl;
+                std::cout << "option name singleExtDepth type string default " << singleExtDepth << std::endl;
+                std::cout << "option name singleExtrDepth type string default " << singleExtrDepth << std::endl;
+                std::cout << "option name singleExtnDepth type string default " << singleExtnDepth << std::endl;
+
+                std::cout << "option name dta type string default " << dta << std::endl;
+                std::cout << "option name dtn type string default " << dtn << std::endl;
+                std::cout << "option name dtd type string default " << dtd << std::endl;
+
+                std::cout << "option name mad type string default " << mad << std::endl;
+
+                std::cout << "option name sbc type string default " << sbc << std::endl;
+                std::cout << "option name sbm type string default " << sbm << std::endl;
+                std::cout << "option name msb type string default " << msb << std::endl;
+                std::cout << "option name lsb type string default " << lsb << std::endl;
+
+                std::cout << "option name lbc type string default " << lbc << std::endl;
+                std::cout << "option name rvc type string default " << rvc << std::endl;
+                std::cout << "option name rvs type string default " << rvs << std::endl;
+                std::cout << "option name rfm type string default " << rfm << std::endl;
+                std::cout << "option name hpv type string default " << hpv << std::endl;
+                std::cout << "option name hrv type string default " << hrv << std::endl;
+                std::cout << "option name qte type string default " << qte << std::endl;
+                std::cout << "option name sec type string default " << sec << std::endl;
+                std::cout << "option name sem type string default " << sem << std::endl;
+                std::cout << "option name fth type string default " << fth << std::endl;
+                std::cout << "option name svq type string default " << svq << std::endl;
+                std::cout << "option name pcc type string default " << pcc << std::endl;
+                std::cout << "option name pci type string default " << pci << std::endl;
+                std::cout << "option name fpc type string default " << fpc << std::endl;
+                std::cout << "option name fpm type string default " << fpm << std::endl;
+                std::cout << "option name smq type string default " << smq << std::endl;
+                std::cout << "option name smt type string default " << smt << std::endl;
+                std::cout << "option name mhv type string default " << maxHistoryVal << std::endl;
+                std::cout << "option name mcv type string default " << maxContinuationVal << std::endl;
+                std::cout << "option name cpm type string default " << maxCaptureVal << std::endl;
+                std::cout << "option name singleDepthDividend type string default " << singleDepthDividend << std::endl;
+                std::cout << "option name singleDepthMultiplier type string default " << singleDepthMultiplier << std::endl;
+                std::cout << "option name queenOrderVal type string default " << queenOrderVal << std::endl;
+                std::cout << "option name rookOrderVal type string default " << rookOrderVal << std::endl;
+                std::cout << "option name minorOrderVal type string default " << minorOrderVal << std::endl;
+                std::cout << "option name pMG type string default " << libchess::Position::pieceValuesMG[0] << std::endl;
+                std::cout << "option name kMG type string default " << libchess::Position::pieceValuesMG[1] << std::endl;
+                std::cout << "option name bMG type string default " << libchess::Position::pieceValuesMG[2] << std::endl;
+                std::cout << "option name rMG type string default " << libchess::Position::pieceValuesMG[3] << std::endl;
+                std::cout << "option name qMG type string default " << libchess::Position::pieceValuesMG[4] << std::endl;
+                std::cout << "option name pEG type string default " << libchess::Position::pieceValuesEG[0] << std::endl;
+                std::cout << "option name kEG type string default " << libchess::Position::pieceValuesEG[1] << std::endl;
+                std::cout << "option name bEG type string default " << libchess::Position::pieceValuesEG[2] << std::endl;
+                std::cout << "option name rEG type string default " << libchess::Position::pieceValuesEG[3] << std::endl;
+                std::cout << "option name qEG type string default " << libchess::Position::pieceValuesEG[4] << std::endl;
+
 
                 std::cout << "uciok" << std::endl;
 
@@ -222,6 +348,417 @@ namespace UCI {
             NNUE::LoadNNUE();
         }
 
+        else if (token == "SyzygyPath") {
+            stream >> syzygy_path;
+            char *end = strchr(syzygy_path, '\n');
+            if (end) {
+                *end = '\0';
+            }
+            tb_free();
+            tb_init(syzygy_path);
+
+            // give them some info
+            if (TB_LARGEST != 0) {
+                std::cout << "info string up to " << TB_LARGEST << "-piece Syzygy tablebases loaded" << std::endl;
+                std::cout << "info string loaded " << TB_NUM_WDL << " WDL; " << TB_NUM_DTZ << " DTZ; " << TB_NUM_DTM << " DTM" << std::endl;
+            }
+
+        }
+
+        else if (token == "SyzygyProbeDepth") {
+            stream >> syzygyProbeDepth;
+        }
+
+        else if (token == "Syzygy50MoveRule") {
+            stream >> token;
+            if (token == "true") {
+                syzygy50MoveRule = true;
+            }
+            else {
+                syzygy50MoveRule = false;
+            }
+        }
+
+        else if (token == "SyzygyProbeLimit") {
+            stream >> syzygyProbeLimit;
+        }
+
+        // set nem
+        else if (token == "nem") {
+            stream >> UCI::nem;
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set neb
+        else if (token == "neb") {
+            stream >> UCI::neb;
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set tem
+        else if (token == "tem") {
+            stream >> UCI::tem;
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set teb
+        else if (token == "teb") {
+            stream >> UCI::teb;
+            initReductions(UCI::nem, UCI::neb, UCI::tem, UCI::teb);
+        }
+
+        // set mcPruningDepth
+        else if (token == "mcPruningDepth") {
+            stream >> mcPruningDepth;
+        }
+
+        // set unlikelyFailLowRed
+        else if (token == "unlikelyFailLowRed") {
+            stream >> unlikelyFailLowRed;
+        }
+
+        // set cutNodeRed
+        else if (token == "cutNodeRed") {
+            stream >> cutNodeRed;
+        }
+
+        // set transpositionCapRed
+        else if (token == "transpositionCapRed") {
+            stream >> transpositionCapRed;
+        }
+
+        // set singleQuietRed
+        else if (token == "singleQuietRed") {
+            stream >> singleQuietRed;
+        }
+
+        // set oppMoveCountRed
+        else if (token == "oppMoveCountRed") {
+            stream >> oppMoveCountRed;
+        }
+
+        // set oppMoveCountThr
+        else if (token == "oppMoveCountThr") {
+            stream >> oppMoveCountThr;
+        }
+
+        // set repetitionRed
+        else if (token == "repetitionRed") {
+            stream >> repetitionRed;
+        }
+
+        // set revFutilDepth
+        else if (token == "revFutilDepth") {
+            stream >> revFutilDepth;
+        }
+
+        // set nullBase
+        else if (token == "nullBase") {
+            stream >> nullBase;
+        }
+
+        // set nullDepthDiv
+        else if (token == "nullDepthDiv") {
+            stream >> nullDepthDiv;
+        }
+
+        // set nullDifMin
+        else if (token == "nullDifMin") {
+            stream >> nullDifMin;
+        }
+
+        // set nullDifDiv
+        else if (token == "nullDifDiv") {
+            stream >> nullDifDiv;
+        }
+
+        // set verifDepth
+        else if (token == "verifDepth") {
+            stream >> verifDepth;
+        }
+
+        // set verifMul
+        else if (token == "verifMul") {
+            stream >> verifMul;
+        }
+
+        // set verifDiv
+        else if (token == "verifDiv") {
+            stream >> verifDiv;
+        }
+
+        // set IIRDepth
+        else if (token == "IIRDepth") {
+            stream >> IIRDepth;
+        }
+
+        // set futilDepth
+        else if (token == "futilDepth") {
+            stream >> futilDepth;
+        }
+
+        // set contHisPrnDepth
+        else if (token == "contHisPrnDepth") {
+            stream >> contHisPrnDepth;
+        }
+
+        // set seePrnDepth
+        else if (token == "seePrnDepth") {
+            stream >> seePrnDepth;
+        }
+
+        // set singleExtDepth
+        else if (token == "singleExtDepth") {
+            stream >> singleExtDepth;
+        }
+
+        // set singleExtrDepth
+        else if (token == "singleExtrDepth") {
+            stream >> singleExtrDepth;
+        }
+
+        // set singleExtnDepth
+        else if (token == "singleExtnDepth") {
+            stream >> singleExtnDepth;
+        }
+
+        // set mad
+        else if (token == "mad") {
+            stream >> mad;
+        }
+
+        // set sbc
+        else if (token == "sbc") {
+            stream >> sbc;
+        }
+
+        // set sbm
+        else if (token == "sbm") {
+            stream >> sbm;
+        }
+
+        // set msb
+        else if (token == "msb") {
+            stream >> msb;
+        }
+
+        // set lsb
+        else if (token == "lsb") {
+            stream >> lsb;
+        }
+
+        // set lbc
+        else if (token == "lbc") {
+            stream >> lbc;
+        }
+
+        // set rvc
+        else if (token == "rvc") {
+            stream >> rvc;
+        }
+
+        // set rvs
+        else if (token == "rvs") {
+            stream >> rvs;
+        }
+
+        // set rfm
+        else if (token == "rfm") {
+            stream >> rfm;
+        }
+
+        // set hpv
+        else if (token == "hpv") {
+            stream >> hpv;
+        }
+
+        // set hrv
+        else if (token == "hrv") {
+            stream >> hrv;
+        }
+
+        // set qte
+        else if (token == "qte") {
+            stream >> qte;
+        }
+
+        // set sec
+        else if (token == "sec") {
+            stream >> sec;
+        }
+
+        // set sem
+        else if (token == "sem") {
+            stream >> sem;
+        }
+
+        // set fth
+        else if (token == "fth") {
+            stream >> fth;
+        }
+
+        // set svq
+        else if (token == "svq") {
+            stream >> svq;
+        }
+
+        // set pcc
+        else if (token == "pcc") {
+            stream >> pcc;
+        }
+
+        // set pci
+        else if (token == "pci") {
+            stream >> pci;
+        }
+
+        // set fpc
+        else if (token == "fpc") {
+            stream >> fpc;
+        }
+
+        // set fpm
+        else if (token == "fpm") {
+            stream >> fpm;
+        }
+
+        // set smq
+        else if (token == "smq") {
+            stream >> smq;
+        }
+
+        // set smt
+        else if (token == "smt") {
+            stream >> smt;
+        }
+
+        // set pMG
+        else if (token == "pMG") {
+            stream >> libchess::Position::pieceValuesMG[0];
+        }
+
+        // set kMG
+        else if (token == "kMG") {
+            stream >> libchess::Position::pieceValuesMG[1];
+        }
+
+        // set bMG
+        else if (token == "bMG") {
+            stream >> libchess::Position::pieceValuesMG[2];
+        }
+
+        // set rMG
+        else if (token == "rMG") {
+            stream >> libchess::Position::pieceValuesMG[3];
+        }
+
+        // set qMG
+        else if (token == "qMG") {
+            stream >> libchess::Position::pieceValuesMG[4];
+        }
+
+        // set pEG
+        else if (token == "pEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[0] = val;
+            Anduril::pieceValues[0] = val;
+            Anduril::pieceValues[8] = val;
+        }
+
+        // set kEG
+        else if (token == "kEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[1] = val;
+            Anduril::pieceValues[1] = val;
+            Anduril::pieceValues[9] = val;
+        }
+
+        // set bEG
+        else if (token == "bEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[2] = val;
+            Anduril::pieceValues[2] = val;
+            Anduril::pieceValues[10] = val;
+        }
+
+        // set rEG
+        else if (token == "rEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[3] = val;
+            Anduril::pieceValues[3] = val;
+            Anduril::pieceValues[11] = val;
+        }
+
+        // set qEG
+        else if (token == "qEG") {
+            int val;
+            stream >> val;
+            libchess::Position::pieceValuesEG[4] = val;
+            Anduril::pieceValues[4] = val;
+            Anduril::pieceValues[12] = val;
+        }
+
+        // set mhv
+        else if (token == "mhv") {
+            stream >> maxHistoryVal;
+        }
+
+        // set mcv
+        else if (token == "mcv") {
+            stream >> maxContinuationVal;
+        }
+
+        // set cpm
+        else if (token == "cpm") {
+            stream >> maxCaptureVal;
+        }
+
+        // set singleDepthDividend
+        else if (token == "singleDepthDividend") {
+            stream >> singleDepthDividend;
+        }
+
+        // set singleDepthMultiplier
+        else if (token == "singleDepthMultiplier") {
+            stream >> singleDepthMultiplier;
+        }
+
+        // set queenOrderVal
+        else if (token == "queenOrderVal") {
+            stream >> queenOrderVal;
+        }
+
+        // set rookOrderVal
+        else if (token == "rookOrderVal") {
+            stream >> rookOrderVal;
+        }
+
+        // set minorOrderVal
+        else if (token == "minorOrderVal") {
+            stream >> minorOrderVal;
+        }
+
+        // set dta
+        else if (token == "dta") {
+            stream >> dta;
+        }
+
+        // set dtn
+        else if (token == "dtn") {
+            stream >> dtn;
+        }
+
+        // set dtd
+        else if (token == "dtd") {
+            stream >> dtd;
+        }
+
+
+
     }
 
     void parseGo(std::stringstream &stream, libchess::Position &board, Book &openingBook, bool &bookOpen) {
@@ -229,9 +766,13 @@ namespace UCI {
         int depth = -1; int moveTime = -1; int mtg = 35;
         int time = -1;
         int increment = 0;
+        int nodes = -1;
         gondor.mainThread()->engine->limits.timeSet = false;
 
         std::string token;
+
+        // start the clock as early as possible to help avoid time loss on with extremely low clock
+        gondor.mainThread()->engine->startTime = std::chrono::steady_clock::now();
 
         // this makes sure that the opening book is set to the correct state
         if (!bookOpen) {
@@ -272,6 +813,10 @@ namespace UCI {
             else if (token == "depth") {
                 stream >> depth;
             }
+
+            else if (token == "nodes") {
+                stream >> nodes;
+            }
         }
 
         if (moveTime != -1) {
@@ -279,8 +824,11 @@ namespace UCI {
             mtg = 1;
         }
 
-        gondor.mainThread()->engine->startTime = std::chrono::steady_clock::now();
         gondor.mainThread()->engine->limits.depth = depth;
+
+        // nodes will really only work if we are searching with one thread
+        // the engine will most likely search a few more nodes than this if we are using multiple threads
+        gondor.mainThread()->engine->limits.nodes = nodes;
 
         if (time != -1) {
             gondor.mainThread()->engine->limits.timeSet = true;
@@ -379,7 +927,7 @@ void Anduril::go(libchess::Position board) {
     int beta = 32001;
     int bestScore = -32001;
     int prevBestScore = bestScore;
-    int delta = 18;
+    int delta = dta;
 
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
@@ -457,7 +1005,7 @@ void Anduril::go(libchess::Position board) {
         completedDepth = sDepth;
 
         // set the aspiration window
-        if (rDepth >= 8) {
+        if (rDepth >= mad) {
             // search was outside the window, need to redo the search
             // fail low
             if (bestScore <= alpha) {
@@ -486,14 +1034,14 @@ void Anduril::go(libchess::Position board) {
                 rDepth++;
                 rDepth = std::clamp(rDepth, 1, 100);
                 upper = lower = false;
-                delta = std::min(18 + bestScore * bestScore / 10000, 100);
+                delta = dta;
                 alpha = std::max(bestScore - delta, -32001);
                 beta = std::min(bestScore + delta, 32001);
             }
         }
         // for depths less than 5
         else {
-            delta = std::min(18 + bestScore * bestScore / 10000, 100);
+            delta = dta;
             rDepth++;
             rDepth = std::clamp(rDepth, 1, 100);
             sDepth = rDepth;
@@ -502,7 +1050,8 @@ void Anduril::go(libchess::Position board) {
         // expand search window in case we miss (will be reset anyway if we didn't)
         // we can do it here because if we did not miss, we set alpha and beta for the next search above,
         // if we did miss, delta was already modified before we searched, meaning the alpha and beta windows were expanded
-        delta += delta * 3 / 4;
+        // 3 / 4
+        delta += delta * dtn / dtd;
 
         if (!incomplete && found) {
             bestMove = board.from_table(node->bestMove);
@@ -529,6 +1078,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
@@ -540,6 +1090,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
@@ -550,6 +1101,7 @@ void Anduril::go(libchess::Position board) {
                               << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
@@ -565,6 +1117,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -577,6 +1130,7 @@ void Anduril::go(libchess::Position board) {
                               << "score mate " << distance
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -588,6 +1142,7 @@ void Anduril::go(libchess::Position board) {
                               << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
                               << " depth " << completedDepth
                               << " seldepth " << selDepth
+                              << " tbhits " << getTbHits()
                               << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
                               << " nodes " << getMovesExplored()
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
@@ -635,6 +1190,7 @@ void Anduril::go(libchess::Position board) {
         // reset the node count for each thread
         for (auto &thread : gondor) {
             thread->engine->setMovesExplored(0);
+            thread->engine->setTbHits(0);
         }
 
         // tell the GUI what move we want to make

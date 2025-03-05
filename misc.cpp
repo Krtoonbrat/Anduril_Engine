@@ -5,6 +5,7 @@
 #include "misc.h"
 
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 #ifdef _WIN32
