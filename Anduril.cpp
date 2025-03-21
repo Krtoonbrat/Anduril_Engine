@@ -43,18 +43,18 @@ void initReductions(double nem, double neb, double tem, double teb) {
     }
 }
 
-int stat_bonus(int depth) {
+constexpr int stat_bonus(int depth) {
     return std::clamp(367 * depth - 136, 202, 6941);
 }
 
 // returns the amount of moves we need to search before we can use move count based pruning
-int moveCountPruningThreshold(bool improving, int depth) {
+constexpr int moveCountPruningThreshold(bool improving, int depth) {
     return improving ? (4 + depth * depth) : (4 + depth * depth) / 2;
 }
 
 // returns the margin for reverse futility pruning.  Returns the same values as the list we used before, except this is
 // able to a higher depth, and we introduced the improving factor to it
-int reverseFutilityMargin(int depth, bool improving) {
+constexpr int reverseFutilityMargin(int depth, bool improving) {
     return 234 * (depth - improving);
 }
 
