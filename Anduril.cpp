@@ -43,8 +43,14 @@ void initReductions(double nem, double neb, double tem, double teb) {
     }
 }
 
-constexpr int stat_bonus(int depth) {
+// calculates the score added to a history table when we reward a move
+int stat_bonus(int depth) {
     return std::clamp(367 * depth - 136, 202, 6941);
+}
+
+// calculates the score subtracted from a history table when we punish a move
+int stat_penalty(int depth) {
+    return -std::clamp(367 * depth - 136, 202, 6941);
 }
 
 // returns the amount of moves we need to search before we can use move count based pruning
@@ -427,14 +433,14 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
                 // extra penalty for early quiet moves on the previous ply
                 if (prevMoveSq.value() != -1 && board.moveCount(ply - 1) <= 2 && !board.previously_captured_piece()) {
-                    int bonus = -stat_bonus(depth + 1);
+                    int bonus = stat_penalty(depth + 1);
                     updateContinuationHistory(board,*board.piece_on(prevMoveSq),prevMoveSq, bonus,1);
                 }
 
             }
             // penalty for those that don't
             else if (!transpositionCapture) {
-                int bonus = -stat_bonus(depth);
+                int bonus = stat_penalty(depth);
 
                 // update move history and continuation history for best move
                 moveHistory[board.side_to_move()][nMove.from_square()][nMove.to_square()] += bonus - moveHistory[board.side_to_move()][nMove.from_square()][nMove.to_square()] * abs(bonus) / maxHistoryVal;
@@ -928,7 +934,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
                 score = -negamax<NonPV>(board, actualDepth, -(alpha + 1), -alpha, !cutNode);
             }
             decPly();
-            int bonus = score <= alpha ? -stat_bonus(actualDepth)
+            int bonus = score <= alpha ? stat_penalty(actualDepth)
                       : score >= beta  ? stat_bonus(actualDepth)
                                        : 0;
             updateContinuationHistory(board, libchess::Piece(movePieceType), move.to_square(), bonus);
@@ -1086,27 +1092,30 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
 
     if (!board.is_capture_move(bestMove)) {
 
+        // update stats for best quiet
         updateQuietStats(board, bestMove, bonus);
 
         // decrease stats for non-best quiets
         for (int i = 0; i < quietCount; i++) {
-            nonBestPenalty = -bonus;
+            nonBestPenalty = bestScore > beta + 53 ? stat_penalty(depth + 1) : stat_penalty(depth);
             updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), nonBestPenalty);
             moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += nonBestPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(nonBestPenalty) / maxHistoryVal;
         }
     }
     else {
+        // update stats for best capture
         int capturedIndex = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
         captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] += largerBonus - captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] * abs(largerBonus) / maxCaptureVal;
     }
 
     // extra penalty for early move that was not a transposition or main killer in previous ply
     if (board.previous_move() && ((board.moveCount(ply - 1) == 1 + board.found(ply - 1) || *board.previous_move() == killers[ply - rootPly - 1][0])) && !board.previously_captured_piece()) {
-        updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), -largerBonus, 1);
+        updateContinuationHistory(board, *board.piece_on(board.previous_move()->to_square()), board.previous_move()->to_square(), stat_penalty(depth + 1), 1);
     }
 
+    // decrease stats for non-best captures
     for (int i = 0; i < captureCount; i++) {
-        nonBestPenalty = -largerBonus;
+        nonBestPenalty = stat_penalty(depth + 1);
         int movedPieceIdx = board.piece_on(capturesSearched[i].from_square())->to_nnue();
         int capturedType = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
         captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] += nonBestPenalty - captureHistory[movedPieceIdx][capturesSearched[i].to_square()][capturedType] * abs(nonBestPenalty) / maxCaptureVal;
