@@ -25,6 +25,16 @@ extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
 
+extern int bonusMult;
+extern int bonusSub;
+extern int bonusMin;
+extern int bonusMax;
+
+extern int penaltyMult;
+extern int penaltySub;
+extern int penaltyMin;
+extern int penaltyMax;
+
 namespace NNUE {
     extern char nnue_path[256];
 }
@@ -132,6 +142,16 @@ namespace UCI {
                 std::cout << "option name Syzygy50MoveRule type check default true" << std::endl;
                 std::cout << "option name SyzygyProbeLimit type spin default 7 min 0 max 7" << std::endl;
 
+                std::cout << "option name bonusMult type string default " << bonusMult << std::endl;
+                std::cout << "option name bonusSub type string default " << bonusSub << std::endl;
+                std::cout << "option name bonusMin type string default " << bonusMin << std::endl;
+                std::cout << "option name bonusMax type string default " << bonusMax << std::endl;
+
+                std::cout << "option name penaltyMult type string default " << penaltyMult << std::endl;
+                std::cout << "option name penaltySub type string default " << penaltySub << std::endl;
+                std::cout << "option name penaltyMin type string default " << penaltyMin << std::endl;
+                std::cout << "option name penaltyMax type string default " << penaltyMax << std::endl;
+
                 std::cout << "uciok" << std::endl;
 
 
@@ -237,6 +257,46 @@ namespace UCI {
 
         else if (token == "SyzygyProbeLimit") {
             stream >> syzygyProbeLimit;
+        }
+
+        // set bonusMult
+        else if (token == "bonusMult") {
+            stream >> bonusMult;
+        }
+
+        // set bonusSub
+        else if (token == "bonusSub") {
+            stream >> bonusSub;
+        }
+
+        // set bonusMin
+        else if (token == "bonusMin") {
+            stream >> bonusMin;
+        }
+
+        // set bonusMax
+        else if (token == "bonusMax") {
+            stream >> bonusMax;
+        }
+
+        // set penaltyMult
+        else if (token == "penaltyMult") {
+            stream >> penaltyMult;
+        }
+
+        // set penaltySub
+        else if (token == "penaltySub") {
+            stream >> penaltySub;
+        }
+
+        // set penaltyMin
+        else if (token == "penaltyMin") {
+            stream >> penaltyMin;
+        }
+
+        // set penaltyMax
+        else if (token == "penaltyMax") {
+            stream >> penaltyMax;
         }
 
     }

@@ -24,6 +24,18 @@ int maxHistoryVal = 8250;
 int maxContinuationVal = 31035;
 int maxCaptureVal = 7321;
 
+// stat bonus values
+int bonusMult = 367;
+int bonusSub = 136;
+int bonusMin = 202;
+int bonusMax = 6941;
+
+// stat penalty values
+int penaltyMult = 367;
+int penaltySub = 136;
+int penaltyMin = 202;
+int penaltyMax = 6941;
+
 // our thread pool
 extern ThreadPool gondor;
 
@@ -45,12 +57,12 @@ void initReductions(double nem, double neb, double tem, double teb) {
 
 // calculates the score added to a history table when we reward a move
 int stat_bonus(int depth) {
-    return std::clamp(367 * depth - 136, 202, 6941);
+    return std::clamp(bonusMult * depth - bonusSub, bonusMin, bonusMax);
 }
 
 // calculates the score subtracted from a history table when we punish a move
 int stat_penalty(int depth) {
-    return -std::clamp(367 * depth - 136, 202, 6941);
+    return -std::clamp(penaltyMult * depth - penaltySub, penaltyMin, penaltyMax);
 }
 
 // returns the amount of moves we need to search before we can use move count based pruning
