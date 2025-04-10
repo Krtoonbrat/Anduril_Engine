@@ -25,16 +25,16 @@ int maxContinuationVal = 31035;
 int maxCaptureVal = 7321;
 
 // stat bonus values
-int bonusMult = 367;
-int bonusSub = 136;
-int bonusMin = 202;
-int bonusMax = 6941;
+int bonusMult = 407;
+int bonusSub = 133;
+int bonusMin = 181;
+int bonusMax = 6969;
 
 // stat penalty values
-int penaltyMult = 367;
-int penaltySub = 136;
-int penaltyMin = 202;
-int penaltyMax = 6941;
+int penaltyMult = 317;
+int penaltySub = 137;
+int penaltyMin = 204;
+int penaltyMax = 6922;
 
 // our thread pool
 extern ThreadPool gondor;
