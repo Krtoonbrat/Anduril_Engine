@@ -1044,6 +1044,16 @@ void Anduril::go(libchess::Position board) {
             thread->engine->setTbHits(0);
         }
 
+        //TODO: get rid of this and fix the actual issue of sometimes returning a1a1 as the best move
+        // if the best move is a null move, we need to set it to a random legal move
+        if (bestMove.value() == 0) {
+            libchess::MoveList list = board.legal_move_list();
+            // if there were no legal moves then we can return the null move
+            if (list.size() > 0) {
+                bestMove = list.values()[0];
+            }
+        }
+
         // tell the GUI what move we want to make
         std::cout << "bestmove " << bestMove.to_str() << std::endl;
     }
