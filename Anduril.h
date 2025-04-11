@@ -35,6 +35,23 @@ public:
               ALL_PIECES
             };
 
+    // types of stat bonus and penalties
+    enum StatType : int
+            { FAIL_HIGH_TRANSPO,
+              LMR_BETA_CUT,
+              PRIOR_FAIL_LOW,
+              LARGER_BONUS,
+              CAP_HISTORY_BONUS,
+              QUIET_BEST,
+              PREV_EARLY_QUIET,
+              NON_FAIL_HIGH_TRANSPO,
+              LMR_FAIL_LOW,
+              NON_BEST_QUIET,
+              NON_BEST_QUIET_LARGER,
+              EARLY_NON_TRANSPO_KILLER,
+              NON_BEST_CAPTURE,
+            };
+
     Anduril(int id) : id(id) { resetHistories(); }
 
     // calls negamax and keeps track of the best move

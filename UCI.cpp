@@ -25,15 +25,70 @@ extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
 
-extern int bonusMult;
-extern int bonusSub;
-extern int bonusMin;
-extern int bonusMax;
+extern int failHighTranspoMult;
+extern int failHighTranspoSub;
+extern int failHighTranspoMin;
+extern int failHighTranspoMax;
 
-extern int penaltyMult;
-extern int penaltySub;
-extern int penaltyMin;
-extern int penaltyMax;
+extern int lmrBetaCutMult;
+extern int lmrBetaCutSub;
+extern int lmrBetaCutMin;
+extern int lmrBetaCutMax;
+
+extern int priorFailLowMult;
+extern int priorFailLowSub;
+extern int priorFailLowMin;
+extern int priorFailLowMax;
+
+extern int largerBonusMult;
+extern int largerBonusSub;
+extern int largerBonusMin;
+extern int largerBonusMax;
+
+extern int capHistoryBonusMult;
+extern int capHistoryBonusSub;
+extern int capHistoryBonusMin;
+extern int capHistoryBonusMax;
+
+extern int quietBestMult;
+extern int quietBestSub;
+extern int quietBestMin;
+extern int quietBestMax;
+
+extern int prevEarlyQuietMult;
+extern int prevEarlyQuietSub;
+extern int prevEarlyQuietMin;
+extern int prevEarlyQuietMax;
+
+extern int nonFailHighTranspoMult;
+extern int nonFailHighTranspoSub;
+extern int nonFailHighTranspoMin;
+extern int nonFailHighTranspoMax;
+
+extern int lmrFailLowMult;
+extern int lmrFailLowSub;
+extern int lmrFailLowMin;
+extern int lmrFailLowMax;
+
+extern int nonBestQuietMult;
+extern int nonBestQuietSub;
+extern int nonBestQuietMin;
+extern int nonBestQuietMax;
+
+extern int nonBestQuietLargerMult;
+extern int nonBestQuietLargerSub;
+extern int nonBestQuietLargerMin;
+extern int nonBestQuietLargerMax;
+
+extern int earlyNonTranspoKillerMult;
+extern int earlyNonTranspoKillerSub;
+extern int earlyNonTranspoKillerMin;
+extern int earlyNonTranspoKillerMax;
+
+extern int nonBestCaptureMult;
+extern int nonBestCaptureSub;
+extern int nonBestCaptureMin;
+extern int nonBestCaptureMax;
 
 namespace NNUE {
     extern char nnue_path[256];
@@ -142,15 +197,71 @@ namespace UCI {
                 std::cout << "option name Syzygy50MoveRule type check default true" << std::endl;
                 std::cout << "option name SyzygyProbeLimit type spin default 7 min 0 max 7" << std::endl;
 
-                std::cout << "option name bonusMult type string default " << bonusMult << std::endl;
-                std::cout << "option name bonusSub type string default " << bonusSub << std::endl;
-                std::cout << "option name bonusMin type string default " << bonusMin << std::endl;
-                std::cout << "option name bonusMax type string default " << bonusMax << std::endl;
+                std::cout << "option name failHighTranspoMult type string default " << failHighTranspoMult << std::endl;
+                std::cout << "option name failHighTranspoSub type string default " << failHighTranspoSub << std::endl;
+                std::cout << "option name failHighTranspoMin type string default " << failHighTranspoMin << std::endl;
+                std::cout << "option name failHighTranspoMax type string default " << failHighTranspoMax << std::endl;
 
-                std::cout << "option name penaltyMult type string default " << penaltyMult << std::endl;
-                std::cout << "option name penaltySub type string default " << penaltySub << std::endl;
-                std::cout << "option name penaltyMin type string default " << penaltyMin << std::endl;
-                std::cout << "option name penaltyMax type string default " << penaltyMax << std::endl;
+                std::cout << "option name lmrBetaCutMult type string default " << lmrBetaCutMult << std::endl;
+                std::cout << "option name lmrBetaCutSub type string default " << lmrBetaCutSub << std::endl;
+                std::cout << "option name lmrBetaCutMin type string default " << lmrBetaCutMin << std::endl;
+                std::cout << "option name lmrBetaCutMax type string default " << lmrBetaCutMax << std::endl;
+
+                std::cout << "option name priorFailLowMult type string default " << priorFailLowMult << std::endl;
+                std::cout << "option name priorFailLowSub type string default " << priorFailLowSub << std::endl;
+                std::cout << "option name priorFailLowMin type string default " << priorFailLowMin << std::endl;
+                std::cout << "option name priorFailLowMax type string default " << priorFailLowMax << std::endl;
+
+                std::cout << "option name largerBonusMult type string default " << largerBonusMult << std::endl;
+                std::cout << "option name largerBonusSub type string default " << largerBonusSub << std::endl;
+                std::cout << "option name largerBonusMin type string default " << largerBonusMin << std::endl;
+                std::cout << "option name largerBonusMax type string default " << largerBonusMax << std::endl;
+
+                std::cout << "option name capHistoryBonusMult type string default " << capHistoryBonusMult << std::endl;
+                std::cout << "option name capHistoryBonusSub type string default " << capHistoryBonusSub << std::endl;
+                std::cout << "option name capHistoryBonusMin type string default " << capHistoryBonusMin << std::endl;
+                std::cout << "option name capHistoryBonusMax type string default " << capHistoryBonusMax << std::endl;
+
+                std::cout << "option name quietBestMult type string default " << quietBestMult << std::endl;
+                std::cout << "option name quietBestSub type string default " << quietBestSub << std::endl;
+                std::cout << "option name quietBestMin type string default " << quietBestMin << std::endl;
+                std::cout << "option name quietBestMax type string default " << quietBestMax << std::endl;
+
+                std::cout << "option name prevEarlyQuietMult type string default " << prevEarlyQuietMult << std::endl;
+                std::cout << "option name prevEarlyQuietSub type string default " << prevEarlyQuietSub << std::endl;
+                std::cout << "option name prevEarlyQuietMin type string default " << prevEarlyQuietMin << std::endl;
+                std::cout << "option name prevEarlyQuietMax type string default " << prevEarlyQuietMax << std::endl;
+
+                std::cout << "option name nonFailHighTranspoMult type string default " << nonFailHighTranspoMult << std::endl;
+                std::cout << "option name nonFailHighTranspoSub type string default " << nonFailHighTranspoSub << std::endl;
+                std::cout << "option name nonFailHighTranspoMin type string default " << nonFailHighTranspoMin << std::endl;
+                std::cout << "option name nonFailHighTranspoMax type string default " << nonFailHighTranspoMax << std::endl;
+
+                std::cout << "option name lmrFailLowMult type string default " << lmrFailLowMult << std::endl;
+                std::cout << "option name lmrFailLowSub type string default " << lmrFailLowSub << std::endl;
+                std::cout << "option name lmrFailLowMin type string default " << lmrFailLowMin << std::endl;
+                std::cout << "option name lmrFailLowMax type string default " << lmrFailLowMax << std::endl;
+
+                std::cout << "option name nonBestQuietMult type string default " << nonBestQuietMult << std::endl;
+                std::cout << "option name nonBestQuietSub type string default " << nonBestQuietSub << std::endl;
+                std::cout << "option name nonBestQuietMin type string default " << nonBestQuietMin << std::endl;
+                std::cout << "option name nonBestQuietMax type string default " << nonBestQuietMax << std::endl;
+
+                std::cout << "option name nonBestQuietLargerMult type string default " << nonBestQuietLargerMult << std::endl;
+                std::cout << "option name nonBestQuietLargerSub type string default " << nonBestQuietLargerSub << std::endl;
+                std::cout << "option name nonBestQuietLargerMin type string default " << nonBestQuietLargerMin << std::endl;
+                std::cout << "option name nonBestQuietLargerMax type string default " << nonBestQuietLargerMax << std::endl;
+
+                std::cout << "option name earlyNonTranspoKillerMult type string default " << earlyNonTranspoKillerMult << std::endl;
+                std::cout << "option name earlyNonTranspoKillerSub type string default " << earlyNonTranspoKillerSub << std::endl;
+                std::cout << "option name earlyNonTranspoKillerMin type string default " << earlyNonTranspoKillerMin << std::endl;
+                std::cout << "option name earlyNonTranspoKillerMax type string default " << earlyNonTranspoKillerMax << std::endl;
+
+                std::cout << "option name nonBestCaptureMult type string default " << nonBestCaptureMult << std::endl;
+                std::cout << "option name nonBestCaptureSub type string default " << nonBestCaptureSub << std::endl;
+                std::cout << "option name nonBestCaptureMin type string default " << nonBestCaptureMin << std::endl;
+                std::cout << "option name nonBestCaptureMax type string default " << nonBestCaptureMax << std::endl;
+
 
                 std::cout << "uciok" << std::endl;
 
@@ -259,44 +370,244 @@ namespace UCI {
             stream >> syzygyProbeLimit;
         }
 
-        // set bonusMult
-        else if (token == "bonusMult") {
-            stream >> bonusMult;
+        // set failHighTranspoMult
+        else if (token == "failHighTranspoMult") {
+            stream >> failHighTranspoMult;
         }
 
-        // set bonusSub
-        else if (token == "bonusSub") {
-            stream >> bonusSub;
+        // set failHighTranspoSub
+        else if (token == "failHighTranspoSub") {
+            stream >> failHighTranspoSub;
         }
 
-        // set bonusMin
-        else if (token == "bonusMin") {
-            stream >> bonusMin;
+        // set failHighTranspoMin
+        else if (token == "failHighTranspoMin") {
+            stream >> failHighTranspoMin;
         }
 
-        // set bonusMax
-        else if (token == "bonusMax") {
-            stream >> bonusMax;
+        // set lmrBetaCutMult
+        else if (token == "lmrBetaCutMult") {
+            stream >> lmrBetaCutMult;
         }
 
-        // set penaltyMult
-        else if (token == "penaltyMult") {
-            stream >> penaltyMult;
+        // set lmrBetaCutSub
+        else if (token == "lmrBetaCutSub") {
+            stream >> lmrBetaCutSub;
         }
 
-        // set penaltySub
-        else if (token == "penaltySub") {
-            stream >> penaltySub;
+        // set lmrBetaCutMin
+        else if (token == "lmrBetaCutMin") {
+            stream >> lmrBetaCutMin;
         }
 
-        // set penaltyMin
-        else if (token == "penaltyMin") {
-            stream >> penaltyMin;
+        // set lmrBetaCutMax
+        else if (token == "lmrBetaCutMax") {
+            stream >> lmrBetaCutMax;
         }
 
-        // set penaltyMax
-        else if (token == "penaltyMax") {
-            stream >> penaltyMax;
+        // set priorFailLowMult
+        else if (token == "priorFailLowMult") {
+            stream >> priorFailLowMult;
+        }
+
+        // set priorFailLowSub
+        else if (token == "priorFailLowSub") {
+            stream >> priorFailLowSub;
+        }
+
+        // set priorFailLowMin
+        else if (token == "priorFailLowMin") {
+            stream >> priorFailLowMin;
+        }
+
+        // set priorFailLowMax
+        else if (token == "priorFailLowMax") {
+            stream >> priorFailLowMax;
+        }
+
+        // set largerBonusMult
+        else if (token == "largerBonusMult") {
+            stream >> largerBonusMult;
+        }
+
+        // set largerBonusSub
+        else if (token == "largerBonusSub") {
+            stream >> largerBonusSub;
+        }
+
+        // set largerBonusMin
+        else if (token == "largerBonusMin") {
+            stream >> largerBonusMin;
+        }
+
+        // set largerBonusMax
+        else if (token == "largerBonusMax") {
+            stream >> largerBonusMax;
+        }
+
+        // set capHistoryBonusMult
+        else if (token == "capHistoryBonusMult") {
+            stream >> capHistoryBonusMult;
+        }
+
+        // set capHistoryBonusSub
+        else if (token == "capHistoryBonusSub") {
+            stream >> capHistoryBonusSub;
+        }
+
+        // set capHistoryBonusMin
+        else if (token == "capHistoryBonusMin") {
+            stream >> capHistoryBonusMin;
+        }
+
+        // set capHistoryBonusMax
+        else if (token == "capHistoryBonusMax") {
+            stream >> capHistoryBonusMax;
+        }
+
+        // set quietBestMult
+        else if (token == "quietBestMult") {
+            stream >> quietBestMult;
+        }
+
+        // set quietBestSub
+        else if (token == "quietBestSub") {
+            stream >> quietBestSub;
+        }
+
+        // set quietBestMin
+        else if (token == "quietBestMin") {
+            stream >> quietBestMin;
+        }
+
+        // set quietBestMax
+        else if (token == "quietBestMax") {
+            stream >> quietBestMax;
+        }
+
+        // set failHighTranspoMax
+        else if (token == "failHighTranspoMax") {
+            stream >> failHighTranspoMax;
+        }
+
+        // set prevEarlyQuietMult
+        else if (token == "prevEarlyQuietMult") {
+            stream >> prevEarlyQuietMult;
+        }
+
+        // set prevEarlyQuietSub
+        else if (token == "prevEarlyQuietSub") {
+            stream >> prevEarlyQuietSub;
+        }
+
+        // set prevEarlyQuietMin
+        else if (token == "prevEarlyQuietMin") {
+            stream >> prevEarlyQuietMin;
+        }
+
+        // set prevEarlyQuietMax
+        else if (token == "prevEarlyQuietMax") {
+            stream >> prevEarlyQuietMax;
+        }
+
+        // set nonFailHighTranspoMult
+        else if (token == "nonFailHighTranspoMult") {
+            stream >> nonFailHighTranspoMult;
+        }
+
+        // set nonFailHighTranspoSub
+        else if (token == "nonFailHighTranspoSub") {
+            stream >> nonFailHighTranspoSub;
+        }
+
+        // set nonFailHighTranspoMin
+        else if (token == "nonFailHighTranspoMin") {
+            stream >> nonFailHighTranspoMin;
+        }
+
+        // set nonFailHighTranspoMax
+        else if (token == "nonFailHighTranspoMax") {
+            stream >> nonFailHighTranspoMax;
+        }
+
+        // set lmrFailLowMult
+        else if (token == "lmrFailLowMult") {
+            stream >> lmrFailLowMult;
+        }
+
+        // set lmrFailLowSub
+        else if (token == "lmrFailLowSub") {
+            stream >> lmrFailLowSub;
+        }
+
+        // set lmrFailLowMin
+        else if (token == "lmrFailLowMin") {
+            stream >> lmrFailLowMin;
+        }
+
+        // set lmrFailLowMax
+        else if (token == "lmrFailLowMax") {
+            stream >> lmrFailLowMax;
+        }
+
+        // set nonBestQuietMult
+        else if (token == "nonBestQuietMult") {
+            stream >> nonBestQuietMult;
+        }
+
+        // set nonBestQuietSub
+        else if (token == "nonBestQuietSub") {
+            stream >> nonBestQuietSub;
+        }
+
+        // set nonBestQuietMin
+        else if (token == "nonBestQuietMin") {
+            stream >> nonBestQuietMin;
+        }
+
+        // set nonBestQuietMax
+        else if (token == "nonBestQuietMax") {
+            stream >> nonBestQuietMax;
+        }
+
+        // set earlyNonTranspoKillerMult
+        else if (token == "earlyNonTranspoKillerMult") {
+            stream >> earlyNonTranspoKillerMult;
+        }
+
+        // set earlyNonTranspoKillerSub
+        else if (token == "earlyNonTranspoKillerSub") {
+            stream >> earlyNonTranspoKillerSub;
+        }
+
+        // set earlyNonTranspoKillerMin
+        else if (token == "earlyNonTranspoKillerMin") {
+            stream >> earlyNonTranspoKillerMin;
+        }
+
+        // set earlyNonTranspoKillerMax
+        else if (token == "earlyNonTranspoKillerMax") {
+            stream >> earlyNonTranspoKillerMax;
+        }
+
+        // set nonBestCaptureMult
+        else if (token == "nonBestCaptureMult") {
+            stream >> nonBestCaptureMult;
+        }
+
+        // set nonBestCaptureSub
+        else if (token == "nonBestCaptureSub") {
+            stream >> nonBestCaptureSub;
+        }
+
+        // set nonBestCaptureMin
+        else if (token == "nonBestCaptureMin") {
+            stream >> nonBestCaptureMin;
+        }
+
+        // set nonBestCaptureMax
+        else if (token == "nonBestCaptureMax") {
+            stream >> nonBestCaptureMax;
         }
 
     }
