@@ -40,20 +40,20 @@ int priorFailLowSub = 133;
 int priorFailLowMin = 181;
 int priorFailLowMax = 6969;
 
-int largerBonusMult = 407;
-int largerBonusSub = 133;
-int largerBonusMin = 181;
-int largerBonusMax = 6969;
+int bestButterflyMult = 407;
+int bestButterflySub = 133;
+int bestButterflyMin = 181;
+int bestButterflyMax = 6969;
 
 int capHistoryBonusMult = 407;
 int capHistoryBonusSub = 133;
 int capHistoryBonusMin = 181;
 int capHistoryBonusMax = 6969;
 
-int quietBestMult = 407;
-int quietBestSub = 133;
-int quietBestMin = 181;
-int quietBestMax = 6969;
+int bestContinuationMult = 407;
+int bestContinuationSub = 133;
+int bestContinuationMin = 181;
+int bestContinuationMax = 6969;
 
 // stat penalty values
 int prevEarlyQuietMult = -317;
@@ -71,15 +71,15 @@ int lmrFailLowSub = -137;
 int lmrFailLowMin = -204;
 int lmrFailLowMax = -6922;
 
-int nonBestQuietMult = -317;
-int nonBestQuietSub = -137;
-int nonBestQuietMin = -204;
-int nonBestQuietMax = -6922;
+int nonBestContinuationMult = -317;
+int nonBestContinuationSub = -137;
+int nonBestContinuationMin = -204;
+int nonBestContinuationMax = -6922;
 
-int nonBestQuietLargerMult = -317;
-int nonBestQuietLargerSub = -137;
-int nonBestQuietLargerMin = -204;
-int nonBestQuietLargerMax = -6922;
+int nonBestButterflyMult = -317;
+int nonBestButterflySub = -137;
+int nonBestButterflyMin = -204;
+int nonBestButterflyMax = -6922;
 
 int earlyNonTranspoKillerMult = -317;
 int earlyNonTranspoKillerSub = -137;
@@ -120,10 +120,6 @@ int stat_score(int depth) {
         return std::clamp(failHighTranspoMult * depth - failHighTranspoSub, failHighTranspoMin, failHighTranspoMax);
     }
 
-    else if constexpr (statType == StatType::LARGER_BONUS) {
-        return std::clamp(largerBonusMult * depth - largerBonusSub, largerBonusMin, largerBonusMax);
-    }
-
     else if constexpr (statType == StatType::LMR_BETA_CUT) {
         return std::clamp(lmrBetaCutMult * depth - lmrBetaCutSub, lmrBetaCutMin, lmrBetaCutMax);
     }
@@ -136,8 +132,12 @@ int stat_score(int depth) {
         return std::clamp(capHistoryBonusMult * depth - capHistoryBonusSub, capHistoryBonusMin, capHistoryBonusMax);
     }
 
-    else if constexpr (statType == StatType::QUIET_BEST) {
-        return std::clamp(quietBestMult * depth - quietBestSub, quietBestMin, quietBestMax);
+    else if constexpr (statType == StatType::BEST_CONTINUATION) {
+        return std::clamp(bestContinuationMult * depth - bestContinuationSub, bestContinuationMin, bestContinuationMax);
+    }
+
+    else if constexpr (statType == StatType::BEST_BUTTERFLY) {
+        return std::clamp(bestButterflyMult * depth - bestButterflySub, bestButterflyMin, bestButterflyMax);
     }
 
     else if constexpr (statType == StatType::PREV_EARLY_QUIET) {
@@ -152,12 +152,12 @@ int stat_score(int depth) {
         return std::clamp(lmrFailLowMult * depth - lmrFailLowSub, lmrFailLowMax, lmrFailLowMin);
     }
 
-    else if constexpr (statType == StatType::NON_BEST_QUIET) {
-        return std::clamp(nonBestQuietMult * depth - nonBestQuietSub, nonBestQuietMax, nonBestQuietMin);
+    else if constexpr (statType == StatType::NON_BEST_CONTINUATION) {
+        return std::clamp(nonBestContinuationMult * depth - nonBestContinuationSub, nonBestContinuationMax, nonBestContinuationMin);
     }
 
-    else if constexpr (statType == StatType::NON_BEST_QUIET_LARGER) {
-        return std::clamp(nonBestQuietLargerMult * depth - nonBestQuietLargerSub, nonBestQuietLargerMax, nonBestQuietLargerMin);
+    else if constexpr (statType == StatType::NON_BEST_BUTTERFLY) {
+        return std::clamp(nonBestButterflyMult * depth - nonBestButterflySub, nonBestButterflyMax, nonBestButterflyMin);
     }
 
     else if constexpr (statType == StatType::EARLY_NON_TRANSPO_KILLER) {
@@ -1203,19 +1203,19 @@ int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
 // updates all history statistics
 void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
                                libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched, int captureCount) {
-    int largerBonus = stat_score<LARGER_BONUS>(depth);
-    int bonus = bestScore > beta + 53 ? largerBonus : stat_score<QUIET_BEST>(depth);
+    int bonus;
     int nonBestPenalty;
 
     if (!board.is_capture_move(bestMove)) {
-
         // update stats for best quiet
-        updateQuietStats(board, bestMove, bonus);
+        updateQuietStats(board, bestMove, depth);
 
         // decrease stats for non-best quiets
         for (int i = 0; i < quietCount; i++) {
-            nonBestPenalty = bestScore > beta + 53 ? stat_score<NON_BEST_QUIET_LARGER>(depth) : stat_score<NON_BEST_QUIET>(depth);
+            nonBestPenalty = stat_score<NON_BEST_CONTINUATION>(depth);
             updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), nonBestPenalty);
+
+            nonBestPenalty = stat_score<NON_BEST_BUTTERFLY>(depth);
             moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += nonBestPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(nonBestPenalty) / maxHistoryVal;
         }
     }
@@ -1240,13 +1240,16 @@ void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMov
     }
 }
 
-void Anduril::updateQuietStats(libchess::Position &board, libchess::Move bestMove, int bonus) {
+void Anduril::updateQuietStats(libchess::Position &board, libchess::Move bestMove, int depth) {
     // update killers
     insertKiller(bestMove, ply - rootPly);
 
     // update move history and continuation history for best move
-    moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] += bonus - moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] * abs(bonus) / maxHistoryVal;
+    int bonus = stat_score<BEST_CONTINUATION>(depth);
     updateContinuationHistory(board, *board.piece_on(bestMove.from_square()), bestMove.to_square(), bonus);
+
+    bonus = stat_score<BEST_BUTTERFLY>(depth);
+    moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] += bonus - moveHistory[board.side_to_move()][bestMove.from_square()][bestMove.to_square()] * abs(bonus) / maxHistoryVal;
 
     // update countermoves
     if (board.prevMoveType(ply) != libchess::Move::Type::NONE) {

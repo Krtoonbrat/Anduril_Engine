@@ -40,20 +40,20 @@ extern int priorFailLowSub;
 extern int priorFailLowMin;
 extern int priorFailLowMax;
 
-extern int largerBonusMult;
-extern int largerBonusSub;
-extern int largerBonusMin;
-extern int largerBonusMax;
+extern int bestButterflyMult;
+extern int bestButterflySub;
+extern int bestButterflyMin;
+extern int bestButterflyMax;
 
 extern int capHistoryBonusMult;
 extern int capHistoryBonusSub;
 extern int capHistoryBonusMin;
 extern int capHistoryBonusMax;
 
-extern int quietBestMult;
-extern int quietBestSub;
-extern int quietBestMin;
-extern int quietBestMax;
+extern int bestContinuationMult;
+extern int bestContinuationSub;
+extern int bestContinuationMin;
+extern int bestContinuationMax;
 
 extern int prevEarlyQuietMult;
 extern int prevEarlyQuietSub;
@@ -70,15 +70,15 @@ extern int lmrFailLowSub;
 extern int lmrFailLowMin;
 extern int lmrFailLowMax;
 
-extern int nonBestQuietMult;
-extern int nonBestQuietSub;
-extern int nonBestQuietMin;
-extern int nonBestQuietMax;
+extern int nonBestContinuationMult;
+extern int nonBestContinuationSub;
+extern int nonBestContinuationMin;
+extern int nonBestContinuationMax;
 
-extern int nonBestQuietLargerMult;
-extern int nonBestQuietLargerSub;
-extern int nonBestQuietLargerMin;
-extern int nonBestQuietLargerMax;
+extern int nonBestButterflyMult;
+extern int nonBestButterflySub;
+extern int nonBestButterflyMin;
+extern int nonBestButterflyMax;
 
 extern int earlyNonTranspoKillerMult;
 extern int earlyNonTranspoKillerSub;
@@ -212,20 +212,20 @@ namespace UCI {
                 std::cout << "option name priorFailLowMin type string default " << priorFailLowMin << std::endl;
                 std::cout << "option name priorFailLowMax type string default " << priorFailLowMax << std::endl;
 
-                std::cout << "option name largerBonusMult type string default " << largerBonusMult << std::endl;
-                std::cout << "option name largerBonusSub type string default " << largerBonusSub << std::endl;
-                std::cout << "option name largerBonusMin type string default " << largerBonusMin << std::endl;
-                std::cout << "option name largerBonusMax type string default " << largerBonusMax << std::endl;
+                std::cout << "option name bestButterflyMult type string default " << bestButterflyMult << std::endl;
+                std::cout << "option name bestButterflySub type string default " << bestButterflySub << std::endl;
+                std::cout << "option name bestButterflyMin type string default " << bestButterflyMin << std::endl;
+                std::cout << "option name bestButterflyMax type string default " << bestButterflyMax << std::endl;
 
                 std::cout << "option name capHistoryBonusMult type string default " << capHistoryBonusMult << std::endl;
                 std::cout << "option name capHistoryBonusSub type string default " << capHistoryBonusSub << std::endl;
                 std::cout << "option name capHistoryBonusMin type string default " << capHistoryBonusMin << std::endl;
                 std::cout << "option name capHistoryBonusMax type string default " << capHistoryBonusMax << std::endl;
 
-                std::cout << "option name quietBestMult type string default " << quietBestMult << std::endl;
-                std::cout << "option name quietBestSub type string default " << quietBestSub << std::endl;
-                std::cout << "option name quietBestMin type string default " << quietBestMin << std::endl;
-                std::cout << "option name quietBestMax type string default " << quietBestMax << std::endl;
+                std::cout << "option name bestContinuationMult type string default " << bestContinuationMult << std::endl;
+                std::cout << "option name bestContinuationSub type string default " << bestContinuationSub << std::endl;
+                std::cout << "option name bestContinuationMin type string default " << bestContinuationMin << std::endl;
+                std::cout << "option name bestContinuationMax type string default " << bestContinuationMax << std::endl;
 
                 std::cout << "option name prevEarlyQuietMult type string default " << prevEarlyQuietMult << std::endl;
                 std::cout << "option name prevEarlyQuietSub type string default " << prevEarlyQuietSub << std::endl;
@@ -242,15 +242,15 @@ namespace UCI {
                 std::cout << "option name lmrFailLowMin type string default " << lmrFailLowMin << std::endl;
                 std::cout << "option name lmrFailLowMax type string default " << lmrFailLowMax << std::endl;
 
-                std::cout << "option name nonBestQuietMult type string default " << nonBestQuietMult << std::endl;
-                std::cout << "option name nonBestQuietSub type string default " << nonBestQuietSub << std::endl;
-                std::cout << "option name nonBestQuietMin type string default " << nonBestQuietMin << std::endl;
-                std::cout << "option name nonBestQuietMax type string default " << nonBestQuietMax << std::endl;
+                std::cout << "option name nonBestContinuationMult type string default " << nonBestContinuationMult << std::endl;
+                std::cout << "option name nonBestContinuationSub type string default " << nonBestContinuationSub << std::endl;
+                std::cout << "option name nonBestContinuationMin type string default " << nonBestContinuationMin << std::endl;
+                std::cout << "option name nonBestContinuationMax type string default " << nonBestContinuationMax << std::endl;
 
-                std::cout << "option name nonBestQuietLargerMult type string default " << nonBestQuietLargerMult << std::endl;
-                std::cout << "option name nonBestQuietLargerSub type string default " << nonBestQuietLargerSub << std::endl;
-                std::cout << "option name nonBestQuietLargerMin type string default " << nonBestQuietLargerMin << std::endl;
-                std::cout << "option name nonBestQuietLargerMax type string default " << nonBestQuietLargerMax << std::endl;
+                std::cout << "option name nonBestButterflyMult type string default " << nonBestButterflyMult << std::endl;
+                std::cout << "option name nonBestButterflySub type string default " << nonBestButterflySub << std::endl;
+                std::cout << "option name nonBestButterflyMin type string default " << nonBestButterflyMin << std::endl;
+                std::cout << "option name nonBestButterflyMax type string default " << nonBestButterflyMax << std::endl;
 
                 std::cout << "option name earlyNonTranspoKillerMult type string default " << earlyNonTranspoKillerMult << std::endl;
                 std::cout << "option name earlyNonTranspoKillerSub type string default " << earlyNonTranspoKillerSub << std::endl;
@@ -425,24 +425,24 @@ namespace UCI {
             stream >> priorFailLowMax;
         }
 
-        // set largerBonusMult
-        else if (token == "largerBonusMult") {
-            stream >> largerBonusMult;
+        // set bestButterflyMult
+        else if (token == "bestButterflyMult") {
+            stream >> bestButterflyMult;
         }
 
-        // set largerBonusSub
-        else if (token == "largerBonusSub") {
-            stream >> largerBonusSub;
+        // set bestButterflySub
+        else if (token == "bestButterflySub") {
+            stream >> bestButterflySub;
         }
 
-        // set largerBonusMin
-        else if (token == "largerBonusMin") {
-            stream >> largerBonusMin;
+        // set bestButterflyMin
+        else if (token == "bestButterflyMin") {
+            stream >> bestButterflyMin;
         }
 
-        // set largerBonusMax
-        else if (token == "largerBonusMax") {
-            stream >> largerBonusMax;
+        // set bestButterflyMax
+        else if (token == "bestButterflyMax") {
+            stream >> bestButterflyMax;
         }
 
         // set capHistoryBonusMult
@@ -465,24 +465,24 @@ namespace UCI {
             stream >> capHistoryBonusMax;
         }
 
-        // set quietBestMult
-        else if (token == "quietBestMult") {
-            stream >> quietBestMult;
+        // set bestContinuationMult
+        else if (token == "bestContinuationMult") {
+            stream >> bestContinuationMult;
         }
 
-        // set quietBestSub
-        else if (token == "quietBestSub") {
-            stream >> quietBestSub;
+        // set bestContinuationSub
+        else if (token == "bestContinuationSub") {
+            stream >> bestContinuationSub;
         }
 
-        // set quietBestMin
-        else if (token == "quietBestMin") {
-            stream >> quietBestMin;
+        // set bestContinuationMin
+        else if (token == "bestContinuationMin") {
+            stream >> bestContinuationMin;
         }
 
-        // set quietBestMax
-        else if (token == "quietBestMax") {
-            stream >> quietBestMax;
+        // set bestContinuationMax
+        else if (token == "bestContinuationMax") {
+            stream >> bestContinuationMax;
         }
 
         // set failHighTranspoMax
@@ -550,24 +550,24 @@ namespace UCI {
             stream >> lmrFailLowMax;
         }
 
-        // set nonBestQuietMult
-        else if (token == "nonBestQuietMult") {
-            stream >> nonBestQuietMult;
+        // set nonBestContinuationMult
+        else if (token == "nonBestContinuationMult") {
+            stream >> nonBestContinuationMult;
         }
 
-        // set nonBestQuietSub
-        else if (token == "nonBestQuietSub") {
-            stream >> nonBestQuietSub;
+        // set nonBestContinuationSub
+        else if (token == "nonBestContinuationSub") {
+            stream >> nonBestContinuationSub;
         }
 
-        // set nonBestQuietMin
-        else if (token == "nonBestQuietMin") {
-            stream >> nonBestQuietMin;
+        // set nonBestContinuationMin
+        else if (token == "nonBestContinuationMin") {
+            stream >> nonBestContinuationMin;
         }
 
-        // set nonBestQuietMax
-        else if (token == "nonBestQuietMax") {
-            stream >> nonBestQuietMax;
+        // set nonBestContinuationMax
+        else if (token == "nonBestContinuationMax") {
+            stream >> nonBestContinuationMax;
         }
 
         // set earlyNonTranspoKillerMult

@@ -36,18 +36,18 @@ public:
             };
 
     // types of stat bonus and penalties
-    enum StatType : int
+    enum StatType
             { FAIL_HIGH_TRANSPO,
               LMR_BETA_CUT,
               PRIOR_FAIL_LOW,
-              LARGER_BONUS,
               CAP_HISTORY_BONUS,
-              QUIET_BEST,
+              BEST_CONTINUATION,
+              BEST_BUTTERFLY,
               PREV_EARLY_QUIET,
               NON_FAIL_HIGH_TRANSPO,
               LMR_FAIL_LOW,
-              NON_BEST_QUIET,
-              NON_BEST_QUIET_LARGER,
+              NON_BEST_CONTINUATION,
+              NON_BEST_BUTTERFLY,
               EARLY_NON_TRANSPO_KILLER,
               NON_BEST_CAPTURE,
             };
@@ -207,7 +207,7 @@ private:
                           libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched,
                           int captureCount);
 
-    void updateQuietStats(libchess::Position &board, libchess::Move bestMove, int bonus);
+    void updateQuietStats(libchess::Position &board, libchess::Move bestMove, int depth);
 
     // updates the continuation history
     void updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, int start = 0);
