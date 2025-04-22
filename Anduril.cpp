@@ -25,70 +25,71 @@ int maxContinuationVal = 31035;
 int maxCaptureVal = 7321;
 
 // stat bonus values
-int failHighTranspoMult = 400;
-int failHighTranspoSub = 146;
-int failHighTranspoMin = 198;
-int failHighTranspoMax = 7009;
+int failHighTranspoMult = 407;
+int failHighTranspoSub = 133;
+int failHighTranspoMin = 181;
+int failHighTranspoMax = 6969;
 
-int lmrBetaCutMult = 440;
-int lmrBetaCutSub = 137;
-int lmrBetaCutMin = 175;
-int lmrBetaCutMax = 7038;
+int lmrBetaCutMult = 407;
+int lmrBetaCutSub = 133;
+int lmrBetaCutMin = 181;
+int lmrBetaCutMax = 6969;
 
-int priorFailLowMult = 413;
-int priorFailLowSub = 136;
-int priorFailLowMin = 202;
-int priorFailLowMax = 7007;
+int priorFailLowMult = 407;
+int priorFailLowSub = 133;
+int priorFailLowMin = 181;
+int priorFailLowMax = 6969;
 
-int largerBonusMult = 402;
-int largerBonusSub = 131;
-int largerBonusMin = 176;
-int largerBonusMax = 6930;
+int largerBonusMult = 407;
+int largerBonusSub = 133;
+int largerBonusMin = 181;
+int largerBonusMax = 6969;
 
-int capHistoryBonusMult = 393;
-int capHistoryBonusSub = 141;
-int capHistoryBonusMin = 195;
-int capHistoryBonusMax = 7000;
+int capHistoryBonusMult = 407;
+int capHistoryBonusSub = 133;
+int capHistoryBonusMin = 181;
+int capHistoryBonusMax = 6969;
 
-int quietBestMult = 405;
-int quietBestSub = 159;
-int quietBestMin = 171;
-int quietBestMax = 7021;
+int quietBestMult = 407;
+int quietBestSub = 133;
+int quietBestMin = 181;
+int quietBestMax = 6969;
 
-int prevEarlyQuietMult = -314;
-int prevEarlyQuietSub = -139;
-int prevEarlyQuietMin = -194;
-int prevEarlyQuietMax = -6912;
+// stat penalty values
+int prevEarlyQuietMult = -317;
+int prevEarlyQuietSub = -137;
+int prevEarlyQuietMin = -204;
+int prevEarlyQuietMax = -6922;
 
-int nonFailHighTranspoMult = -316;
-int nonFailHighTranspoSub = -150;
-int nonFailHighTranspoMin = -202;
-int nonFailHighTranspoMax = -6908;
+int nonFailHighTranspoMult = -317;
+int nonFailHighTranspoSub = -137;
+int nonFailHighTranspoMin = -204;
+int nonFailHighTranspoMax = -6922;
 
-int lmrFailLowMult = -301;
-int lmrFailLowSub = -130;
-int lmrFailLowMin = -207;
-int lmrFailLowMax = -6920;
+int lmrFailLowMult = -317;
+int lmrFailLowSub = -137;
+int lmrFailLowMin = -204;
+int lmrFailLowMax = -6922;
 
-int nonBestQuietMult = -320;
-int nonBestQuietSub = -140;
-int nonBestQuietMin = -206;
-int nonBestQuietMax = -6876;
+int nonBestQuietMult = -317;
+int nonBestQuietSub = -137;
+int nonBestQuietMin = -204;
+int nonBestQuietMax = -6922;
 
-int nonBestQuietLargerMult = -315;
-int nonBestQuietLargerSub = -143;
-int nonBestQuietLargerMin = -199;
-int nonBestQuietLargerMax = -6912;
+int nonBestQuietLargerMult = -317;
+int nonBestQuietLargerSub = -137;
+int nonBestQuietLargerMin = -204;
+int nonBestQuietLargerMax = -6922;
 
-int earlyNonTranspoKillerMult = -312;
-int earlyNonTranspoKillerSub = -140;
-int earlyNonTranspoKillerMin = -203;
-int earlyNonTranspoKillerMax = -6930;
+int earlyNonTranspoKillerMult = -317;
+int earlyNonTranspoKillerSub = -137;
+int earlyNonTranspoKillerMin = -204;
+int earlyNonTranspoKillerMax = -6922;
 
-int nonBestCaptureMult = -318;
-int nonBestCaptureSub = -138;
-int nonBestCaptureMin = -207;
-int nonBestCaptureMax = -6926;
+int nonBestCaptureMult = -317;
+int nonBestCaptureSub = -137;
+int nonBestCaptureMin = -204;
+int nonBestCaptureMax = -6922;
 
 
 // our thread pool
