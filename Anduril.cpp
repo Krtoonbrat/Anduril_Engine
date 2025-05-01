@@ -1203,25 +1203,25 @@ int Anduril::nonPawnMaterial(bool whiteToPlay, libchess::Position &board) {
 // updates all history statistics
 void Anduril::updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
                                libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched, int captureCount) {
-    int bonus;
     int nonBestPenalty;
+    int bonusDepth = bestScore > beta + 53 ? depth + 1 : depth;
 
     if (!board.is_capture_move(bestMove)) {
         // update stats for best quiet
-        updateQuietStats(board, bestMove, depth);
+        updateQuietStats(board, bestMove, bonusDepth);
 
         // decrease stats for non-best quiets
         for (int i = 0; i < quietCount; i++) {
-            nonBestPenalty = stat_score<NON_BEST_CONTINUATION>(depth);
+            nonBestPenalty = stat_score<NON_BEST_CONTINUATION>(bonusDepth);
             updateContinuationHistory(board, *board.piece_on(quietsSearched[i].from_square()), quietsSearched[i].to_square(), nonBestPenalty);
 
-            nonBestPenalty = stat_score<NON_BEST_BUTTERFLY>(depth);
+            nonBestPenalty = stat_score<NON_BEST_BUTTERFLY>(bonusDepth);
             moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] += nonBestPenalty - moveHistory[board.side_to_move()][quietsSearched[i].from_square()][quietsSearched[i].to_square()] * abs(nonBestPenalty) / maxHistoryVal;
         }
     }
     else {
         // update stats for best capture
-        bonus = stat_score<CAP_HISTORY_BONUS>(depth);
+        int bonus = stat_score<CAP_HISTORY_BONUS>(depth);
         int capturedIndex = board.piece_type_on(bestMove.to_square()) ? board.piece_type_on(bestMove.to_square())->value() : 0; // condition for enpassant
         captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] += bonus - captureHistory[board.piece_on(bestMove.from_square())->to_nnue()][bestMove.to_square()][capturedIndex] * abs(bonus) / maxCaptureVal;
     }
