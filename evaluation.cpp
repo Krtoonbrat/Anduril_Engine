@@ -239,19 +239,19 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     int scoreEG = 0;
 
     // get the material score for the board
-    //scoreMG += board.getPSQTMG();
-    //scoreEG += board.getPSQTEG();
+    scoreMG += board.getPSQTMG();
+    scoreEG += board.getPSQTEG();
 
     // first check for a transposition
     uint64_t phash = board.pawn_hash();
     PawnEntry *node = pTable[phash];
-    if (node->key == hash) {
+    if (node->key == phash) {
         scoreMG += node->score.first;
         scoreEG += node->score.second;
     }
     else {
         // reset the node
-        node->key = hash;
+        node->key = phash;
 
         // get the pawn score for the board
         std::pair<int16_t, int16_t> wp = getPawnScore<true>(board);

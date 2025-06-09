@@ -362,6 +362,9 @@ inline void Position::make_move(Move move) {
     next_state.previous_move_ = move;
     next_state.enpassant_square_ = {};
 
+    next_state.scoreMG = prev_state.scoreMG;
+    next_state.scoreEG = prev_state.scoreEG;
+
     Square from_square = move.from_square();
     Square to_square = move.to_square();
 
@@ -461,6 +464,12 @@ inline void Position::make_move(Move move) {
             if (*moving_pt == constants::PAWN) {
                 phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             }
+
+            next_state.scoreMG -= stm ? -pieceSquareTableMG[moving_pt->value()][from_square.flipped()] : pieceSquareTableMG[moving_pt->value()][from_square];
+            next_state.scoreEG -= stm ? -pieceSquareTableEG[moving_pt->value()][from_square.flipped()] : pieceSquareTableEG[moving_pt->value()][from_square];
+
+            next_state.scoreMG += stm ? -pieceSquareTableMG[moving_pt->value()][to_square.flipped()] : pieceSquareTableMG[moving_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceSquareTableEG[moving_pt->value()][to_square.flipped()] : pieceSquareTableEG[moving_pt->value()][to_square];
             break;
         case Move::Type::CAPTURE:
             remove_piece(to_square, *captured_pt, !stm);
@@ -469,11 +478,21 @@ inline void Position::make_move(Move move) {
                 phash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
             }
 
+            next_state.scoreMG -= !stm ? -pieceValuesMG[captured_pt->value()] + -pieceSquareTableMG[captured_pt->value()][to_square.flipped()] : pieceValuesMG[captured_pt->value()] + pieceSquareTableMG[captured_pt->value()][to_square];
+            next_state.scoreEG -= !stm ? -pieceValuesEG[captured_pt->value()] + -pieceSquareTableEG[captured_pt->value()][to_square.flipped()] : pieceValuesEG[captured_pt->value()] + pieceSquareTableEG[captured_pt->value()][to_square];
+
             move_piece(from_square, to_square, *moving_pt, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             if (*moving_pt == constants::PAWN) {
                 phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             }
+
+            next_state.scoreMG -= stm ? -pieceSquareTableMG[moving_pt->value()][from_square.flipped()] : pieceSquareTableMG[moving_pt->value()][from_square];
+            next_state.scoreEG -= stm ? -pieceSquareTableEG[moving_pt->value()][from_square.flipped()] : pieceSquareTableEG[moving_pt->value()][from_square];
+
+            next_state.scoreMG += stm ? -pieceSquareTableMG[moving_pt->value()][to_square.flipped()] : pieceSquareTableMG[moving_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceSquareTableEG[moving_pt->value()][to_square.flipped()] : pieceSquareTableEG[moving_pt->value()][to_square];
+
             break;
         case Move::Type::DOUBLE_PUSH:
             move_piece(from_square, to_square, constants::PAWN, stm);
@@ -487,35 +506,87 @@ inline void Position::make_move(Move move) {
                 next_state.enpassant_square_ = possiblePassant;
                 hash ^= zobrist::enpassant_key(*next_state.enpassant_square_);
             }
+
+            next_state.scoreMG -= stm ? -pieceSquareTableMG[moving_pt->value()][from_square.flipped()] : pieceSquareTableMG[moving_pt->value()][from_square];
+            next_state.scoreEG -= stm ? -pieceSquareTableEG[moving_pt->value()][from_square.flipped()] : pieceSquareTableEG[moving_pt->value()][from_square];
+
+            next_state.scoreMG += stm ? -pieceSquareTableMG[moving_pt->value()][to_square.flipped()] : pieceSquareTableMG[moving_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceSquareTableEG[moving_pt->value()][to_square.flipped()] : pieceSquareTableEG[moving_pt->value()][to_square];
+
             break;
         case Move::Type::ENPASSANT:
             move_piece(from_square, to_square, constants::PAWN, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
             phash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
 
+            next_state.scoreMG -= stm ? -pieceSquareTableMG[moving_pt->value()][from_square.flipped()] : pieceSquareTableMG[moving_pt->value()][from_square];
+            next_state.scoreEG -= stm ? -pieceSquareTableEG[moving_pt->value()][from_square.flipped()] : pieceSquareTableEG[moving_pt->value()][from_square];
+
+            next_state.scoreMG += stm ? -pieceSquareTableMG[moving_pt->value()][to_square.flipped()] : pieceSquareTableMG[moving_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceSquareTableEG[moving_pt->value()][to_square.flipped()] : pieceSquareTableEG[moving_pt->value()][to_square];
+
             remove_piece(epCapSquare,constants::PAWN,!stm);
             hash ^= zobrist::piece_square_key(epCapSquare, constants::PAWN, !stm);
             phash ^= zobrist::piece_square_key(epCapSquare, constants::PAWN, !stm);
+
+            next_state.scoreMG -= !stm ? -pieceValuesMG[constants::PAWN] + -pieceSquareTableMG[constants::PAWN][epCapSquare.flipped()] : pieceValuesMG[constants::PAWN] + pieceSquareTableMG[constants::PAWN][epCapSquare];
+            next_state.scoreEG -= !stm ? -pieceValuesEG[constants::PAWN] + -pieceSquareTableEG[constants::PAWN][epCapSquare.flipped()] : pieceValuesEG[constants::PAWN] + pieceSquareTableEG[constants::PAWN][epCapSquare];
+
             break;
         case Move::Type::CASTLING:
             move_piece(from_square, to_square, constants::KING, stm);
             hash ^= zobrist::piece_square_key(from_square, *moving_pt, stm) ^ zobrist::piece_square_key(to_square, *moving_pt, stm);
+
+            next_state.scoreMG -= stm ? -pieceSquareTableMG[moving_pt->value()][from_square.flipped()] : pieceSquareTableMG[moving_pt->value()][from_square];
+            next_state.scoreEG -= stm ? -pieceSquareTableEG[moving_pt->value()][from_square.flipped()] : pieceSquareTableEG[moving_pt->value()][from_square];
+
+            next_state.scoreMG += stm ? -pieceSquareTableMG[moving_pt->value()][to_square.flipped()] : pieceSquareTableMG[moving_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceSquareTableEG[moving_pt->value()][to_square.flipped()] : pieceSquareTableEG[moving_pt->value()][to_square];
+
             switch (to_square) {
                 case constants::C1:
                     move_piece(constants::A1, constants::D1, constants::ROOK, stm);
                     hash ^= zobrist::piece_square_key(constants::A1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D1, constants::ROOK, stm);
+
+                    next_state.scoreMG -= stm ? -pieceSquareTableMG[constants::ROOK][constants::A1.flipped()] : pieceSquareTableMG[constants::ROOK][constants::A1];
+                    next_state.scoreEG -= stm ? -pieceSquareTableEG[constants::ROOK][constants::A1.flipped()] : pieceSquareTableEG[constants::ROOK][constants::A1];
+
+                    next_state.scoreMG += stm ? -pieceSquareTableMG[constants::ROOK][constants::D1.flipped()] : pieceSquareTableMG[constants::ROOK][constants::D1];
+                    next_state.scoreEG += stm ? -pieceSquareTableEG[constants::ROOK][constants::D1.flipped()] : pieceSquareTableEG[constants::ROOK][constants::D1];
+
                     break;
                 case constants::G1:
                     move_piece(constants::H1, constants::F1, constants::ROOK, stm);
                     hash ^= zobrist::piece_square_key(constants::H1, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F1, constants::ROOK, stm);
+
+                    next_state.scoreMG -= stm ? -pieceSquareTableMG[constants::ROOK][constants::H1.flipped()] : pieceSquareTableMG[constants::ROOK][constants::H1];
+                    next_state.scoreEG -= stm ? -pieceSquareTableEG[constants::ROOK][constants::H1.flipped()] : pieceSquareTableEG[constants::ROOK][constants::H1];
+
+                    next_state.scoreMG += stm ? -pieceSquareTableMG[constants::ROOK][constants::F1.flipped()] : pieceSquareTableMG[constants::ROOK][constants::F1];
+                    next_state.scoreEG += stm ? -pieceSquareTableEG[constants::ROOK][constants::F1.flipped()] : pieceSquareTableEG[constants::ROOK][constants::F1];
+
                     break;
                 case constants::C8:
                     move_piece(constants::A8, constants::D8, constants::ROOK, stm);
                     hash ^= zobrist::piece_square_key(constants::A8, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::D8, constants::ROOK, stm);
+
+                    next_state.scoreMG -= stm ? -pieceSquareTableMG[constants::ROOK][constants::A8.flipped()] : pieceSquareTableMG[constants::ROOK][constants::A8];
+                    next_state.scoreEG -= stm ? -pieceSquareTableEG[constants::ROOK][constants::A8.flipped()] : pieceSquareTableEG[constants::ROOK][constants::A8];
+
+                    next_state.scoreMG += stm ? -pieceSquareTableMG[constants::ROOK][constants::D8.flipped()] : pieceSquareTableMG[constants::ROOK][constants::D8];
+                    next_state.scoreEG += stm ? -pieceSquareTableEG[constants::ROOK][constants::D8.flipped()] : pieceSquareTableEG[constants::ROOK][constants::D8];
+
                     break;
                 case constants::G8:
                     move_piece(constants::H8, constants::F8, constants::ROOK, stm);
                     hash ^= zobrist::piece_square_key(constants::H8, constants::ROOK, stm) ^ zobrist::piece_square_key(constants::F8, constants::ROOK, stm);
+
+                    next_state.scoreMG -= stm ? -pieceSquareTableMG[constants::ROOK][constants::H8.flipped()] : pieceSquareTableMG[constants::ROOK][constants::H8];
+                    next_state.scoreEG -= stm ? -pieceSquareTableEG[constants::ROOK][constants::H8.flipped()] : pieceSquareTableEG[constants::ROOK][constants::H8];
+
+                    next_state.scoreMG += stm ? -pieceSquareTableMG[constants::ROOK][constants::F8.flipped()] : pieceSquareTableMG[constants::ROOK][constants::F8];
+                    next_state.scoreEG += stm ? -pieceSquareTableEG[constants::ROOK][constants::F8.flipped()] : pieceSquareTableEG[constants::ROOK][constants::F8];
+
                     break;
                 default:
                     break;
@@ -526,8 +597,15 @@ inline void Position::make_move(Move move) {
             hash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
             phash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
 
+            next_state.scoreMG -= stm ? -pieceValuesMG[constants::PAWN] + -pieceSquareTableMG[constants::PAWN][from_square.flipped()] : pieceValuesMG[constants::PAWN] + pieceSquareTableMG[constants::PAWN][from_square];
+            next_state.scoreEG -= stm ? -pieceValuesEG[constants::PAWN] + -pieceSquareTableEG[constants::PAWN][from_square.flipped()] : pieceValuesEG[constants::PAWN] + pieceSquareTableEG[constants::PAWN][from_square];
+
             put_piece(to_square, *promotion_pt, stm);
             hash ^= zobrist::piece_square_key(to_square, *promotion_pt, stm);
+
+            next_state.scoreMG += stm ? -pieceValuesMG[promotion_pt->value()] + -pieceSquareTableMG[promotion_pt->value()][to_square.flipped()] : pieceValuesMG[promotion_pt->value()] + pieceSquareTableMG[promotion_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceValuesEG[promotion_pt->value()] + -pieceSquareTableEG[promotion_pt->value()][to_square.flipped()] : pieceValuesEG[promotion_pt->value()] + pieceSquareTableEG[promotion_pt->value()][to_square];
+
             break;
         case Move::Type::CAPTURE_PROMOTION:
             remove_piece(to_square, *captured_pt, !stm);
@@ -536,12 +614,22 @@ inline void Position::make_move(Move move) {
                 phash ^= zobrist::piece_square_key(to_square, *captured_pt, !stm);
             }
 
+            next_state.scoreMG -= !stm ? -pieceValuesMG[captured_pt->value()] + -pieceSquareTableMG[captured_pt->value()][to_square.flipped()] : pieceValuesMG[captured_pt->value()] + pieceSquareTableMG[captured_pt->value()][to_square];
+            next_state.scoreEG -= !stm ? -pieceValuesEG[captured_pt->value()] + -pieceSquareTableEG[captured_pt->value()][to_square.flipped()] : pieceValuesEG[captured_pt->value()] + pieceSquareTableEG[captured_pt->value()][to_square];
+
             remove_piece(from_square, constants::PAWN, stm);
             hash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
             phash ^= zobrist::piece_square_key(from_square, constants::PAWN, stm);
 
+            next_state.scoreMG -= stm ? -pieceValuesMG[constants::PAWN] + -pieceSquareTableMG[constants::PAWN][from_square.flipped()] : pieceValuesMG[constants::PAWN] + pieceSquareTableMG[constants::PAWN][from_square];
+            next_state.scoreEG -= stm ? -pieceValuesEG[constants::PAWN] + -pieceSquareTableEG[constants::PAWN][from_square.flipped()] : pieceValuesEG[constants::PAWN] + pieceSquareTableEG[constants::PAWN][from_square];
+
             put_piece(to_square, *promotion_pt, stm);
             hash ^= zobrist::piece_square_key(to_square, *promotion_pt, stm);
+
+            next_state.scoreMG += stm ? -pieceValuesMG[promotion_pt->value()] + -pieceSquareTableMG[promotion_pt->value()][to_square.flipped()] : pieceValuesMG[promotion_pt->value()] + pieceSquareTableMG[promotion_pt->value()][to_square];
+            next_state.scoreEG += stm ? -pieceValuesEG[promotion_pt->value()] + -pieceSquareTableEG[promotion_pt->value()][to_square.flipped()] : pieceValuesEG[promotion_pt->value()] + pieceSquareTableEG[promotion_pt->value()][to_square];
+
             break;
         case Move::Type::NONE:
             break;
@@ -588,6 +676,8 @@ inline void Position::make_null_move() {
     next.castling_rights_ = prev.castling_rights_;
     next.captured_pt_ = {};
     next.move_type_ = Move::Type::NONE;
+    next.scoreMG = prev.scoreMG;
+    next.scoreEG = prev.scoreEG;
 
     // editied by Krtoonbrat
     // We should be able to incrementally update the hash for null moves.  The only things that change are the turn
