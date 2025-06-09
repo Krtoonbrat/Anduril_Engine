@@ -1054,6 +1054,7 @@ void Anduril::bench(libchess::Position &board) {
     // start the timer and search
     // using PV instead of root will silence any console activity that would have occurred.
     // In return, this is slightly inaccurate to the "real thing", but realistically it should be close enough to not matter
+    // TODO: return this value to 25 before merging to main!
     startTime = std::chrono::steady_clock::now();
     negamax<PV>(board, 15, -32001, 32001, false);
 
