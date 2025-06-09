@@ -113,7 +113,7 @@ int rookPawnBonus[9] = { 15,  12,  9,  6,  3,  0, -3, -6, -9 };
 int passedBonusMG[7] = {0, 1, 4, 6, 18, 46, 78};
 int passedBonusEG[7] = {0, 10, 10, 14, 22, 51, 74};
 
-constexpr bool use_nnue = true;
+constexpr bool use_nnue = false;
 
 int nnue(libchess::Position &board) {
     int piece[33], square[33], index = 0;
@@ -167,7 +167,7 @@ int Anduril::evaluateBoard(libchess::Position &board) {
 
         return finalScore;
     }
-/*
+
     // first check for transpositions
     uint64_t hash = board.hash();
     SimpleNode *eNode = evalTable[hash];
@@ -371,7 +371,6 @@ int Anduril::evaluateBoard(libchess::Position &board) {
     finalScore = std::clamp(finalScore, -31507, 31507);
 
     return finalScore;
-    */
 }
 
 // calculates all mobility scores and tropism

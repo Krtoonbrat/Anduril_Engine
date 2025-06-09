@@ -1055,7 +1055,7 @@ void Anduril::bench(libchess::Position &board) {
     // using PV instead of root will silence any console activity that would have occurred.
     // In return, this is slightly inaccurate to the "real thing", but realistically it should be close enough to not matter
     startTime = std::chrono::steady_clock::now();
-    negamax<PV>(board, 25, -32001, 32001, false);
+    negamax<PV>(board, 15, -32001, 32001, false);
 
     // stop the timer and report the nodes searched and speed
     stopTime = std::chrono::steady_clock::now();
