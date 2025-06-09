@@ -23,7 +23,7 @@ namespace libchess {
 
     // piece square tables
     // values from Rofchade: http://www.talkchess.com/forum3/viewtopic.php?f=2&t=68311&start=19
-    static constexpr int pieceSquareTableMG[6][64] = {
+    static int pieceSquareTableMG[6][64] = {
             // pawns
             {
                 0,   0,   0,   0,   0,   0,  0,   0,
@@ -97,7 +97,7 @@ namespace libchess {
             }
     };
 
-    static constexpr int pieceSquareTableEG[6][64] = {
+    static int pieceSquareTableEG[6][64] = {
             // pawns
             {
                 0,   0,   0,   0,   0,   0,   0,   0,
@@ -367,8 +367,8 @@ class Position {
     bool& ttPv(int ply) { return state_mut_ref(ply).ttPv; }
 
     // getters for the material score
-    int getPSQTMG() { return state().scoreMG; }
-    int getPSQTEG() { return state().scoreEG; }
+    int getPSQTMG() const { return state().scoreMG; }
+    int getPSQTEG() const { return state().scoreEG; }
 
 
     [[nodiscard]] int ply() const {
