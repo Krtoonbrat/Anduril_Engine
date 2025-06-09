@@ -25,6 +25,8 @@ extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
 
+extern bool use_nnue;
+
 namespace NNUE {
     extern char nnue_path[256];
 }
@@ -132,6 +134,8 @@ namespace UCI {
                 std::cout << "option name Syzygy50MoveRule type check default true" << std::endl;
                 std::cout << "option name SyzygyProbeLimit type spin default 7 min 0 max 7" << std::endl;
 
+                std::cout << "option name UseNNUE type check default false" << std::endl;
+
                 std::cout << "uciok" << std::endl;
 
 
@@ -191,6 +195,17 @@ namespace UCI {
             }
             else {
                 bookOpen = false;
+            }
+        }
+
+        // use NNUE or HCE
+        else if (token == "UseNNUE") {
+            stream >> token;
+            if (token == "true") {
+                use_nnue = true;
+            }
+            else {
+                use_nnue = false;
             }
         }
 
