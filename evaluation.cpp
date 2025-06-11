@@ -113,7 +113,7 @@ int rookPawnBonus[9] = { 15,  12,  9,  6,  3,  0, -3, -6, -9 };
 int passedBonusMG[7] = {0, 1, 4, 6, 18, 46, 78};
 int passedBonusEG[7] = {0, 10, 10, 14, 22, 51, 74};
 
-constexpr bool use_nnue = false;
+bool use_nnue = false;
 
 int nnue(libchess::Position &board) {
     int piece[33], square[33], index = 0;
@@ -156,7 +156,7 @@ int nnue(libchess::Position &board) {
 
 // generates a static evaluation of the board
 int Anduril::evaluateBoard(libchess::Position &board) {
-    if constexpr (use_nnue) {
+    if (use_nnue) {
         int finalScore = nnue(board);
 
         // idea from stockfish: damp down score when shuffling
