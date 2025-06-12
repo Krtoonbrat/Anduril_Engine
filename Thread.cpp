@@ -47,7 +47,7 @@ void Thread::idle() {
 
         lock.unlock();
 
-        engine->go(board);
+        engine->go(*libchess::Position::from_fen(board.fen()));
 
     }
 

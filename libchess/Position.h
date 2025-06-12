@@ -192,14 +192,8 @@ class Position {
         int scoreMG = 0;
         int scoreEG = 0;
         int halfmoves_ = 0;
-        int moveCount = 0;
-        bool found = false;
-        Move excludedMove = Move(0);
-        int staticEval = 0;
-        PieceHistory *continuationHistory;
         int pliesSinceNull = 0;
         NNUEdata nnue;
-        bool ttPv = false;
     };
 
    public:
@@ -349,22 +343,10 @@ class Position {
     // added by Krtoonbrat, based on the Stockfish implementation
     bool see_ge(Move move, int threshold);
 
-    Move getExcluded() { return state().excludedMove; }
-    void setExcluded(Move move) { state_mut_ref().excludedMove = move; }
-    int& staticEval() { return state_mut_ref().staticEval; }
-    int& moveCount() { return state_mut_ref().moveCount; }
-    int& staticEval(int ply) { return state_mut_ref(ply).staticEval; }
-    int& moveCount(int ply) { return state_mut_ref(ply).moveCount; }
-    PieceHistory*& continuationHistory() { return state_mut_ref().continuationHistory; }
-    PieceHistory*& continuationHistory(int ply) { return state_mut_ref(ply).continuationHistory; }
     Move::Type prevMoveType(int ply) { return state(ply).move_type_; }
-    bool& found() { return state_mut_ref().found; }
-    bool found(int ply) { return state(ply).found; }
     std::optional<Move> previousMove(int ply) { return state(ply).previous_move_; }
     NNUEdata& nnue() { return state_mut_ref().nnue; }
     NNUEdata& nnue(int ply) { return state_mut_ref(ply).nnue; }
-    bool& ttPv() { return state_mut_ref().ttPv; }
-    bool& ttPv(int ply) { return state_mut_ref(ply).ttPv; }
 
     // getters for the material score
     int getPSQTMG() const { return state().scoreMG; }

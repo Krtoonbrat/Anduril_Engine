@@ -490,6 +490,10 @@ void Anduril::go(libchess::Position board) {
     int prevBestScore = bestScore;
     int delta = 14;
 
+    // Allocate the search stack. Extra room is to allow access from ply - 7 (for continuation histories)
+    SearchStack stack[100 + 7] = {};
+    SearchStack *curStack = stack + 7;
+
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
     for (auto i : killers) {
@@ -502,7 +506,7 @@ void Anduril::go(libchess::Position board) {
 
     // initialize the oversize state array
     for (int i = 7; i > 0; i--) {
-        board.continuationHistory(ply - i) = &continuationHistory[0][0][15][0];
+        curStack[-i].continuationHistory = &continuationHistory[0][0][15][0];
     }
 
     // these variables are for debugging
@@ -548,7 +552,7 @@ void Anduril::go(libchess::Position board) {
         sDepth = std::clamp(sDepth < rDepth - 3 ? rDepth - 3 : sDepth, 1, 100);
 
         // search for the best score
-        bestScore = negamax<Root>(board, sDepth, alpha, beta, false);
+        bestScore = negamax<Root>(board, sDepth, alpha, beta, curStack, false);
 
         // if we didn't find a node before, try again now that we have searched
         if (!found) {

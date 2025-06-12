@@ -18,6 +18,19 @@
 #include "TranspositionTable.h"
 #include "PolyglotBook.h"
 
+// the SearchStack struct will store the
+// variables we want to keep track of by
+// ply for the search
+struct SearchStack {
+    int staticEval = 0;
+    int moveCount = 0;
+    bool found = false;
+    bool ttPv = false;
+    libchess::Move excludedMove = libchess::Move(0);
+    PieceHistory *continuationHistory = nullptr;
+};
+
+
 class Anduril {
 public:
 
@@ -43,12 +56,12 @@ public:
 
     // the negamax function.  Does the heavy lifting for the search
     template <NodeType nodeType>
-    int negamax(libchess::Position &board, int depth, int alpha, int beta, bool cutNode);
+    int negamax(libchess::Position &board, int depth, int alpha, int beta, SearchStack* curStack, bool cutNode);
 
     // the quiescence search
     // searches possible captures to make sure we aren't mis-evaluating certain positions
     template <NodeType nodeType>
-    int quiescence(libchess::Position &board, int alpha, int beta, int depth = 0);
+    int quiescence(libchess::Position &board, int alpha, int beta, SearchStack* curStack, int depth = 0);
 
     // generates a static evaluation of the board
     int evaluateBoard(libchess::Position &board);
@@ -188,12 +201,12 @@ private:
 
     void updateStatistics(libchess::Position &board, libchess::Move bestMove, int bestScore, int depth, int beta,
                           libchess::Move *quietsSearched, int quietCount, libchess::Move *capturesSearched,
-                          int captureCount);
+                          int captureCount, SearchStack* curStack);
 
-    void updateQuietStats(libchess::Position &board, libchess::Move bestMove, int bonus);
+    void updateQuietStats(libchess::Position &board, libchess::Move bestMove, int bonus, SearchStack * curStack);
 
     // updates the continuation history
-    void updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, int start = 0);
+    void updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, SearchStack *curStack, int start = 0);
 
     // gets the phase of the game for evaluation
     int getPhase(libchess::Position &board);
