@@ -156,18 +156,25 @@ namespace UCI {
 
                 std::cout << "option name UseNNUE type check default false" << std::endl;
 
+                std::cout << "option name bishopPair1 type string default " << bishopPair[0] << std::endl;
+                std::cout << "option name bishopPair2 type string default " << bishopPair[1] << std::endl;
 
                 std::cout << "option name outpost1 type string default " << outpost[0] << std::endl;
                 std::cout << "option name outpost2 type string default " << outpost[1] << std::endl;
+
                 std::cout << "option name trappedKnight1 type string default " << trappedKnight[0] << std::endl;
                 std::cout << "option name trappedKnight2 type string default " << trappedKnight[1] << std::endl;
+
                 std::cout << "option name fianchetto1 type string default " << fianchetto[0] << std::endl;
                 std::cout << "option name fianchetto2 type string default " << fianchetto[1] << std::endl;
+
                 std::cout << "option name spaceDivisor type string default " << spaceDivisor << std::endl;
+
                 std::cout << "option name BlockedPawnMG1 type string default " << BlockedPawnMG[0] << std::endl;
                 std::cout << "option name BlockedPawnMG2 type string default " << BlockedPawnMG[1] << std::endl;\
                 std::cout << "option name BlockedPawnEG1 type string default " << BlockedPawnEG[0] << std::endl;
                 std::cout << "option name BlockedPawnEG2 type string default " << BlockedPawnEG[1] << std::endl;
+
                 std::cout << "option name Connected1 type string default " << Connected[0] << std::endl;
                 std::cout << "option name Connected2 type string default " << Connected[1] << std::endl;
                 std::cout << "option name Connected3 type string default " << Connected[2] << std::endl;
@@ -175,6 +182,7 @@ namespace UCI {
                 std::cout << "option name Connected5 type string default " << Connected[4] << std::endl;
                 std::cout << "option name Connected6 type string default " << Connected[5] << std::endl;
                 std::cout << "option name Connected7 type string default " << Connected[6] << std::endl;
+
                 std::cout << "option name passedBonusMG1 type string default " << passedBonusMG[0] << std::endl;
                 std::cout << "option name passedBonusMG2 type string default " << passedBonusMG[1] << std::endl;
                 std::cout << "option name passedBonusMG3 type string default " << passedBonusMG[2] << std::endl;
@@ -189,6 +197,7 @@ namespace UCI {
                 std::cout << "option name passedBonusEG5 type string default " << passedBonusEG[4] << std::endl;
                 std::cout << "option name passedBonusEG6 type string default " << passedBonusEG[5] << std::endl;
                 std::cout << "option name passedBonusEG7 type string default " << passedBonusEG[6] << std::endl;
+
                 std::cout << "option name rookPawnBonus1 type string default " << rookPawnBonus[0] << std::endl;
                 std::cout << "option name rookPawnBonus2 type string default " << rookPawnBonus[1] << std::endl;
                 std::cout << "option name rookPawnBonus3 type string default " << rookPawnBonus[2] << std::endl;
@@ -198,6 +207,7 @@ namespace UCI {
                 std::cout << "option name rookPawnBonus7 type string default " << rookPawnBonus[6] << std::endl;
                 std::cout << "option name rookPawnBonus8 type string default " << rookPawnBonus[7] << std::endl;
                 std::cout << "option name rookPawnBonus9 type string default " << rookPawnBonus[8] << std::endl;
+
                 std::cout << "option name knightPawnBonus1 type string default " << knightPawnBonus[0] << std::endl;
                 std::cout << "option name knightPawnBonus2 type string default " << knightPawnBonus[1] << std::endl;
                 std::cout << "option name knightPawnBonus3 type string default " << knightPawnBonus[2] << std::endl;
@@ -207,16 +217,22 @@ namespace UCI {
                 std::cout << "option name knightPawnBonus7 type string default " << knightPawnBonus[6] << std::endl;
                 std::cout << "option name knightPawnBonus8 type string default " << knightPawnBonus[7] << std::endl;
                 std::cout << "option name knightPawnBonus9 type string default " << knightPawnBonus[8] << std::endl;
+
                 std::cout << "option name trappedRook1 type string default " << trappedRook[0] << std::endl;
                 std::cout << "option name trappedRook2 type string default " << trappedRook[1] << std::endl;
+
                 std::cout << "option name doubledPawn1 type string default " << doubledPawn[0] << std::endl;
                 std::cout << "option name doubledPawn2 type string default " << doubledPawn[1] << std::endl;
+
                 std::cout << "option name isolated1 type string default " << isolated[0] << std::endl;
                 std::cout << "option name isolated2 type string default " << isolated[1] << std::endl;
+
                 std::cout << "option name weakUnopposed1 type string default " << weakUnopposed[0] << std::endl;
                 std::cout << "option name weakUnopposed2 type string default " << weakUnopposed[1] << std::endl;
+
                 std::cout << "option name backwardPawn1 type string default " << backwardPawn[0] << std::endl;
                 std::cout << "option name backwardPawn2 type string default " << backwardPawn[1] << std::endl;
+
                 std::cout << "option name weakLever1 type string default " << weakLever[0] << std::endl;
                 std::cout << "option name weakLever2 type string default " << weakLever[1] << std::endl;
 
