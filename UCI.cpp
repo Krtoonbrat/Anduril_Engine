@@ -16,10 +16,10 @@
 #include "Thread.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {117, 439, 478, 659, 1455, 0};
-int libchess::Position::pieceValuesEG[6] = {149, 468, 514, 934, 1827, 0};
-int Anduril::pieceValues[16] = { 149,  468,  514,  934,  1827, 0, 0, 0,
-                                 149,  468,  514,  934,  1827, 0, 0, 0};
+int libchess::Position::pieceValuesMG[6] = {108, 445, 498, 644, 1423, 0};
+int libchess::Position::pieceValuesEG[6] = {152, 503, 523, 875, 1768, 0};
+int Anduril::pieceValues[16] = { 152,  503,  523,  875,  1768, 0, 0, 0,
+                                 152,  503,  523,  875,  1768, 0, 0, 0};
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
