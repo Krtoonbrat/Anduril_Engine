@@ -22,7 +22,7 @@ constexpr int SafetyTable[100] = {
 };
 
 // Connected pawn bonus
-constexpr int Connected[7] = { 0, 1, 3, 3, 6, 21, 34 };
+int Connected[7] = { 0, 1, 3, 3, 6, 21, 34 };
 
 // blocked pawns at 5th or 6th rank
 int BlockedPawnMG[2] = { 20, 63 };
@@ -88,13 +88,27 @@ constexpr int knightOnQueen[2] = {4, 3};
 
 constexpr int sliderOnQueen[2] = {17, 5};
 
-constexpr int outpost[2] = {19, 14};
+int outpost[2] = {19, 14};
 
-constexpr int bishopPair[2] = {10, 30};
+int bishopPair[2] = {10, 30};
 
-constexpr int spaceDivisor = 47;
+int fianchetto[2] = {10, 1};
 
-constexpr int trappedKnight[2] = {150, 150};
+int spaceDivisor = 47;
+
+int trappedKnight[2] = {150, 150};
+
+int trappedRook[2] = {15, 3};
+
+int doubledPawn[2] = {3, 15};
+
+int isolated[2] = {1, 5};
+
+int weakUnopposed[2] = {4, 5};
+
+int backwardPawn[2] = {2, 6};
+
+int weakLever[2] = {1, 17};
 
 // mask for the central squares we are looking for in space evaluations
 constexpr libchess::Bitboard centerWhite = (libchess::lookups::FILE_C_MASK | libchess::lookups::FILE_D_MASK | libchess::lookups::FILE_E_MASK | libchess::lookups::FILE_F_MASK)
@@ -511,8 +525,8 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
             // fianchetto
             if ((square == libchess::constants::G2 && board.king_square(libchess::constants::WHITE) == libchess::constants::G1)
                 || (square == libchess::constants::B2 && board.king_square(libchess::constants::WHITE) == libchess::constants::B1)) {
-                score.first  += 10;
-                score.second += 1;
+                score.first  += fianchetto[0];
+                score.second += fianchetto[1];
             }
 
             evaluateBishops<true>(board, square);
@@ -521,8 +535,8 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
             // fianchetto
             if ((square == libchess::constants::G7 && board.king_square(libchess::constants::BLACK) == libchess::constants::G8)
                 || (square == libchess::constants::B7 && board.king_square(libchess::constants::BLACK) == libchess::constants::B8)) {
-                score.first  -= 10;
-                score.second -= 1;
+                score.first  -= fianchetto[0];
+                score.second -= fianchetto[1];
             }
 
             evaluateBishops<false>(board, square);
@@ -546,38 +560,38 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
             switch (square) {
                 case libchess::constants::H1:
                     if (kingSquare == libchess::constants::E1 || kingSquare == libchess::constants::F1 || kingSquare == libchess::constants::G1) {
-                        score.first  -= 15;
-                        score.second -= 3;
+                        score.first  -= trappedRook[0];
+                        score.second -= trappedRook[1];
                     }
                     break;
                 case libchess::constants::G1:
                     if (kingSquare == libchess::constants::E1 || kingSquare == libchess::constants::F1) {
-                        score.first  -= 15;
-                        score.second -= 3;
+                        score.first  -= trappedRook[0];
+                        score.second -= trappedRook[1];
                     }
                     break;
                 case libchess::constants::F1:
                     if (kingSquare == libchess::constants::E1) {
-                        score.first  -= 15;
-                        score.second -= 3;
+                        score.first  -= trappedRook[0];
+                        score.second -= trappedRook[1];
                     }
                     break;
                 case libchess::constants::A1:
                     if (kingSquare == libchess::constants::B1 || kingSquare == libchess::constants::C1 || kingSquare == libchess::constants::D1) {
-                        score.first  -= 15;
-                        score.second -= 3;
+                        score.first  -= trappedRook[0];
+                        score.second -= trappedRook[1];
                     }
                     break;
                 case libchess::constants::B1:
                     if (kingSquare == libchess::constants::C1 || kingSquare == libchess::constants::D1) {
-                        score.first  -= 15;
-                        score.second -= 3;
+                        score.first  -= trappedRook[0];
+                        score.second -= trappedRook[1];
                     }
                     break;
                 case libchess::constants::C1:
                     if (kingSquare == libchess::constants::D1) {
-                        score.first  -= 15;
-                        score.second -= 3;
+                        score.first  -= trappedRook[0];
+                        score.second -= trappedRook[1];
                     }
                     break;
             }
@@ -594,38 +608,38 @@ std::pair<int, int> Anduril::positionalMobilityTropism(libchess::Position &board
             switch (square) {
                 case libchess::constants::H8:
                     if (kingSquare == libchess::constants::E8 || kingSquare == libchess::constants::F8 || kingSquare == libchess::constants::G8) {
-                        score.first  += 15;
-                        score.second += 3;
+                        score.first  += trappedRook[0];
+                        score.second += trappedRook[1];
                     }
                     break;
                 case libchess::constants::G8:
                     if (kingSquare == libchess::constants::E8 || kingSquare == libchess::constants::F8) {
-                        score.first  += 15;
-                        score.second += 3;
+                        score.first  += trappedRook[0];
+                        score.second += trappedRook[1];
                     }
                     break;
                 case libchess::constants::F8:
                     if (kingSquare == libchess::constants::E8) {
-                        score.first  += 15;
-                        score.second += 3;
+                        score.first  += trappedRook[0];
+                        score.second += trappedRook[1];
                     }
                     break;
                 case libchess::constants::A8:
                     if (kingSquare == libchess::constants::B8 || kingSquare == libchess::constants::C8 || kingSquare == libchess::constants::D8) {
-                        score.first  += 15;
-                        score.second += 3;
+                        score.first  += trappedRook[0];
+                        score.second += trappedRook[1];
                     }
                     break;
                 case libchess::constants::B8:
                     if (kingSquare == libchess::constants::C8 || kingSquare == libchess::constants::D8) {
-                        score.first  += 15;
-                        score.second += 3;
+                        score.first  += trappedRook[0];
+                        score.second += trappedRook[1];
                     }
                     break;
                 case libchess::constants::C8:
                     if (kingSquare == libchess::constants::D8) {
-                        score.first  += 15;
-                        score.second += 3;
+                        score.first  += trappedRook[0];
+                        score.second += trappedRook[1];
                     }
                     break;
             }
@@ -888,34 +902,34 @@ std::pair<int16_t, int16_t> Anduril::getPawnScore(libchess::Position &board) {
                 && (ourPawns & libchess::lookups::forward_file_mask(s, them))
                 && !(theirPawns & libchess::lookups::adjacent_files_mask(s))) {
                 // doubled
-                score.first -= 3;
-                score.second -= 15;
+                score.first -= doubledPawn[0];
+                score.second -= doubledPawn[1];
             }
             else {
                 // isolated
-                score.first -= 1;
-                score.second -= 5;
+                score.first -= isolated[0];
+                score.second -= isolated[1];
                 // weak unopposed
-                score.first -= 4 * !opposed;
-                score.second -= 5 * !opposed;
+                score.first -= weakUnopposed[0] * !opposed;
+                score.second -= weakUnopposed[1] * !opposed;
             }
         }
         else if (backward) {
             // backward
-            score.first -= 2;
-            score.second -= 6;
+            score.first -= backwardPawn[0];
+            score.second -= backwardPawn[1];
             // weak unopposed
-            score.first -= 4 * !opposed * bool(~(libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_H_MASK) & libchess::Bitboard(s));
-            score.second -= 5 * !opposed * bool(~(libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_H_MASK) & libchess::Bitboard(s));
+            score.first -= weakUnopposed[0] * !opposed * bool(~(libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_H_MASK) & libchess::Bitboard(s));
+            score.second -= weakUnopposed[1] * !opposed * bool(~(libchess::lookups::FILE_A_MASK | libchess::lookups::FILE_H_MASK) & libchess::Bitboard(s));
         }
 
         if (!support) {
             // doubled
-            score.first -= 3 * doubled;
-            score.second -= 15 * doubled;
+            score.first -= doubledPawn[0] * doubled;
+            score.second -= doubledPawn[1] * doubled;
             // weak lever
-            score.first -= 1 * bool(lever & (lever - 1));
-            score.second -= 17 * bool(lever & (lever - 1));
+            score.first -= weakLever[0] * bool(lever & (lever - 1));
+            score.second -= weakLever[1] * bool(lever & (lever - 1));
         }
 
         if (blocked && r >= 4) {

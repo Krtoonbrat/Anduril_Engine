@@ -27,6 +27,26 @@ extern int maxCaptureVal;
 
 extern bool use_nnue;
 
+extern int bishopPair[2];
+extern int outpost[2];
+extern int trappedKnight[2];
+extern int fianchetto[2];
+extern int spaceDivisor;
+extern int BlockedPawnMG[2];
+extern int BlockedPawnEG[2];
+extern int Connected[7];
+extern int passedBonusMG[7];
+extern int passedBonusEG[7];
+extern int rookPawnBonus[9];
+extern int knightPawnBonus[9];
+extern int trappedRook[2];
+extern int doubledPawn[2];
+extern int isolated[2];
+extern int weakUnopposed[2];
+extern int backwardPawn[2];
+extern int weakLever[2];
+
+
 namespace NNUE {
     extern char nnue_path[256];
 }
@@ -136,17 +156,69 @@ namespace UCI {
 
                 std::cout << "option name UseNNUE type check default false" << std::endl;
 
-                std::cout << "option name pawnMG type string default " << libchess::Position::pieceValuesMG[0] << std::endl;
-                std::cout << "option name knightMG type string default " << libchess::Position::pieceValuesMG[1] << std::endl;
-                std::cout << "option name bishopMG type string default " << libchess::Position::pieceValuesMG[2] << std::endl;
-                std::cout << "option name rookMG type string default " << libchess::Position::pieceValuesMG[3] << std::endl;
-                std::cout << "option name queenMG type string default " << libchess::Position::pieceValuesMG[4] << std::endl;
 
-                std::cout << "option name pawnEG type string default " << libchess::Position::pieceValuesEG[0] << std::endl;
-                std::cout << "option name knightEG type string default " << libchess::Position::pieceValuesEG[1] << std::endl;
-                std::cout << "option name bishopEG type string default " << libchess::Position::pieceValuesEG[2] << std::endl;
-                std::cout << "option name rookEG type string default " << libchess::Position::pieceValuesEG[3] << std::endl;
-                std::cout << "option name queenEG type string default " << libchess::Position::pieceValuesEG[4] << std::endl;
+                std::cout << "option name outpost1 type string default " << outpost[0] << std::endl;
+                std::cout << "option name outpost2 type string default " << outpost[1] << std::endl;
+                std::cout << "option name trappedKnight1 type string default " << trappedKnight[0] << std::endl;
+                std::cout << "option name trappedKnight2 type string default " << trappedKnight[1] << std::endl;
+                std::cout << "option name fianchetto1 type string default " << fianchetto[0] << std::endl;
+                std::cout << "option name fianchetto2 type string default " << fianchetto[1] << std::endl;
+                std::cout << "option name spaceDivisor type string default " << spaceDivisor << std::endl;
+                std::cout << "option name BlockedPawnMG1 type string default " << BlockedPawnMG[0] << std::endl;
+                std::cout << "option name BlockedPawnMG2 type string default " << BlockedPawnMG[1] << std::endl;\
+                std::cout << "option name BlockedPawnEG1 type string default " << BlockedPawnEG[0] << std::endl;
+                std::cout << "option name BlockedPawnEG2 type string default " << BlockedPawnEG[1] << std::endl;
+                std::cout << "option name Connected1 type string default " << Connected[0] << std::endl;
+                std::cout << "option name Connected2 type string default " << Connected[1] << std::endl;
+                std::cout << "option name Connected3 type string default " << Connected[2] << std::endl;
+                std::cout << "option name Connected4 type string default " << Connected[3] << std::endl;
+                std::cout << "option name Connected5 type string default " << Connected[4] << std::endl;
+                std::cout << "option name Connected6 type string default " << Connected[5] << std::endl;
+                std::cout << "option name Connected7 type string default " << Connected[6] << std::endl;
+                std::cout << "option name passedBonusMG1 type string default " << passedBonusMG[0] << std::endl;
+                std::cout << "option name passedBonusMG2 type string default " << passedBonusMG[1] << std::endl;
+                std::cout << "option name passedBonusMG3 type string default " << passedBonusMG[2] << std::endl;
+                std::cout << "option name passedBonusMG4 type string default " << passedBonusMG[3] << std::endl;
+                std::cout << "option name passedBonusMG5 type string default " << passedBonusMG[4] << std::endl;
+                std::cout << "option name passedBonusMG6 type string default " << passedBonusMG[5] << std::endl;
+                std::cout << "option name passedBonusMG7 type string default " << passedBonusMG[6] << std::endl;
+                std::cout << "option name passedBonusEG1 type string default " << passedBonusEG[0] << std::endl;
+                std::cout << "option name passedBonusEG2 type string default " << passedBonusEG[1] << std::endl;
+                std::cout << "option name passedBonusEG3 type string default " << passedBonusEG[2] << std::endl;
+                std::cout << "option name passedBonusEG4 type string default " << passedBonusEG[3] << std::endl;
+                std::cout << "option name passedBonusEG5 type string default " << passedBonusEG[4] << std::endl;
+                std::cout << "option name passedBonusEG6 type string default " << passedBonusEG[5] << std::endl;
+                std::cout << "option name passedBonusEG7 type string default " << passedBonusEG[6] << std::endl;
+                std::cout << "option name rookPawnBonus1 type string default " << rookPawnBonus[0] << std::endl;
+                std::cout << "option name rookPawnBonus2 type string default " << rookPawnBonus[1] << std::endl;
+                std::cout << "option name rookPawnBonus3 type string default " << rookPawnBonus[2] << std::endl;
+                std::cout << "option name rookPawnBonus4 type string default " << rookPawnBonus[3] << std::endl;
+                std::cout << "option name rookPawnBonus5 type string default " << rookPawnBonus[4] << std::endl;
+                std::cout << "option name rookPawnBonus6 type string default " << rookPawnBonus[5] << std::endl;
+                std::cout << "option name rookPawnBonus7 type string default " << rookPawnBonus[6] << std::endl;
+                std::cout << "option name rookPawnBonus8 type string default " << rookPawnBonus[7] << std::endl;
+                std::cout << "option name rookPawnBonus9 type string default " << rookPawnBonus[8] << std::endl;
+                std::cout << "option name knightPawnBonus1 type string default " << knightPawnBonus[0] << std::endl;
+                std::cout << "option name knightPawnBonus2 type string default " << knightPawnBonus[1] << std::endl;
+                std::cout << "option name knightPawnBonus3 type string default " << knightPawnBonus[2] << std::endl;
+                std::cout << "option name knightPawnBonus4 type string default " << knightPawnBonus[3] << std::endl;
+                std::cout << "option name knightPawnBonus5 type string default " << knightPawnBonus[4] << std::endl;
+                std::cout << "option name knightPawnBonus6 type string default " << knightPawnBonus[5] << std::endl;
+                std::cout << "option name knightPawnBonus7 type string default " << knightPawnBonus[6] << std::endl;
+                std::cout << "option name knightPawnBonus8 type string default " << knightPawnBonus[7] << std::endl;
+                std::cout << "option name knightPawnBonus9 type string default " << knightPawnBonus[8] << std::endl;
+                std::cout << "option name trappedRook1 type string default " << trappedRook[0] << std::endl;
+                std::cout << "option name trappedRook2 type string default " << trappedRook[1] << std::endl;
+                std::cout << "option name doubledPawn1 type string default " << doubledPawn[0] << std::endl;
+                std::cout << "option name doubledPawn2 type string default " << doubledPawn[1] << std::endl;
+                std::cout << "option name isolated1 type string default " << isolated[0] << std::endl;
+                std::cout << "option name isolated2 type string default " << isolated[1] << std::endl;
+                std::cout << "option name weakUnopposed1 type string default " << weakUnopposed[0] << std::endl;
+                std::cout << "option name weakUnopposed2 type string default " << weakUnopposed[1] << std::endl;
+                std::cout << "option name backwardPawn1 type string default " << backwardPawn[0] << std::endl;
+                std::cout << "option name backwardPawn2 type string default " << backwardPawn[1] << std::endl;
+                std::cout << "option name weakLever1 type string default " << weakLever[0] << std::endl;
+                std::cout << "option name weakLever2 type string default " << weakLever[1] << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -266,59 +338,198 @@ namespace UCI {
             stream >> syzygyProbeLimit;
         }
 
-        else if (token == "pawnMG") {
-            stream >> libchess::Position::pieceValuesMG[0];
-        }
 
-        else if (token == "knightMG") {
-            stream >> libchess::Position::pieceValuesMG[1];
+        else if (token == "bishopPair1") {
+            stream >> bishopPair[0];
         }
-
-        else if (token == "bishopMG") {
-            stream >> libchess::Position::pieceValuesMG[2];
+        else if (token == "bishopPair2") {
+            stream >> bishopPair[1];
         }
-
-        else if (token == "rookMG") {
-            stream >> libchess::Position::pieceValuesMG[3];
+        else if (token == "outpost1") {
+            stream >> outpost[0];
         }
-
-        else if (token == "queenMG") {
-            stream >> libchess::Position::pieceValuesMG[4];
+        else if (token == "outpost2") {
+            stream >> outpost[1];
         }
-
-        else if (token == "pawnEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[0] = val;
-            Anduril::pieceValues[0] = Anduril::pieceValues[8] = val;
+        else if (token == "trappedKnight1") {
+            stream >> trappedKnight[0];
         }
-
-        else if (token == "knightEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[1] = val;
-            Anduril::pieceValues[1] = Anduril::pieceValues[9] = val;
+        else if (token == "trappedKnight2") {
+            stream >> trappedKnight[1];
         }
-
-        else if (token == "bishopEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[2] = val;
-            Anduril::pieceValues[2] = Anduril::pieceValues[10] = val;
+        else if (token == "fianchetto1") {
+            stream >> fianchetto[0];
         }
-
-        else if (token == "rookEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[3] = val;
-            Anduril::pieceValues[3] = Anduril::pieceValues[11] = val;
+        else if (token == "fianchetto2") {
+            stream >> fianchetto[1];
         }
-
-        else if (token == "queenEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[4] = val;
-            Anduril::pieceValues[4] = Anduril::pieceValues[12] = val;
+        else if (token == "spaceDivisor") {
+            stream >> spaceDivisor;
+        }
+        else if (token == "BlockedPawnMG1") {
+            stream >> BlockedPawnMG[0];
+        }
+        else if (token == "BlockedPawnMG2") {
+            stream >> BlockedPawnMG[1];
+        }
+        else if (token == "BlockedPawnEG1") {
+            stream >> BlockedPawnEG[0];
+        }
+        else if (token == "BlockedPawnEG2") {
+            stream >> BlockedPawnEG[1];
+        }
+        else if (token == "Connected1") {
+            stream >> Connected[0];
+        }
+        else if (token == "Connected2") {
+            stream >> Connected[1];
+        }
+        else if (token == "Connected3") {
+            stream >> Connected[2];
+        }
+        else if (token == "Connected4") {
+            stream >> Connected[3];
+        }
+        else if (token == "Connected5") {
+            stream >> Connected[4];
+        }
+        else if (token == "Connected6") {
+            stream >> Connected[5];
+        }
+        else if (token == "Connected7") {
+            stream >> Connected[6];
+        }
+        else if (token == "passedBonusMG1") {
+            stream >> passedBonusMG[0];
+        }
+        else if (token == "passedBonusMG2") {
+            stream >> passedBonusMG[1];
+        }
+        else if (token == "passedBonusMG3") {
+            stream >> passedBonusMG[2];
+        }
+        else if (token == "passedBonusMG4") {
+            stream >> passedBonusMG[3];
+        }
+        else if (token == "passedBonusMG5") {
+            stream >> passedBonusMG[4];
+        }
+        else if (token == "passedBonusMG6") {
+            stream >> passedBonusMG[5];
+        }
+        else if (token == "passedBonusMG7") {
+            stream >> passedBonusMG[6];
+        }
+        else if (token == "passedBonusEG1") {
+            stream >> passedBonusEG[0];
+        }
+        else if (token == "passedBonusEG2") {
+            stream >> passedBonusEG[1];
+        }
+        else if (token == "passedBonusEG3") {
+            stream >> passedBonusEG[2];
+        }
+        else if (token == "passedBonusEG4") {
+            stream >> passedBonusEG[3];
+        }
+        else if (token == "passedBonusEG5") {
+            stream >> passedBonusEG[4];
+        }
+        else if (token == "passedBonusEG6") {
+            stream >> passedBonusEG[5];
+        }
+        else if (token == "passedBonusEG7") {
+            stream >> passedBonusEG[6];
+        }
+        else if (token == "rookPawnBonus1") {
+            stream >> rookPawnBonus[0];
+        }
+        else if (token == "rookPawnBonus2") {
+            stream >> rookPawnBonus[1];
+        }
+        else if (token == "rookPawnBonus3") {
+            stream >> rookPawnBonus[2];
+        }
+        else if (token == "rookPawnBonus4") {
+            stream >> rookPawnBonus[3];
+        }
+        else if (token == "rookPawnBonus5") {
+            stream >> rookPawnBonus[4];
+        }
+        else if (token == "rookPawnBonus6") {
+            stream >> rookPawnBonus[5];
+        }
+        else if (token == "rookPawnBonus7") {
+            stream >> rookPawnBonus[6];
+        }
+        else if (token == "rookPawnBonus8") {
+            stream >> rookPawnBonus[7];
+        }
+        else if (token == "rookPawnBonus9") {
+            stream >> rookPawnBonus[8];
+        }
+        else if (token == "knightPawnBonus1") {
+            stream >> knightPawnBonus[0];
+        }
+        else if (token == "knightPawnBonus2") {
+            stream >> knightPawnBonus[1];
+        }
+        else if (token == "knightPawnBonus3") {
+            stream >> knightPawnBonus[2];
+        }
+        else if (token == "knightPawnBonus4") {
+            stream >> knightPawnBonus[3];
+        }
+        else if (token == "knightPawnBonus5") {
+            stream >> knightPawnBonus[4];
+        }
+        else if (token == "knightPawnBonus6") {
+            stream >> knightPawnBonus[5];
+        }
+        else if (token == "knightPawnBonus7") {
+            stream >> knightPawnBonus[6];
+        }
+        else if (token == "knightPawnBonus8") {
+            stream >> knightPawnBonus[7];
+        }
+        else if (token == "knightPawnBonus9") {
+            stream >> knightPawnBonus[8];
+        }
+        else if (token == "trappedRook1") {
+            stream >> trappedRook[0];
+        }
+        else if (token == "trappedRook2") {
+            stream >> trappedRook[1];
+        }
+        else if (token == "doubledPawn1") {
+            stream >> doubledPawn[0];
+        }
+        else if (token == "doubledPawn2") {
+            stream >> doubledPawn[1];
+        }
+        else if (token == "isolated1") {
+            stream >> isolated[0];
+        }
+        else if (token == "isolated2") {
+            stream >> isolated[1];
+        }
+        else if (token == "weakUnopposed1") {
+            stream >> weakUnopposed[0];
+        }
+        else if (token == "weakUnopposed2") {
+            stream >> weakUnopposed[1];
+        }
+        else if (token == "backwardPawn1") {
+            stream >> backwardPawn[0];
+        }
+        else if (token == "backwardPawn2") {
+            stream >> backwardPawn[1];
+        }
+        else if (token == "weakLever1") {
+            stream >> weakLever[0];
+        }
+        else if (token == "weakLever2") {
+            stream >> weakLever[1];
         }
     }
 
