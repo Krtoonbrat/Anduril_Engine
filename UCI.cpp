@@ -16,10 +16,10 @@
 #include "Thread.h"
 #include "UCI.h"
 
-int libchess::Position::pieceValuesMG[6] = {117, 439, 478, 659, 1455, 0};
-int libchess::Position::pieceValuesEG[6] = {149, 468, 514, 934, 1827, 0};
-int Anduril::pieceValues[16] = { 149,  468,  514,  934,  1827, 0, 0, 0,
-                                 149,  468,  514,  934,  1827, 0, 0, 0};
+int libchess::Position::pieceValuesMG[6] = {108, 445, 498, 644, 1423, 0};
+int libchess::Position::pieceValuesEG[6] = {152, 503, 523, 875, 1768, 0};
+int Anduril::pieceValues[16] = { 152,  503,  523,  875,  1768, 0, 0, 0,
+                                 152,  503,  523,  875,  1768, 0, 0, 0};
 
 extern int maxHistoryVal;
 extern int maxContinuationVal;
@@ -135,18 +135,6 @@ namespace UCI {
                 std::cout << "option name SyzygyProbeLimit type spin default 7 min 0 max 7" << std::endl;
 
                 std::cout << "option name UseNNUE type check default false" << std::endl;
-
-                std::cout << "option name pawnMG type string default " << libchess::Position::pieceValuesMG[0] << std::endl;
-                std::cout << "option name knightMG type string default " << libchess::Position::pieceValuesMG[1] << std::endl;
-                std::cout << "option name bishopMG type string default " << libchess::Position::pieceValuesMG[2] << std::endl;
-                std::cout << "option name rookMG type string default " << libchess::Position::pieceValuesMG[3] << std::endl;
-                std::cout << "option name queenMG type string default " << libchess::Position::pieceValuesMG[4] << std::endl;
-
-                std::cout << "option name pawnEG type string default " << libchess::Position::pieceValuesEG[0] << std::endl;
-                std::cout << "option name knightEG type string default " << libchess::Position::pieceValuesEG[1] << std::endl;
-                std::cout << "option name bishopEG type string default " << libchess::Position::pieceValuesEG[2] << std::endl;
-                std::cout << "option name rookEG type string default " << libchess::Position::pieceValuesEG[3] << std::endl;
-                std::cout << "option name queenEG type string default " << libchess::Position::pieceValuesEG[4] << std::endl;
 
                 std::cout << "uciok" << std::endl;
 
@@ -266,60 +254,6 @@ namespace UCI {
             stream >> syzygyProbeLimit;
         }
 
-        else if (token == "pawnMG") {
-            stream >> libchess::Position::pieceValuesMG[0];
-        }
-
-        else if (token == "knightMG") {
-            stream >> libchess::Position::pieceValuesMG[1];
-        }
-
-        else if (token == "bishopMG") {
-            stream >> libchess::Position::pieceValuesMG[2];
-        }
-
-        else if (token == "rookMG") {
-            stream >> libchess::Position::pieceValuesMG[3];
-        }
-
-        else if (token == "queenMG") {
-            stream >> libchess::Position::pieceValuesMG[4];
-        }
-
-        else if (token == "pawnEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[0] = val;
-            Anduril::pieceValues[0] = Anduril::pieceValues[8] = val;
-        }
-
-        else if (token == "knightEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[1] = val;
-            Anduril::pieceValues[1] = Anduril::pieceValues[9] = val;
-        }
-
-        else if (token == "bishopEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[2] = val;
-            Anduril::pieceValues[2] = Anduril::pieceValues[10] = val;
-        }
-
-        else if (token == "rookEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[3] = val;
-            Anduril::pieceValues[3] = Anduril::pieceValues[11] = val;
-        }
-
-        else if (token == "queenEG") {
-            int val = 0;
-            stream >> val;
-            libchess::Position::pieceValuesEG[4] = val;
-            Anduril::pieceValues[4] = Anduril::pieceValues[12] = val;
-        }
     }
 
     void parseGo(std::stringstream &stream, libchess::Position &board, Book &openingBook, bool &bookOpen) {
