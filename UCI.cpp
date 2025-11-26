@@ -591,86 +591,44 @@ void Anduril::go(libchess::Position board) {
             for (auto m: rootPV) {
                 pvStr += " " + m.to_str();
             }
-
-            if (!incomplete) {
-                if (prevBestScore >= 31000) {
-                    int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
-                    std::cout << "info "
-                              << "score mate " << distance
-                              << " depth " << completedDepth
-                              << " seldepth " << selDepth
-                              << " tbhits " << getTbHits()
-                              << " nodes " << getMovesExplored()
-                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                              << " hashfull " << table.hashFull()
-                              << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pvStr << std::endl;
-                } else if (prevBestScore <= -31000) {
-                    int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
-                    std::cout << "info "
-                              << "score mate " << distance
-                              << " depth " << completedDepth
-                              << " seldepth " << selDepth
-                              << " tbhits " << getTbHits()
-                              << " nodes " << getMovesExplored()
-                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                              << " hashfull " << table.hashFull()
-                              << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pvStr << std::endl;
-                } else {
-                    std::cout << "info "
-                              << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
-                              << " depth " << completedDepth
-                              << " seldepth " << selDepth
-                              << " tbhits " << getTbHits()
-                              << " nodes " << getMovesExplored()
-                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                              << " hashfull " << table.hashFull()
-                              << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pvStr << std::endl;
-                }
-            }
-                // still give some info on a fail high or low
-            else {
-                if (prevBestScore >= 31000) {
-                    int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
-                    std::cout << "info "
-                              << "score mate " << distance
-                              << " depth " << completedDepth
-                              << " seldepth " << selDepth
-                              << " tbhits " << getTbHits()
-                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                              << " nodes " << getMovesExplored()
-                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                              << " hashfull " << table.hashFull()
-                              << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pvStr << std::endl;
-                } else if (prevBestScore <= -31000) {
-                    int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
-                    std::cout << "info "
-                              << "score mate " << distance
-                              << " depth " << completedDepth
-                              << " seldepth " << selDepth
-                              << " tbhits " << getTbHits()
-                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                              << " nodes " << getMovesExplored()
-                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                              << " hashfull " << table.hashFull()
-                              << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pvStr << std::endl;
-                } else {
-                    std::cout << "info "
-                              << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
-                              << " depth " << completedDepth
-                              << " seldepth " << selDepth
-                              << " tbhits " << getTbHits()
-                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                              << " nodes " << getMovesExplored()
-                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                              << " hashfull " << table.hashFull()
-                              << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pvStr << std::endl;
-                }
+            if (prevBestScore >= 31000) {
+                int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
+                std::cout << "info "
+                          << "score mate " << distance
+                          << " depth " << completedDepth
+                          << " seldepth " << selDepth
+                          << " tbhits " << getTbHits()
+                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                          << " nodes " << getMovesExplored()
+                          << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " hashfull " << table.hashFull()
+                          << " time " << (uint64_t) timeElapsed.count()
+                          << " pv" << pvStr << std::endl;
+            } else if (prevBestScore <= -31000) {
+                int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
+                std::cout << "info "
+                          << "score mate " << distance
+                          << " depth " << completedDepth
+                          << " seldepth " << selDepth
+                          << " tbhits " << getTbHits()
+                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                          << " nodes " << getMovesExplored()
+                          << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " hashfull " << table.hashFull()
+                          << " time " << (uint64_t) timeElapsed.count()
+                          << " pv" << pvStr << std::endl;
+            } else {
+                std::cout << "info "
+                          << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
+                          << " depth " << completedDepth
+                          << " seldepth " << selDepth
+                          << " tbhits " << getTbHits()
+                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                          << " nodes " << getMovesExplored()
+                          << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                          << " hashfull " << table.hashFull()
+                          << " time " << (uint64_t) timeElapsed.count()
+                          << " pv" << pvStr << std::endl;
             }
             //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
             //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
