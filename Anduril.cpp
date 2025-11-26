@@ -1232,57 +1232,12 @@ void Anduril::copyPV(libchess::Move* src, libchess::Move* dst) {
 
 
 // finds and returns the principal variation
-std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth, libchess::Move bestMove, SearchStack *curStack) {
+std::vector<libchess::Move> Anduril::getPV(int depth, SearchStack *curStack) {
     std::vector<libchess::Move> pv;
     for (int i = 0; curStack->pv && i < depth && curStack->pv[i].value() != 0; ++i) {
         pv.push_back(curStack->pv[i]);
     }
     return pv;
-
-    /*
-    std::vector<libchess::Move> PV;
-    uint64_t hash = 0;
-    Node *node;
-    bool found = true;
-
-    // push the best move and add to the PV
-    PV.push_back(bestMove);
-    board.make_move(bestMove);
-
-    // This loop hashes the board, finds the node associated with the current board
-    // adds the best move we found to the PV, then pushes it to the board
-    hash = board.hash();
-    node = table.probe(hash, found);
-    while (found && node->bestMove != 0) {
-        libchess::Move tmp = board.from_table(node->bestMove);
-        if (board.is_capture_move(tmp) && board.piece_type_on(tmp.to_square()) == std::nullopt && tmp.type() != libchess::Move::Type::ENPASSANT) {
-            break;
-        }
-        // this will make sure we don't segfault
-        // I don't know the problem but this fixed it and the search does not appear to be affected
-        if (board.is_legal_move(tmp)) {
-            PV.push_back(tmp);
-            board.make_move(tmp);
-        }
-        else {
-            break;
-        }
-        hash = board.hash();
-        node = table.probe(hash, found);
-        // in case of infinite loops of repeating moves
-        // also check to see if the pv is still in the main search
-        if (PV.size() > depth || node->nodeDepth <= 0) {
-            break;
-        }
-    }
-
-    // undoes each move in the PV so that we don't have a messed up board
-    for (int i = PV.size() - 1; i >= 0; i--){
-        board.unmake_move();
-    }
-
-    return PV;
-    */
 }
 
 uint64_t Anduril::getMovesExplored() {
