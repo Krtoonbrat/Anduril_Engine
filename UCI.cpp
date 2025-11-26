@@ -586,7 +586,6 @@ void Anduril::go(libchess::Position board) {
             end = std::chrono::steady_clock::now();
             timeElapsed = end - startTime;
 
-            std::vector<libchess::Move> PV = getPV(board, rDepth, bestMove, curStack);
             std::string pvStr = "";
             for (auto m: rootPV) {
                 pvStr += " " + m.to_str();
