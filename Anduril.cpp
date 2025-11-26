@@ -138,6 +138,13 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, SearchSt
     int futility = -32001;
     int futilityValue;
 
+    libchess::Move pv[100 + 1] = {libchess::Move(0)};
+
+    if constexpr (PvNode) {
+        (curStack + 1)->pv = pv;
+        curStack->pv[0] = libchess::Move(0);
+    }
+
     // tDepth will be -1 when searching evasions or when we include checks and promotions, -2 otherwise
     int tDepth = check || depth >= 0 ? -1 : -2;
 
@@ -296,6 +303,12 @@ int Anduril::quiescence(libchess::Position &board, int alpha, int beta, SearchSt
             bestScore = score;
             if (score > alpha) {
                 bestMove = move;
+
+                if constexpr (PvNode) {
+                    curStack->pv[0] = bestMove;
+                    copyPV((curStack + 1)->pv, curStack->pv + 1);
+                }
+
                 if (PvNode && score < beta) {
                     alpha = score;
                 }
@@ -399,6 +412,8 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
     int moveCounter;
     moveCounter = curStack->moveCount = 0;
+
+    libchess::Move pv[100 + 1] = {libchess::Move(0)};
 
     // Idea from Stockfish: these variable represent if we are improving our score over our last turn, and how much
     bool improving;
@@ -685,6 +700,11 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         currRootMove = rootMoves.begin();
     }
 
+    // reset PV pointer for next ply
+    if constexpr (PvNode) {
+        (curStack + 1)->pv = nullptr;
+    }
+
     // indicates that a PvNode will probably fail low if the node was searched, and we found a fail low already
     bool likelyFailLow = PvNode && nMove.value() != 0 && (nType & 1) && nDepth >= depth;
 
@@ -949,6 +969,9 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // full PV search for the first move and for moves that fail in the zero window
         if (PvNode && (moveCounter == 1 || score > alpha)) {
+            (curStack + 1)->pv = pv;
+            (curStack + 1)->pv[0] = libchess::Move(0);
+
             incPly();
             score = -negamax<PV>(board, actualDepth, -beta, -alpha, curStack + 1, false);
             decPly();
@@ -966,12 +989,33 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
         if constexpr (rootNode) {
             currRootMove->score = score;
             currRootMove++;
+
+            if (moveCounter == 1 || score > alpha) {
+                // clear the stored PV
+                rootPV.clear();
+
+                // add current root move
+                rootPV.push_back(move);
+
+                // append the rest of the line from the child
+                for (int i = 0; (curStack + 1)->pv && (curStack + 1)->pv[i].value() != 0; ++i) {
+                    rootPV.push_back((curStack + 1)->pv[i]);
+                }
+            }
+
         }
 
+        // do we have a new best score?
         if (score > bestScore) {
             bestScore = score;
+
             if (score > alpha) {
                 bestMove = move;
+                if constexpr (PvNode && !rootNode) {
+                    curStack->pv[0] = bestMove;
+                    copyPV((curStack + 1)->pv, curStack->pv + 1);
+                }
+
                 if (score >= beta) {
                     cutNodes++;
                     break;
@@ -1050,6 +1094,9 @@ void Anduril::bench(libchess::Position &board) {
 
     SearchStack stack[100 + 7] = {};
     SearchStack *curStack = stack + 7;
+    libchess::Move pv[100 + 1] = {libchess::Move(0)};
+    curStack->pv = pv;
+
 
     // initialize the oversize state array
     for (int i = 7; i > 0; i--) {
@@ -1175,8 +1222,24 @@ void Anduril::updateContinuationHistory(libchess::Position &board, libchess::Pie
     }
 }
 
+// copies principal variation from source to destination
+void Anduril::copyPV(libchess::Move* src, libchess::Move* dst) {
+    while (src && dst && src->value() != 0) {
+        *dst++ = *src++;
+    }
+    *dst = libchess::Move(0);
+}
+
+
 // finds and returns the principal variation
-std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth, libchess::Move bestMove) {
+std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth, libchess::Move bestMove, SearchStack *curStack) {
+    std::vector<libchess::Move> pv;
+    for (int i = 0; curStack->pv && i < depth && curStack->pv[i].value() != 0; ++i) {
+        pv.push_back(curStack->pv[i]);
+    }
+    return pv;
+
+    /*
     std::vector<libchess::Move> PV;
     uint64_t hash = 0;
     Node *node;
@@ -1219,6 +1282,7 @@ std::vector<libchess::Move> Anduril::getPV(libchess::Position &board, int depth,
     }
 
     return PV;
+    */
 }
 
 uint64_t Anduril::getMovesExplored() {

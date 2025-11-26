@@ -21,6 +21,8 @@ int libchess::Position::pieceValuesEG[6] = {152, 503, 523, 875, 1768, 0};
 int Anduril::pieceValues[16] = { 152,  503,  523,  875,  1768, 0, 0, 0,
                                  152,  503,  523,  875,  1768, 0, 0, 0};
 
+int Anduril::multiPV = 1;
+
 extern int maxHistoryVal;
 extern int maxContinuationVal;
 extern int maxCaptureVal;
@@ -125,6 +127,7 @@ namespace UCI {
                 std::cout << "option name ClearHash type button" << std::endl;
                 std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
+                std::cout << "option name MultiPV type spin default " << Anduril::multiPV << "min 1 max 64" << std::endl;
                 std::cout << "option name OwnBook type check default false" << std::endl;
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
@@ -185,6 +188,19 @@ namespace UCI {
             else {
                 table.resize(hashSize >= 16 ? hashSize : 16);
             }
+        }
+
+        // set multiPV
+        else if (token == "MultiPV") {
+            int num;
+            stream >> num;
+            if (num < 1 || num > 64) {
+                std::cout << "info string MultiPV must be between 1 and 64" << std::endl;
+            }
+            else {
+                Anduril::multiPV = num;
+            }
+
         }
 
         // set book open or closed
@@ -428,6 +444,12 @@ void Anduril::go(libchess::Position board) {
     SearchStack stack[100 + 7] = {};
     SearchStack *curStack = stack + 7;
 
+    // this array stores our principal variation at the root
+    libchess::Move pv[100 + 1] = {libchess::Move(0)};
+
+    // we store the root pv at curStack - 1 so that the root search has somewhere to copy its PV to.
+    curStack->pv = pv;
+
     // set the killer vector to have the correct number of slots
     // the vector is padded a little at the end in case of the search being extended
     for (auto i : killers) {
@@ -564,10 +586,10 @@ void Anduril::go(libchess::Position board) {
             end = std::chrono::steady_clock::now();
             timeElapsed = end - startTime;
 
-            std::vector<libchess::Move> PV = getPV(board, rDepth, bestMove);
-            std::string pv = "";
-            for (auto m: PV) {
-                pv += " " + m.to_str();
+            std::vector<libchess::Move> PV = getPV(board, rDepth, bestMove, curStack);
+            std::string pvStr = "";
+            for (auto m: rootPV) {
+                pvStr += " " + m.to_str();
             }
 
             if (!incomplete) {
@@ -582,7 +604,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pv << std::endl;
+                              << " pv" << pvStr << std::endl;
                 } else if (prevBestScore <= -31000) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
@@ -594,7 +616,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pv << std::endl;
+                              << " pv" << pvStr << std::endl;
                 } else {
                     std::cout << "info "
                               << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
@@ -605,7 +627,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pv << std::endl;
+                              << " pv" << pvStr << std::endl;
                 }
             }
                 // still give some info on a fail high or low
@@ -622,7 +644,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pv << std::endl;
+                              << " pv" << pvStr << std::endl;
                 } else if (prevBestScore <= -31000) {
                     int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
                     std::cout << "info "
@@ -635,7 +657,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pv << std::endl;
+                              << " pv" << pvStr << std::endl;
                 } else {
                     std::cout << "info "
                               << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
@@ -647,7 +669,7 @@ void Anduril::go(libchess::Position board) {
                               << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
                               << " hashfull " << table.hashFull()
                               << " time " << (uint64_t) timeElapsed.count()
-                              << " pv" << pv << std::endl;
+                              << " pv" << pvStr << std::endl;
                 }
             }
             //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;

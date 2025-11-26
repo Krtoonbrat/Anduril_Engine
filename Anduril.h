@@ -28,6 +28,7 @@ struct SearchStack {
     bool ttPv = false;
     libchess::Move excludedMove = libchess::Move(0);
     PieceHistory *continuationHistory = nullptr;
+    libchess::Move *pv = nullptr;
 };
 
 
@@ -93,7 +94,7 @@ public:
     inline void decPly() { ply--; }
 
     // finds and returns the principal variation
-    std::vector<libchess::Move> getPV(libchess::Position &board, int depth, libchess::Move bestMove);
+    std::vector<libchess::Move> getPV(libchess::Position &board, int depth, libchess::Move bestMove, SearchStack *curStack);
 
     // reset the move and counter move tables
     inline void resetHistories() {
@@ -160,6 +161,9 @@ public:
     // total number of tb hits
     std::atomic<uint64_t> tbHits;
 
+    // multiPV number
+    static int multiPV;
+
 private:
 
     // the ply of the root node
@@ -184,6 +188,9 @@ private:
     libchess::MoveList rootMoves;
     libchess::Move *currRootMove;
 
+    // records the pv at root node
+    std::vector<libchess::Move> rootPV;
+
     // this version actually performs the perft search
     template<bool root>
     uint64_t perft(libchess::Position &board, int depth);
@@ -207,6 +214,9 @@ private:
 
     // updates the continuation history
     void updateContinuationHistory(libchess::Position &board, libchess::Piece piece, libchess::Square to, int bonus, SearchStack *curStack, int start = 0);
+
+    // copies principal variation from source to destination
+    void copyPV(libchess::Move *src, libchess::Move *dst);
 
     // gets the phase of the game for evaluation
     int getPhase(libchess::Position &board);
