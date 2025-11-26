@@ -501,6 +501,7 @@ void Anduril::go(libchess::Position board) {
         if (!incomplete) {
             selDepth = 0;
             sDepth = std::clamp(rDepth, 1, 100);
+            delta = 14;
         }
 
         incomplete = false;
@@ -555,14 +556,12 @@ void Anduril::go(libchess::Position board) {
                 rDepth++;
                 rDepth = std::clamp(rDepth, 1, 100);
                 upper = lower = false;
-                delta = 14;
                 alpha = std::max(bestScore - delta, -32001);
                 beta = std::min(bestScore + delta, 32001);
             }
         }
         // for depths less than 5
         else {
-            delta = 14;
             rDepth++;
             rDepth = std::clamp(rDepth, 1, 100);
             sDepth = rDepth;
