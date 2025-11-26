@@ -181,6 +181,9 @@ private:
     // selective depth
     int selDepth = 0;
 
+    // our current multiPV index
+    int multiPvNum = 0;
+
     uint64_t singularAttempts = 0;
     uint64_t singularExtensions = 0;
 

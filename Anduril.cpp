@@ -696,8 +696,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
     // at root, we are going to ignore the picker object.  The amount of time spent allocating and selecting moves should be negligible because this only happens for one position per search
     // here we set the pointer for the current root move to the beginning of the move list, and sort the list
     if constexpr (rootNode) {
-        partial_insertion_sort(rootMoves.begin(), rootMoves.end(), std::numeric_limits<int>::min());
-        currRootMove = rootMoves.begin();
+        currRootMove = rootMoves.begin() + multiPvNum;
     }
 
     // reset PV pointer for next ply
@@ -721,7 +720,7 @@ int Anduril::negamax(libchess::Position &board, int depth, int alpha, int beta, 
 
         // at root, we do this check just in case the move picker has some illegal moves in it
         if constexpr (rootNode) {
-            if (currRootMove == rootMoves.end()) {
+            if (currRootMove >= rootMoves.end()) {
                 break;
             }
         }

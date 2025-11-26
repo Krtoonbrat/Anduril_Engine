@@ -16,6 +16,8 @@
 #include "Thread.h"
 #include "UCI.h"
 
+#include "MovePicker.h"
+
 int libchess::Position::pieceValuesMG[6] = {108, 445, 498, 644, 1423, 0};
 int libchess::Position::pieceValuesEG[6] = {152, 503, 523, 875, 1768, 0};
 int Anduril::pieceValues[16] = { 152,  503,  523,  875,  1768, 0, 0, 0,
@@ -127,7 +129,7 @@ namespace UCI {
                 std::cout << "option name ClearHash type button" << std::endl;
                 std::cout << "option name Threads type spin default 1 min 1 max 64" << std::endl;
                 std::cout << "option name Hash type spin default 256 min 16 max 33554432" << std::endl;
-                std::cout << "option name MultiPV type spin default " << Anduril::multiPV << "min 1 max 64" << std::endl;
+                std::cout << "option name MultiPV type spin default " << Anduril::multiPV << " min 1 max 64" << std::endl;
                 std::cout << "option name OwnBook type check default false" << std::endl;
 
                 std::cout << "option name nnue_path type string default " << NNUE::nnue_path << std::endl;
@@ -471,7 +473,7 @@ void Anduril::go(libchess::Position board) {
 
     rDepth = 1;
     int sDepth = rDepth;
-    int completedDepth = 0;
+    int completedDepth = rDepth;
     singularAttempts = 0;
     singularExtensions = 0;
     bool finalDepth = false;
@@ -498,161 +500,167 @@ void Anduril::go(libchess::Position board) {
         }
 
         // reset selDepth
-        if (!incomplete) {
+        for (multiPvNum = 0; multiPvNum < multiPV; ++multiPvNum) {
             selDepth = 0;
             sDepth = std::clamp(rDepth, 1, 100);
             delta = 14;
-        }
 
-        incomplete = false;
+            do {
+                incomplete = false;
 
-        sDepth = std::clamp(sDepth < rDepth - 3 ? rDepth - 3 : sDepth, 1, 100);
+                sDepth = std::clamp(sDepth < rDepth - 3 ? rDepth - 3 : sDepth, 1, 100);
 
-        // search for the best score
-        bestScore = negamax<Root>(board, sDepth, alpha, beta, curStack, false);
+                // search for the best score
+                bestScore = negamax<Root>(board, sDepth, alpha, beta, curStack, false);
 
-        // if we didn't find a node before, try again now that we have searched
-        if (!found) {
-            node = table.probe(hash, found);
-        }
+                // if we didn't find a node before, try again now that we have searched
+                if (!found) {
+                    node = table.probe(hash, found);
+                }
 
-        // was the search stopped?
-        // stop the search if time is up
-        if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
-            incomplete = true;
-            finalDepth = true;
-        }
+                // was the search stopped?
+                // stop the search if time is up
+                if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+                    finalDepth = true;
+                    break;
+                }
 
-        // this is the depth we just searched to, we save it here because sDepth might change, but we want to report the value before the change to the GUI
-        completedDepth = sDepth;
+                // this is the depth we just searched to, we save it here because sDepth might change, but we want to report the value before the change to the GUI
+                completedDepth = sDepth;
 
-        // set the aspiration window
-        if (rDepth >= 6) {
-            // search was outside the window, need to redo the search
-            // fail low
-            if (bestScore <= alpha) {
-                //std::cout << "Low miss at: " << rDepth << std::endl;
-                if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
-                misses.push_back(rDepth);
-                aspMissesL++;
-                beta = (alpha + beta) / 2;
-                alpha = std::max(bestScore - delta, -32001);
-                incomplete = true;
-                upper = true;
+                // set the aspiration window
+                if (rDepth >= 6) {
+                    // search was outside the window, need to redo the search
+                    // fail low
+                    if (bestScore <= alpha) {
+                        //std::cout << "Low miss at: " << rDepth << std::endl;
+                        if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
+                        misses.push_back(rDepth);
+                        aspMissesL++;
+                        beta = (alpha + beta) / 2;
+                        alpha = std::max(bestScore - delta, -32001);
+                        incomplete = true;
+                        upper = true;
+                    }
+                    // fail high
+                    else if (bestScore >= beta) {
+                        if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
+                        //std::cout << "High miss at: " << rDepth << std::endl;
+                        misses.push_back(rDepth);
+                        aspMissesH++;
+                        beta = std::min(bestScore + delta, 32001);
+                        sDepth--;
+                        incomplete = true;
+                        lower = true;
+                    }
+                    // the search didn't fall outside the window, we can move to the next depth
+                    else {
+                        upper = lower = false;
+                        alpha = std::max(bestScore - delta, -32001);
+                        beta = std::min(bestScore + delta, 32001);
+                    }
+                }
+
+                // expand search window in case we miss (will be reset anyway if we didn't)
+                // we can do it here because if we did not miss, we set alpha and beta for the next search above,
+                // if we did miss, delta was already modified before we searched, meaning the alpha and beta windows were expanded
+                // 3 / 4
+                delta += delta * 29 / 40;
+
+                if (!incomplete && found) {
+                    bestMove = board.from_table(node->bestMove);
+                    prevBestScore = bestScore;
+                    //std::cout << "Total low misses: " << aspMissesL << std::endl;
+                    //std::cout << "Total high misses: " << aspMissesH << std::endl;
+                }
+
+                // sort the root move list by score for the first depth of the next search
+                // also makes sure that the best move is at the front so that MultiPV skips it
+                partial_insertion_sort(rootMoves.begin() + multiPvNum, rootMoves.end(), std::numeric_limits<int>::min());
+            } while (incomplete);
+
+            if (id == 0) {
+                // send info to the GUI
+                end = std::chrono::steady_clock::now();
+                timeElapsed = end - startTime;
+
+                std::string pvStr = "";
+                for (auto m: rootPV) {
+                    pvStr += " " + m.to_str();
+                }
+                if (prevBestScore >= 31000) {
+                    int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
+                    std::cout << "info "
+                              << "score mate " << distance
+                              << " depth " << completedDepth
+                              << " seldepth " << selDepth
+                              << (multiPV > 1 ? " multipv " + std::to_string(multiPvNum + 1) : "")
+                              << " tbhits " << getTbHits()
+                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pvStr << std::endl;
+                } else if (prevBestScore <= -31000) {
+                    int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
+                    std::cout << "info "
+                              << "score mate " << distance
+                              << " depth " << completedDepth
+                              << " seldepth " << selDepth
+                              << (multiPV > 1 ? " multipv " + std::to_string(multiPvNum + 1) : "")
+                              << " tbhits " << getTbHits()
+                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pvStr << std::endl;
+                } else {
+                    std::cout << "info "
+                              << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
+                              << " depth " << completedDepth
+                              << " seldepth " << selDepth
+                              << (multiPV > 1 ? " multipv " + std::to_string(multiPvNum + 1) : "")
+                              << " tbhits " << getTbHits()
+                              << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
+                              << " nodes " << getMovesExplored()
+                              << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
+                              << " hashfull " << table.hashFull()
+                              << " time " << (uint64_t) timeElapsed.count()
+                              << " pv" << pvStr << std::endl;
+                }
+                //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
+                //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
+
+                // calculate branching factor
+                //std::cout << "info string Branching factor (the stockfish way):" << std::pow((double) getMovesExplored(), (1.0 / (rDepth - 1))) << std::endl;
+
+
+                // for debugging
+                if (boardFEN != board.fen()) {
+                    std::cout << "info string Board does not match original at depth: " << rDepth << std::endl;
+                    std::cout << "info string Bad fen: " << board.fen() << std::endl;
+                    board.from_fen(boardFEN);
+                }
+
+                /*
+                std::cout << "Total Quiescence Moves Searched: " << quiesceExplored << std::endl;
+                std::cout << "Moves transposed: " << movesTransposed << std::endl;
+                std::cout << "Cut Nodes: " << cutNodes << std::endl;
+                 */
             }
-            // fail high
-            else if (bestScore >= beta) {
-                if (!limits.timeSet && limits.depth != 100) { finalDepth = false; }
-                //std::cout << "High miss at: " << rDepth << std::endl;
-                misses.push_back(rDepth);
-                aspMissesH++;
-                beta = std::min(bestScore + delta, 32001);
-                sDepth--;
-                incomplete = true;
-                lower = true;
-            }
-            // the search didn't fall outside the window, we can move to the next depth
-            else {
-                rDepth++;
-                rDepth = std::clamp(rDepth, 1, 100);
-                upper = lower = false;
-                alpha = std::max(bestScore - delta, -32001);
-                beta = std::min(bestScore + delta, 32001);
+
+            // was the search stopped?
+            // stop the search if time is up
+            if (gondor.stop || (limits.timeSet && stopTime - startTime <= std::chrono::steady_clock::now() - startTime)) {
+                break;
             }
         }
-        // for depths less than 5
-        else {
-            rDepth++;
-            rDepth = std::clamp(rDepth, 1, 100);
-            sDepth = rDepth;
-        }
 
-        // expand search window in case we miss (will be reset anyway if we didn't)
-        // we can do it here because if we did not miss, we set alpha and beta for the next search above,
-        // if we did miss, delta was already modified before we searched, meaning the alpha and beta windows were expanded
-        // 3 / 4
-        delta += delta * 29 / 40;
-
-        if (!incomplete && found) {
-            bestMove = board.from_table(node->bestMove);
-            prevBestScore = bestScore;
-            //std::cout << "Total low misses: " << aspMissesL << std::endl;
-            //std::cout << "Total high misses: " << aspMissesH << std::endl;
-        }
-
-        if (id == 0) {
-            // send info to the GUI
-            end = std::chrono::steady_clock::now();
-            timeElapsed = end - startTime;
-
-            std::string pvStr = "";
-            for (auto m: rootPV) {
-                pvStr += " " + m.to_str();
-            }
-            if (prevBestScore >= 31000) {
-                int distance = ((-prevBestScore + 32000) / 2) + (prevBestScore % 2);
-                std::cout << "info "
-                          << "score mate " << distance
-                          << " depth " << completedDepth
-                          << " seldepth " << selDepth
-                          << " tbhits " << getTbHits()
-                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                          << " nodes " << getMovesExplored()
-                          << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " hashfull " << table.hashFull()
-                          << " time " << (uint64_t) timeElapsed.count()
-                          << " pv" << pvStr << std::endl;
-            } else if (prevBestScore <= -31000) {
-                int distance = -((prevBestScore + 32000) / 2) + -(prevBestScore % 2);
-                std::cout << "info "
-                          << "score mate " << distance
-                          << " depth " << completedDepth
-                          << " seldepth " << selDepth
-                          << " tbhits " << getTbHits()
-                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                          << " nodes " << getMovesExplored()
-                          << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " hashfull " << table.hashFull()
-                          << " time " << (uint64_t) timeElapsed.count()
-                          << " pv" << pvStr << std::endl;
-            } else {
-                std::cout << "info "
-                          << "score cp " << (prevBestScore * 100 / 208) // this is the centipawn conversion stockfish used in the version the default network file was trained on
-                          << " depth " << completedDepth
-                          << " seldepth " << selDepth
-                          << " tbhits " << getTbHits()
-                          << (upper ? " upperbound" : (lower ? " lowerbound" : ""))
-                          << " nodes " << getMovesExplored()
-                          << " nps " << (uint64_t) (getMovesExplored() / (timeElapsed.count() / 1000))
-                          << " hashfull " << table.hashFull()
-                          << " time " << (uint64_t) timeElapsed.count()
-                          << " pv" << pvStr << std::endl;
-            }
-            //std::cout << "info string Attempts at Singular Extensions: " << singularAttempts << std::endl;
-            //std::cout << "info string Number of Singular Extensions: " << singularExtensions << std::endl;
-
-            // calculate branching factor
-            //std::cout << "info string Branching factor (the stockfish way):" << std::pow((double) getMovesExplored(), (1.0 / (rDepth - 1))) << std::endl;
-
-
-            // for debugging
-            if (boardFEN != board.fen()) {
-                std::cout << "info string Board does not match original at depth: " << rDepth << std::endl;
-                std::cout << "info string Bad fen: " << board.fen() << std::endl;
-                board.from_fen(boardFEN);
-            }
-
-            /*
-            std::cout << "Total Quiescence Moves Searched: " << quiesceExplored << std::endl;
-            std::cout << "Moves transposed: " << movesTransposed << std::endl;
-            std::cout << "Cut Nodes: " << cutNodes << std::endl;
-             */
-        }
-
-        // reset the variables to prepare for the next loop
-        if (!finalDepth) {
-            bestScore = -32001;
-        }
+        // increment search depth
+        rDepth++;
+        rDepth = std::clamp(rDepth, 1, 100);
     }
 
     if (id == 0) {
